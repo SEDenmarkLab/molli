@@ -9,19 +9,21 @@
 
 package:
   name: molli
-  version: 1.0.0a3
+  version: 1.0.0a4
 
 source:
   path: ..
 
 requirements:
   build:
-    - python>=3.10.4
+    - python>=3.10,<3.11
     - setuptools>=60
-    - pybind11~=2.10
+    # - {{ compiler("cxx") }}
+    - pybind11==2.10
+    # - numpy==1.23
 
   run:
-    - python>=3.10.4
+    - python>=3.10,<3.11
     - openbabel>=3.1.1
     - numpy>=1.22.3
     - scipy>=1.9.1
@@ -33,7 +35,7 @@ requirements:
     - msgpack-python>=1.0.4
 
 build:
-  number: 2
+  number: 0
   include_recipe: True
   script: "{{ PYTHON }} -m pip install --no-deps -vv ." 
 

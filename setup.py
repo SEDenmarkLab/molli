@@ -37,7 +37,7 @@ setup(
     name="molli",
     packages=find_packages(),
     package_data={"molli.data": ["*.yml", "*.yaml"], "molli.files": ["*"]},
-    version="1.0.0a3",
+    version="1.0.0a4",
     author="Alexander S. Shved",
     author_email="shvedalx@illinois.edu",
     install_requires=[
@@ -50,7 +50,7 @@ setup(
         "networkx>=2.8.7",
         "tqdm",
     ],
-    python_requires=">=3.10",
+    python_requires=">=3.10,<3.11",
     entry_points={"console_scripts": ["molli = molli.__main__:main"]},
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},

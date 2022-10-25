@@ -1,3 +1,22 @@
 [build-system]
 requires = ["setuptools>=42", "wheel", "pybind11", "numpy~=1.23"]
 build-backend = "setuptools.build_meta"
+
+# [project]
+# requires-python = ">=3.10,<3.11"
+# name = "molli"
+# description = "molli"
+# dynamic = ["version", "authors"]
+# dependencies = [
+#     "matplotlib>=3.4.3",
+#     "numpy>=1.21.1",
+#     "PyYAML>=5.3",
+#     "msgpack",
+#     "scipy>=1.4.1",
+#     "colorama>=0.4.4",
+#     "networkx>=2.8.7",
+#     "tqdm",
+# ]
+
+# [project.scripts]
+# molli = "molli.__main__:main"
