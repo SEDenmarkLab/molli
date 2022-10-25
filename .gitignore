@@ -1,0 +1,16 @@
+# Unnecessary folders
+/scratch
+/temp
+/build
+/dist
+/misc
+
+# Python residues
+**/.vscode/
+**/__pycache__
+**/*.pyd
+**/*.pyc
+molli.egg-info/
+
+# Files not to be uploaded to repo
+**/_temp_*

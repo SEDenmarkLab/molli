@@ -1,0 +1,52 @@
+# ================================================================================
+# This file is part of
+#      -----------  
+#      MOLLI 1.0.0  
+#      -----------  
+# (C) 2022 Alexander S. Shved and the Denmark laboratory
+# University of Illinois at Urbana-Champaign, Department of Chemistry
+# ================================================================================
+
+package:
+  name: molli
+  version: 1.0.0a3
+
+source:
+  path: ..
+
+requirements:
+  build:
+    - python>=3.10.4
+    - setuptools>=60
+    - pybind11~=2.10
+
+  run:
+    - python>=3.10.4
+    - openbabel>=3.1.1
+    - numpy>=1.22.3
+    - scipy>=1.9.1
+    - colorama~=0.4.5
+    - tqdm~=4.64.0
+    - pyyaml>=5.4.1
+    - dask~=2022.9.1
+    - networkx~=2.8.7
+    - msgpack-python>=1.0.4
+
+build:
+  number: 2
+  include_recipe: True
+  script: "{{ PYTHON }} -m pip install --no-deps -vv ." 
+
+test:
+  imports:
+    - molli
+    - molli_test
+    - molli_xt
+
+about:
+  summary: "Molecular Library Toolkit"
+  description: |
+    This package was originally developed to supersede ccheminfolib. 
+    Now it is a tool that allows storage and fast manipulations of full molecule and conformer ensembles.
+    This project takes advantage of numpy mathematics in its core, as well as binary information storage.
+

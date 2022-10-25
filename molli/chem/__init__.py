@@ -1,0 +1,14 @@
+"""
+# `molli.chem`
+Main subpackage of the molli library. 
+Will eventually contain everything that is needed to do chemistry in silico.
+"""
+
+from .atom import Element, ElementLike, Atom, AtomLike, Promolecule, PromoleculeLike
+from .bond import Bond, Connectivity
+from .geometry import CartesianGeometry
+from .structure import Structure, Substructure
+from .molecule import Molecule, StructureLike
+from .ensemble import ConformerEnsemble, Conformer
+from .library import ConformerLibrary, MoleculeLibrary
+from .legacy import ensemble_from_molli_old_xml
