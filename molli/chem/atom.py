@@ -277,6 +277,10 @@ class Atom:
         parent.append_atom(a)
         return a
 
+    def copy(self, other: Atom):
+        for f in Atom.__slots__:
+            setattr(self, f, getattr(other, f))
+
     def __repr__(self):
 
         _i = self.isotope if self.isotope > 0 else ""
@@ -345,7 +349,7 @@ class Promolecule:
         self.name = name
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
@@ -464,6 +468,17 @@ class Promolecule:
 
     @property
     def molecular_weight(self) -> float:
+        """
+        # `molecular_weight`
+        Molecular weight of the molecule
+        
+        Warning: currently there is no support for isotopic masses.
+        
+        ## Returns
+        
+        `float`
+            molecular weight in Da
+        """        
         _mw = 0.0
         for a in self.atoms:
             _mw += a.element.atomic_weight

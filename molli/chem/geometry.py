@@ -1,7 +1,18 @@
 from __future__ import annotations
+
 # === MOLLI IMPORTS ===
-from . import Element, ElementLike, Atom, AtomLike, Bond, Promolecule, PromoleculeLike, Connectivity
+from . import (
+    Element,
+    ElementLike,
+    Atom,
+    AtomLike,
+    Bond,
+    Promolecule,
+    PromoleculeLike,
+    Connectivity,
+)
 from ..parsing import read_xyz
+
 # =====================
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, Callable
 from enum import Enum
@@ -11,6 +22,7 @@ from io import StringIO, BytesIO
 from functools import wraps
 from pathlib import Path
 import math
+
 
 class DistanceUnit(Enum):
     """
@@ -25,10 +37,12 @@ class DistanceUnit(Enum):
     pm = 100.0
     nm = 0.100
 
+
 def _angle(v1, v2):
     """computes the angle formed by two vectors"""
     dt = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
     return np.arccos(dt)
+
 
 def _nans(shape, dtype) -> np.ndarray:
     res = np.empty(shape, dtype=dtype)
@@ -48,7 +62,7 @@ class CartesianGeometry(Promolecule):
     def __init__(
         self,
         n_atoms: int = 0,
-        name: str="unnamed",
+        name: str = "unnamed",
         *,
         dtype: str = "float32",
     ):
@@ -56,7 +70,6 @@ class CartesianGeometry(Promolecule):
         super().__init__(n_atoms=n_atoms, name=name)
         self._dtype = str(dtype)
         self._coords = _nans((self.n_atoms, 3), dtype=self._dtype)
-
 
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 
@@ -84,23 +97,24 @@ class CartesianGeometry(Promolecule):
     def coords(self):
         """Set of atomic positions in shape (n_atoms, 3)"""
         return self._coords
-    
+
     @coords.setter
     def coords(self, other: ArrayLike):
         _coords = np.array(other, self._dtype)
 
         na = self.n_atoms
-        
+
         match _coords.shape:
             case (x,) if x == na * 3:
                 self._coords = np.reshape(_coords, (na, 3))
-            
+
             case (x, y) if x == na and y == 3:
                 self._coords = _coords
-            
-            case _:
-                raise ValueError(f"Failed to assign array of shape {_coords.shape} to a geometry with {na} atoms.")
 
+            case _:
+                raise ValueError(
+                    f"Failed to assign array of shape {_coords.shape} to a geometry with {na} atoms."
+                )
 
     @property
     def coords_as_list(self):
@@ -110,7 +124,7 @@ class CartesianGeometry(Promolecule):
         """This extends current geometry with another one"""
         raise NotImplementedError
 
-    def dump_xyz(self, output: StringIO, write_header: bool=True) -> None:
+    def dump_xyz(self, output: StringIO, write_header: bool = True) -> None:
         """
         This dumps an xyz file into the output stream.
         """
@@ -161,7 +175,7 @@ class CartesianGeometry(Promolecule):
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 g.scale(DistanceUnit[source_units].value)
-            
+
             yield g
 
     def scale(self, factor: float, allow_inversion=False):
@@ -185,7 +199,6 @@ class CartesianGeometry(Promolecule):
         """
         self.scale(-1, allow_inversion=True)
 
-    
     def distance(self, a1: AtomLike, a2: AtomLike) -> float:
         i1, i2 = self.yield_atom_indices((a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
@@ -193,10 +206,10 @@ class CartesianGeometry(Promolecule):
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
         i = self.index_atom(a)
         return np.linalg.norm(self.coords[i] - p)
-    
+
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
         """
-        Compute an angle 
+        Compute an angle
         """
         i1, i2, i3 = self.yield_atom_indices((a1, a2, a3))
 
@@ -207,12 +220,18 @@ class CartesianGeometry(Promolecule):
         # return np.arccos(dt)
 
         return _angle(v1, v2)
-    
+
     def coord_subset(self, atoms: Iterable[AtomLike]) -> np.ndarray:
         indices = list(self.yield_atom_indices(atoms))
         return self.coords[indices]
-    
-    def dihedral(self, a1: AtomLike, a2: AtomLike, a3: AtomLike, a4: AtomLike,) -> float:
+
+    def dihedral(
+        self,
+        a1: AtomLike,
+        a2: AtomLike,
+        a3: AtomLike,
+        a4: AtomLike,
+    ) -> float:
         i1, i2, i3, i4 = self.yield_atom_indices((a1, a2, a3, a4))
 
         u1 = self.coords[i2] - self.coords[i1]
@@ -226,4 +245,10 @@ class CartesianGeometry(Promolecule):
 
         return np.arctan2(arg1, arg2)
 
-        
+    def translate(self, vector: ArrayLike):
+        v = np.array(vector)
+        self.coords += v[np.newaxis, :]
+
+    def centroid(self) -> np.ndarray:
+        """Return the centroid of the molecule"""
+        return np.average(self.coords, axis=0)

@@ -8,6 +8,7 @@ from ..parsing import read_mol2
 import re
 from io import StringIO, BytesIO
 from warnings import warn
+from itertools import chain
 
 # The intent of this regex is that all molecule names must be valid variable and file names.
 # This may be useful later.
@@ -32,22 +33,10 @@ class Structure(CartesianGeometry, Connectivity):
         super().__init__(n_atoms=n_atoms, dtype=dtype)
         self.name = name
 
-    # @property
-    # def name(self):
-    #     return self._name
+    @classmethod
+    def clone(cls: type[Structure], other: Structure) -> Structure:
+        return cls.concatenate(other)
 
-    # @name.setter
-    # def name(self, value: str):
-    #     if RE_MOL_NAME.fullmatch(value):
-    #         self._name = value
-    #     else:
-    #         sub = RE_MOL_ILLEGAL.sub("_", value)
-    #         self._name = sub
-    #         warn(f"Replaced illegal characters in molecule name: {value} --> {sub}")
-
-    #         # raise ValueError(
-    #         #     f"Inappropriate name for a molecule: {value}. Must match {RE_MOL_NAME.pattern}"
-    #         # )
 
     @classmethod
     def yield_from_xyz(
@@ -121,6 +110,22 @@ class Structure(CartesianGeometry, Connectivity):
     @classmethod
     def from_dict(self):
         ...
+    
+    @classmethod
+    def concatenate(cls: type[Structure], *structs: Structure) -> Structure:
+        res = cls(sum(x.n_atoms for x in structs))
+
+        atom_map = {}
+        for i, a in enumerate(chain.from_iterable(x.atoms for x in structs)):
+            res.atoms[i].copy(a)
+            atom_map[a] = res.atoms[i]
+        
+        for j, b in enumerate(chain.from_iterable(x.bonds for x in structs)):
+            Bond.add_to(res, atom_map[b.a1], atom_map[b.a2], b.order, stereo=b.stereo, aromatic=b.aromatic)
+        
+        res.coords = np.vstack([x._coords for x in structs])
+
+        return res
 
 
     def substructure(self, atoms: Iterable[AtomLike]) -> Substructure:
@@ -139,6 +144,10 @@ class Structure(CartesianGeometry, Connectivity):
     
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
         return self.coord_subset((b.a1, b.a2))
+    
+    def __or__(self, other: Structure) -> Structure:
+        return Structure.concatenate(self, other)
+        
 
 class Substructure(Structure):
     def __init__(self, parent: Structure, atoms: List[AtomLike]):

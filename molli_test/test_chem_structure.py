@@ -1,5 +1,6 @@
 import unittest as ut
 
+import molli as ml
 from molli import chem
 import numpy as np
 from pathlib import Path
@@ -61,3 +62,16 @@ class StructureTC(ut.TestCase):
         chem.Bond.add_to(m, 0, 1)
         chem.Bond.add_to(m, 0, 2)
         self.assertEqual(m.n_bonds, 2)
+
+    def test_concatenate(self):
+        with ml.files.mol2.dendrobine.open() as f:
+            s1 = chem.Structure.from_mol2(f)
+
+        s2 = chem.Structure.clone(s1)
+        s2.translate([50, 0, 0])
+        s3 = s1 | s2
+
+        self.assertEqual(s3.n_atoms, s1.n_atoms * 2)
+        self.assertEqual(s3.n_bonds, s1.n_bonds * 2)
+
+        self.assertAlmostEqual(s3.distance(0, s1.n_atoms), 50.0, 6)
