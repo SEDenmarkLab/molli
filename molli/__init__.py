@@ -8,7 +8,7 @@
 # ================================================================================
 """
 ---------------
-# `MOLLI 1.0.0a2`
+# `MOLLI 1.0.0a4`
 ---------------
 (C) 2022 Alexander S. Shved and the Denmark laboratory  
 University of Illinois at Urbana-Champaign, Department of Chemistry
@@ -20,10 +20,11 @@ It also implements a lot of command line tools (run `molli --HELP` or `molli lis
 
 """
 
-__version__ = "1.0.0a3"
+__version__ = "1.0.0a4"
 
 # Determine whether molli C++ extensions are available
 # if not, pure python analogs should be provided
+
 try:
     import molli_xt as xt
 except:
@@ -31,7 +32,7 @@ except:
 else:
     MOLLI_USING_EXTENSIONS = True
 
-# Believe it or not, on Windows `aux` is not a valid file name
+# Believe it or not, on Windows `aux` is not a valid file/folder name
 from . import _aux as aux
 
 from . import data
