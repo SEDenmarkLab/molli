@@ -1,7 +1,10 @@
 import numpy as np
 from numpy.typing import ArrayLike
 
-def rotation_matrix_from_vectors(v1: ArrayLike, v2: ArrayLike, tol=1.0e-8) -> np.ndarray:
+
+def rotation_matrix_from_vectors(
+    v1: ArrayLike, v2: ArrayLike, tol=1.0e-8
+) -> np.ndarray:
     """
     Rotation Matrix (vector-to-vector definition)
     ---
@@ -23,7 +26,7 @@ def rotation_matrix_from_vectors(v1: ArrayLike, v2: ArrayLike, tol=1.0e-8) -> np
 
     if not _v1.shape == _v2.shape == (3,):
         raise ValueError("Vectors must have a shape of (3,)")
-    
+
     if c <= -1 + tol:
         # This case is for vectors that are nearly opposite and collinear
         return np.diag([-1, -1, 1])

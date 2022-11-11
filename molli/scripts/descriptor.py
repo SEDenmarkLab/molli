@@ -107,17 +107,5 @@ def molli_main(args, config=None, output=None, **kwargs):
                 batch,
             )
             distributed.progress(futures)
-
-    # with ml.chem.ConformerLibrary(parsed.conflib) as lib:
-    #     for ens in tqdm(lib):
-    #         # ml.descriptor.parallel_aso(
-    #         #     ens,
-    #         #     grid,
-    #         #     n_threads=parsed.nprocs,
-    #         #     chunksize=parsed.chunksize,
-    #         # )
-    #         ml.descriptor.chunky_aso(
-    #             ens,
-    #             grid,
-    #             chunksize=parsed.chunksize,
-    #         )
+    
+    
