@@ -24,7 +24,9 @@ class _FileEnum(Enum):
 class mol2(_FileEnum):
     dendrobine = auto()
     nanotube = auto()
+    pdb_4a05 = auto()
     pentane_confs = auto()
+    zincdb_fda = auto()
 
 
 class xyz(_FileEnum):
