@@ -132,12 +132,15 @@ class ConformerEnsemble(Connectivity):
         mols = list(Molecule.yield_from_mol2(mol2io, name=name, dtype=dtype))
 
         res = cls(
-            mols[0],
             len(mols),
+            mols[0].n_atoms,
             charge=charge,
             multiplicity=multiplicity,
             dtype=dtype,
         )
+
+        res._atoms = mols[0].atoms
+        res._bonds = mols[0].bonds
 
         for i, m in enumerate(mols):
             res._coords[i] = m.coords
@@ -147,8 +150,7 @@ class ConformerEnsemble(Connectivity):
     def serialize(self):
         atom_index = {a: i for i, a in enumerate(self.atoms)}
         atoms = [
-            (a.element.z, a.label, a.isotope, a.dummy, a.stereo) 
-            for a in self.atoms
+            (a.element.z, a.label, a.isotope, a.dummy, a.stereo) for a in self.atoms
         ]
         bonds = [
             (atom_index[b.a1], atom_index[b.a2], b.order, b.aromatic, b.stereo)
@@ -258,9 +260,9 @@ class Conformer(Molecule):
     yet is completely virtual.
     """
 
-    def __init__(self, parent: ConformerEnsemble, cid: int):
+    def __init__(self, parent: ConformerEnsemble, conf_id: int):
         self._parent = parent
-        self._cid = cid
+        self._conf_id = conf_id
 
     @property
     def name(self):
@@ -280,11 +282,11 @@ class Conformer(Molecule):
 
     @property
     def _coords(self):
-        return self._parent._coords[self._cid]
+        return self._parent._coords[self._conf_id]
 
     @_coords.setter
     def _coords(self, other):
-        self._parent._coords[self._cid] = other
+        self._parent._coords[self._conf_id] = other
 
     @property
     def charge(self):
@@ -296,5 +298,5 @@ class Conformer(Molecule):
 
     def __str__(self):
         _fml = self.formula if self.n_atoms > 0 else "[no atoms]"
-        s = f"Conformer(name='{self.name}', cid={self._cid})"
+        s = f"Conformer(name='{self.name}', conf_id={self._conf_id})"
         return s

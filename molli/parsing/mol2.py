@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Generator
 from io import StringIO
 from warnings import warn
@@ -9,28 +9,59 @@ import re
 
 @dataclass(slots=True, init=True)
 class MOL2Atom:
-    idx: int = None
-    label: str = None
-    x: float = None
-    y: float = None
-    z: float = None
+    _idx: str
+    label: str
+    _x: str
+    _y: str
+    _z: str
     typ: str = None
-    subst_idx: int = None
+    _subst_idx: str = None
     subst_name: str = None
-    charge: float = None
-    # status_bit: str = None
+    _charge: str = None
+    status_bit: str = None
+    unknown: str = None
 
     @property
     def element(self):
         return self.typ.split(".")[0]
 
+    @property
+    def idx(self):
+        return int(self._idx)
+
+    @property
+    def xyz(self):
+        return [float(self._x), float(self._y), float(self._z)]
+
+    @property
+    def subst_idx(self):
+        return int(self._subst_idx)
+
+    @property
+    def charge(self):
+        return float(self._charge)
+
 
 @dataclass(slots=True, init=True)
 class MOL2Bond:
-    idx: int = None
-    a1: int = None
-    a2: int = None
-    typ: str = None
+    _idx: str
+    _a1: str
+    _a2: str
+    typ: str
+    status_bit: str = None
+    unknown: str = None
+
+    @property
+    def idx(self):
+        return int(self._idx)
+
+    @property
+    def a1(self):
+        return int(self._a1)
+
+    @property
+    def a2(self):
+        return int(self._a2)
 
     @property
     def order(self):
@@ -72,6 +103,8 @@ class MOL2SyntaxError(SyntaxError):
 RE_COMMENT = re.compile(r"#.*")
 RE_TRIPOS = re.compile(r"@<TRIPOS>([A-Z]+)")
 
+MOL2_EMPTY_STR = "****"
+
 
 def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
     reader = LineReader(input, str.strip)
@@ -107,12 +140,9 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                         mol_record_counts = next(reader)
                         mol_type = next(reader)
                         charge_type = next(reader)
+                        # So the tricky thing is that status bits are not necessarily going to be there...
+                        # in this case they should match RE_TRIPOS
                         status_bits = next(reader)
-
-                        if "***" in status_bits:
-                            comment = next(reader)
-                        else:
-                            comment = None
 
                         _mrc = list(map(int, mol_record_counts.split()))
 
@@ -140,6 +170,14 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                                     f"Invalid molecule record counts (line {reader.pos})"
                                 )
 
+                        if RE_TRIPOS.match(status_bits):
+                            reader.put_back(status_bits)
+                            comment = None
+                        elif status_bits == MOL2_EMPTY_STR:
+                            comment = next(reader)
+                        else:
+                            comment = None
+
                         parsed_header = MOL2Header(
                             name=mol_name,
                             n_atoms=n_atoms,
@@ -154,53 +192,55 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                         parsed_atoms = []
                         for i in range(n_atoms):
                             atom_def = next(reader)
-                            (
-                                _id,  # atom id (same as atom index)
-                                _lbl,  # atom label
-                                _x,
-                                _y,
-                                _z,
-                                _type,
-                                _subid,
-                                _sub,
-                                _chrg,
-                            ) = atom_def.strip().split(maxsplit=9)
+                            # (
+                            #     _id,  # atom id (same as atom index)
+                            #     _lbl,  # atom label
+                            #     _x,
+                            #     _y,
+                            #     _z,
+                            #     _type,
+                            #     _subid,
+                            #     _sub,
+                            #     _chrg,
+                            # ) = atom_def.strip().split(maxsplit=9)
 
-                            _element = str.capitalize(_type.split(".")[0])
+                            # _element = str.capitalize(_type.split(".")[0])
 
-                            parsed_atoms.append(
-                                MOL2Atom(
-                                    idx=int(_id),
-                                    label=_lbl if _lbl.upper() != _element.upper() else _lbl.capitalize()+_id,
-                                    x=float(_x),
-                                    y=float(_y),
-                                    z=float(_z),
-                                    typ=_type,
-                                    subst_idx=int(_subid),
-                                    subst_name=_sub,
-                                    charge=float(_chrg),
-                                )
-                            )
+                            # parsed_atoms.append(
+                            #     MOL2Atom(
+                            #         idx=int(_id),
+                            #         label=_lbl if _lbl.upper() != _element.upper() else _lbl.capitalize()+_id,
+                            #         x=float(_x),
+                            #         y=float(_y),
+                            #         z=float(_z),
+                            #         typ=_type,
+                            #         subst_idx=int(_subid),
+                            #         subst_name=_sub,
+                            #         charge=float(_chrg),
+                            #     )
+                            # )
+                            parsed_atoms.append(MOL2Atom(*atom_def.split(maxsplit=10)))
 
                     case "BOND":
                         parsed_bonds = []
                         for _ in range(n_bonds):
                             bond_def = next(reader)
-                            _id, _a1, _a2, _type = bond_def.split()
-                            # a1, a2 = mol.yield_atoms(int(_a1) - 1, int(_a2) - 1)
+                            # _id, _a1, _a2, _type = bond_def.split()
+                            # # a1, a2 = mol.yield_atoms(int(_a1) - 1, int(_a2) - 1)
 
-                            order = 1
-                            match _type:
-                                case "ar":
-                                    order = 1.5
-                                case "_":
-                                    order = float(_type)
+                            # order = 1
+                            # match _type:
+                            #     case "ar":
+                            #         order = 1.5
+                            #     case "_":
+                            #         order = float(_type)
 
-                            parsed_bonds.append(
-                                MOL2Bond(
-                                    idx=int(_id), a1=int(_a1), a2=int(_a2), typ=_type
-                                )
-                            )
+                            # parsed_bonds.append(
+                            #     MOL2Bond(
+                            #         idx=int(_id), a1=int(_a1), a2=int(_a2), typ=_type
+                            #     )
+                            # )
+                            parsed_bonds.append(MOL2Bond(*bond_def.split(maxsplit=5)))
 
                     # case "SUBSTRUCTURE":
                     #     ...

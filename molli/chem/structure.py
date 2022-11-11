@@ -62,23 +62,26 @@ class Structure(CartesianGeometry, Connectivity):
     def yield_from_mol2(
         cls: type[Structure],
         input: str | StringIO,
-        name: str = ...,
+        name: str = "unnamed",
         dtype: str = "float32",
     ):
         mol2io = StringIO(input) if isinstance(input, str) else input
 
         for block in read_mol2(mol2io):
-            _name = name if isinstance(name, str) else block.header.name 
+            _name = name or block.header.name 
             res = cls(n_atoms=block.header.n_atoms, name=_name, dtype=dtype)
 
             for i, a in enumerate(block.atoms):
-                res.atoms[i].label = a.label
-                res.atoms[i].element = Element[a.element]
-                # res.atoms[i].meta.mol2_type = a.typ
-                res.coords[i] = (a.x, a.y, a.z)
+                try:
+                    res.atoms[i].element = Element.get(a.element)
+                except:
+                    res.atoms[i].element = Element.Unknown
+
+                res.atoms[i]._mol2_type = a.typ
+                res.coords[i] = a.xyz
             
             for i, b in enumerate(block.bonds):
-                Bond.add_to(res, res.atoms[b.a1 - 1], res.atoms[b.a2 - 1], b.order)
+                Bond.add_to(res, res.atoms[b.a1 - 1], res.atoms[b.a2 - 1], b.order, _mol2_type = b.typ)
             
             yield res
     
@@ -86,7 +89,7 @@ class Structure(CartesianGeometry, Connectivity):
     def from_mol2(
         cls: type[Structure],
         input: str | StringIO,
-        name: str = ...,
+        name: str = None,
         dtype: str = "float32",
     ):
         return next(cls.yield_from_mol2(input=input, name=name, dtype=dtype))

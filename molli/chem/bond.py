@@ -8,6 +8,30 @@ from collections import deque
 from struct import pack, unpack, Struct
 from io import BytesIO
 
+class BondType(Enum):
+    # Compatibility
+    Unknown = 0
+
+    # Default
+    Single = 1
+    Double = 2
+    Triple = 3
+    Quadruple = 4
+    Quintuple = 5
+    Sextuple = 6
+    FractionalOrder = 9
+
+    # Special cases of bonds
+    Aromatic = 10
+    Amide = 11
+    Dative = 20
+    
+    # Ligands
+    PiMulticenter = 100
+
+    
+
+
 class Bond:
     """`a1` and `a2` are always assumed to be interchangeable"""
 
@@ -17,6 +41,7 @@ class Bond:
         "order",
         "stereo",
         "aromatic",
+        "_mol2_type"
     )
 
     def __init__(
@@ -27,6 +52,7 @@ class Bond:
         *,
         stereo: bool = False,
         aromatic: bool = False,
+        _mol2_type: str = "un"
     ):
         if a1 == a2:
             raise ValueError("Cannot connect the same atom with a bond.")
@@ -36,12 +62,17 @@ class Bond:
         self.order = float(order)
         self.stereo = stereo
         self.aromatic = aromatic
+        self._mol2_type = _mol2_type    
     
     @classmethod
-    def add_to(cls: type[Bond], parent: Connectivity,/, a1: Atom, a2: Atom, order: float = 1.0, stereo: bool = False, aromatic: bool = False,):
-        b = Bond(a1, a2, order=order, stereo=stereo, aromatic=aromatic)
+    def add_to(cls: type[Bond], parent: Connectivity,/, a1: Atom, a2: Atom, order: float = 1.0, stereo: bool = False, aromatic: bool = False, _mol2_type: str = "un",):
+        b = Bond(a1, a2, order=order, stereo=stereo, aromatic=aromatic, _mol2_type=_mol2_type)
         parent.append_bond(b)
         return b
+
+    def copy(self, other: Bond):
+        for f in Bond.__slots__:
+            setattr(self, f, getattr(other, f))
 
     def __contains__(self, other: Atom):
         return other in (self.a1, self.a2)

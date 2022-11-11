@@ -34,10 +34,8 @@ class Element(Enum):
         match elt:
             case Element() | int():
                 return cls(elt)
-            case str():
-                return cls[elt]
-            case bytes():
-                return cls[elt.decode("ascii")]
+            case str() as s:
+                return cls[s.capitalize()]
             case _:
                 return cls(elt)
 
@@ -232,13 +230,7 @@ class Atom:
     Performance of the class was optimized through the use of __slots__
     """
 
-    __slots__ = (
-        "element",
-        "label",
-        "isotope",
-        "stereo",
-        "dummy",
-    )
+    __slots__ = ("element", "label", "isotope", "stereo", "dummy", "_mol2_type")
 
     def __init__(
         self,
@@ -248,12 +240,14 @@ class Atom:
         isotope: int = -1,
         dummy: bool = False,
         stereo: bool = False,
+        _mol2_type: str = "Any",
     ):
         self.element = Element.get(element)
         self.isotope = isotope
         self.dummy = dummy
         self.stereo = stereo
         self.label = label if label is not Ellipsis else self.element.symbol
+        self._mol2_type = _mol2_type
 
     @classmethod
     def add_to(
@@ -265,6 +259,7 @@ class Atom:
         isotope: int = -1,
         dummy: bool = False,
         stereo: bool = False,
+        _mol2_type: str = "Any",
     ):
         a = cls(
             element=element,
@@ -272,6 +267,7 @@ class Atom:
             isotope=isotope,
             dummy=dummy,
             stereo=stereo,
+            _mol2_type=_mol2_type,
         )
 
         parent.append_atom(a)
@@ -335,7 +331,7 @@ class Promolecule:
 
     __slots__ = ("_atoms", "_name")
 
-    def __init__(self, n_atoms: int = 0, name="unnamed"):
+    def __init__(self, n_atoms: int = 0, name: str = None):
         """
         Initialization of promolecule pre-allocates storage space
         """
@@ -353,22 +349,16 @@ class Promolecule:
         return self._name
 
     @name.setter
-    def name(self, value: str | bytes):
-        if isinstance(value, bytes):
-            _value = value.decode("ascii")
-        else:
-            _value = value
+    def name(self, value: str):
+        if value is None or value is Ellipsis:
+            self._name = "unknown"
 
-        if RE_MOL_NAME.fullmatch(_value):
-            self._name = _value
+        elif RE_MOL_NAME.fullmatch(value):
+            self._name = value
         else:
-            sub = RE_MOL_ILLEGAL.sub("_", _value)
+            sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {_value} --> {sub}")
-
-            # raise ValueError(
-            #     f"Inappropriate name for a molecule: {value}. Must match {RE_MOL_NAME.pattern}"
-            # )
+            warn(f"Replaced illegal characters in molecule name: {value} --> {sub}")
 
     @property
     def atoms(self) -> List[Atom]:
@@ -471,14 +461,14 @@ class Promolecule:
         """
         # `molecular_weight`
         Molecular weight of the molecule
-        
+
         Warning: currently there is no support for isotopic masses.
-        
+
         ## Returns
-        
+
         `float`
             molecular weight in Da
-        """        
+        """
         _mw = 0.0
         for a in self.atoms:
             _mw += a.element.atomic_weight

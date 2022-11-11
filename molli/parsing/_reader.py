@@ -1,7 +1,6 @@
 from io import StringIO
 from typing import Callable
-
-
+from collections import deque
 class LineReader:
     def __init__(
         self,
@@ -11,12 +10,16 @@ class LineReader:
         self._io = io
         self._current_line = 0
         self._post = post
+        self._extra_lines = deque()
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        _line = next(self._io)
+        if len(self._extra_lines):
+            _line = self._extra_lines.popleft()
+        else:
+            _line = next(self._io)
 
         if self._post is None:
             line = _line
@@ -36,10 +39,10 @@ class LineReader:
             raise
         else:
             return line
-
+    
     def put_back(self, line: str):
-        """Return the line back into the iterator"""
-        self._q.appendleft(line)
+        self._current_line -= 1
+        self._extra_lines.append(line)
 
     @property
     def pos(self):
