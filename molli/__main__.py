@@ -44,7 +44,7 @@ arg_parser.add_argument(
     action="help",
 )
 
-arg_parser.add_argument("-V", "--VERSION", action="version", version=ml.__version__)
+arg_parser.add_argument("-V", "--VERSION", action="version", version=ml.__version__,)
 
 
 def main():

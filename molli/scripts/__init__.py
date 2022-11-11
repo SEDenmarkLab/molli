@@ -1,5 +1,6 @@
 __all__ = [
     "info",
+    "run",
     "test",
     "compile",
     "recollect",
