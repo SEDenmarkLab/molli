@@ -28,19 +28,18 @@ class Molecule(Structure):
     def __init__(
         self,
         n_atoms: int = 0,
+        *,
         charge: int = 0,
         multiplicity: int = 1,
         name: str = "unnamed",
-        *,
         atomic_charges: ArrayLike = ...,
-        dtype: int = "float32",
     ):
         """
         If other is not none, that molecule will be cloned.
         """
         # if isinstance(other, Molecule | Structure):
         #     ...
-        super().__init__(n_atoms=n_atoms, name=name, dtype=dtype)
+        super().__init__(n_atoms=n_atoms, name=name)
         self.charge = charge
         self.multiplicity = multiplicity
         self.atomic_charges = atomic_charges
@@ -60,9 +59,9 @@ class Molecule(Structure):
     @atomic_charges.setter
     def atomic_charges(self, other: ArrayLike):
         if other is Ellipsis:
-            self._atomic_charges = np.zeros(self.n_atoms, dtype=self._dtype)
+            self._atomic_charges = np.zeros(self.n_atoms)
         else:
-            _pc = np.array(other, dtype=self._dtype)
+            _pc = np.array(other, self._coords_dtype)
             if _pc.shape == (self.n_atoms,):
                 self._atomic_charges = _pc
             else:
@@ -106,7 +105,7 @@ class Molecule(Structure):
         for j, b in enumerate(self.bonds):
             a1, a2 = self.yield_atom_indices((b.a1, b.a2))
             obb: ob.OBBond = obm.AddBond(a1 + 1, a2 + 1, int(b.order))
-        
+
         obm.PerceiveBondOrders()
 
         return obm

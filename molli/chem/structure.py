@@ -20,18 +20,16 @@ class Structure(CartesianGeometry, Connectivity):
     """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
 
     # Improve efficiency of attribute access
-    __slots__ = ("_name", "_dtype", "_atoms", "_bonds", "_coords")
+    __slots__ = ("_name", "_atoms", "_bonds", "_coords")
 
     def __init__(
         self,
         n_atoms: int = 0,
-        name: str = "unnamed",
         *,
-        dtype: str = "float32",
+        name: str = "unnamed",
     ):
         """Structure."""
-        super().__init__(n_atoms=n_atoms, dtype=dtype)
-        self.name = name
+        super().__init__(n_atoms=n_atoms, name=name)
 
     @classmethod
     def clone(cls: type[Structure], other: Structure) -> Structure:
@@ -63,13 +61,12 @@ class Structure(CartesianGeometry, Connectivity):
         cls: type[Structure],
         input: str | StringIO,
         name: str = "unnamed",
-        dtype: str = "float32",
     ):
         mol2io = StringIO(input) if isinstance(input, str) else input
 
         for block in read_mol2(mol2io):
             _name = name or block.header.name 
-            res = cls(n_atoms=block.header.n_atoms, name=_name, dtype=dtype)
+            res = cls(n_atoms=block.header.n_atoms, name=_name)
 
             for i, a in enumerate(block.atoms):
                 try:
@@ -77,7 +74,7 @@ class Structure(CartesianGeometry, Connectivity):
                 except:
                     res.atoms[i].element = Element.Unknown
 
-                res.atoms[i]._mol2_type = a.typ
+                res.atoms[i].atype = a.typ
                 res.coords[i] = a.xyz
             
             for i, b in enumerate(block.bonds):
@@ -90,9 +87,8 @@ class Structure(CartesianGeometry, Connectivity):
         cls: type[Structure],
         input: str | StringIO,
         name: str = None,
-        dtype: str = "float32",
     ):
-        return next(cls.yield_from_mol2(input=input, name=name, dtype=dtype))
+        return next(cls.yield_from_mol2(input=input, name=name))
     
     def to_dict(self):
         bonds = []

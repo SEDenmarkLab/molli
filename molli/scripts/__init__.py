@@ -6,7 +6,7 @@ __all__ = [
     "recollect",
     "show",
     "grid",
-    "descriptor",
+    "gbca",
     "parse",
     "align",
 ]

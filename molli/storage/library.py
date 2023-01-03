@@ -22,7 +22,7 @@ _FILE_HEADER = Struct(b">4s28s")
 # (uint32): length of record
 # (uchar): block flags [RESERVED]
 # (uchar): length of record key
-_BLOCK_HEADER = Struct(b">bI")
+_BLOCK_HEADER = Struct(b">BI")
 
 
 class _Library(Generic[T]):
@@ -198,7 +198,7 @@ class _Library(Generic[T]):
             batch: list[T] = []
             with self:
                 for j in range(i * batchsize, min(len(self), (i + 1) * batchsize)):
-                    batch.append(self.get(i))
+                    batch.append(self.get(j))
             yield batch
 
     def __iter__(self):
@@ -222,11 +222,11 @@ class _Library(Generic[T]):
         with self:
             match locator:
                 case int() as i:
-                    yield self.get(i)
+                    return self.get(i)
 
                 case str() as s:
                     i = self._block_keys.index(s)
-                    yield self.get(i)
+                    return self.get(i)
 
                 case slice() as slc:
                     return [self.get(i) for i in range(*slc.indices(len(self)))]
