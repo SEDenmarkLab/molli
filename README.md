@@ -42,7 +42,9 @@ molli info
 python -m unittest molli_test -v
 ```
 
-## Install in `conda` development mode
+## Install in development mode
+
+pip install -e . --config-settings editable_mode=compat
 
 # Hello, World!
 
