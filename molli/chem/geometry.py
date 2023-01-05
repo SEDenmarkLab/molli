@@ -41,12 +41,6 @@ def _angle(v1, v2):
     return np.arccos(dt)
 
 
-def _nans(shape, dtype=np.float64) -> np.ndarray:
-    res = np.empty(shape, dtype=dtype)
-    res.fill(np.nan)
-    return res
-
-
 class CartesianGeometry(Promolecule):
     """
     Cartesian Geometry Class
@@ -63,13 +57,19 @@ class CartesianGeometry(Promolecule):
 
     def __init__(
         self,
-        n_atoms: int = 0,
+        other: Promolecule = None, 
+        /, 
         *,
+        n_atoms: int = 0,
         name: str = "unnamed",
+        coords: ArrayLike = None,
+        **kw
     ):
         # Type of coordinates
-        super().__init__(n_atoms=n_atoms, name=name)
-        self._coords = _nans((self.n_atoms, 3), self._coords_dtype)
+        super().__init__(other, n_atoms=n_atoms, name=name)
+        self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
+
+        self.coords = coords if coords is not None else np.nan
 
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 
@@ -100,19 +100,7 @@ class CartesianGeometry(Promolecule):
 
     @coords.setter
     def coords(self, other: ArrayLike):
-        _coords = np.array(other, self._coords_dtype)
-
-        match _coords.shape:
-            case (x,) if x == na * 3:
-                self._coords = np.reshape(_coords, (self.n_atoms, 3))
-
-            case (x, y) if x == self.n_atoms and y == 3:
-                self._coords = _coords
-
-            case _:
-                raise ValueError(
-                    f"Failed to assign array of shape {_coords.shape} to a geometry with {self.n_atoms} atoms."
-                )
+        self._coords[:] = other
 
     @property
     def coords_as_list(self):
@@ -166,15 +154,13 @@ class CartesianGeometry(Promolecule):
                 xyzio = input
 
         for xyzblock in read_xyz(xyzio):
-            g = cls(xyzblock.n_atoms)
-            for i, s in enumerate(xyzblock.symbols):
-                g.atoms[i].element = Element[s]
-            g.coords = xyzblock.coords
+            geom = cls(xyzblock.symbols)
+            geom.coords = xyzblock.coords
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
-                g.scale(DistanceUnit[source_units].value)
+                geom.scale(DistanceUnit[source_units].value)
 
-            yield g
+            yield geom
 
     def scale(self, factor: float, allow_inversion=False):
         """

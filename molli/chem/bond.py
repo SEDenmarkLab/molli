@@ -62,7 +62,31 @@ class Bond:
         kw_only=True,
         repr=lambda x: x.name,
     )
-     
+
+    @property
+    def order(self) -> float:
+        # if self.btype == BondType.FractionalOrder:
+        #     return self._order
+        # elif 0 < self.btype < 9:
+        #     return float(self.btype)
+        # elif self.btype in {BondType.Aromatic}
+
+        match self.btype:
+
+            case 0|1|2|3|4|5|6 as b:
+                return float(b)
+            
+            case BondType.Aromatic:
+                return 1.5
+
+            case BondType.FractionalOrder:
+                return self._order
+            
+            case BondType.H_Acceptor:
+                return 0.0
+            
+            case _:
+                return 1.0
     
     def copy(self, other: Bond):
         for f in Bond.__slots__:
@@ -76,7 +100,8 @@ class Bond:
         match other:
             case Bond():
                 return {self.a1, self.a2} == {other.a1, other.a2}
-            case [a1, a2]:
+            case list()|set() as l:
+                a1, a2 = l
                 return {self.a1, self.a2} == {a1, a2}
             case _:
                 raise ValueError(
@@ -114,8 +139,8 @@ class Bond:
 
 
 class Connectivity(Promolecule):
-    def __init__(self, n_atoms: int = 0, name="unnamed"):
-        super().__init__(n_atoms=n_atoms, name=name)
+    def __init__(self, other: Promolecule = None, /, *, n_atoms: int = 0, name="unnamed"):
+        super().__init__(other, n_atoms=n_atoms, name=name)
         self._bonds = list()
 
     @property
@@ -156,8 +181,15 @@ class Connectivity(Promolecule):
             case _:
                 raise ValueError(f"Unable to fetch a bond with {type(b)}: {b}")
 
-    def append_bond(self, b: Bond):
-        self._bonds.append(b)
+    def append_bond(self, bond: Bond):
+        self._bonds.append(bond)
+
+    def append_bonds(self, *bonds: Bond):
+        self._bonds.extend(bonds)
+    
+    def extend_bonds(self, bonds: Iterable[Bond]):
+        self._bonds.extend(bonds)
+    
 
     def del_bond(self, b: Bond):
         match b:

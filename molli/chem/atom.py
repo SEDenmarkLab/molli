@@ -547,7 +547,7 @@ class Promolecule:
     def yield_atom_indices(
         self, atoms: Iterable[AtomLike]
     ) -> Generator[int, None, None]:
-        for a in atoms:
+        for a in map(self.get_atom, atoms):
             yield self.index_atom(a)
 
     def yield_atoms(self, atoms: Iterable[AtomLike]) -> Generator[Atom, None, None]:

@@ -27,6 +27,10 @@ class PromoleculeTC(ut.TestCase):
 
     def test_promolecule_natoms_constructor(self):
         pm = chem.Promolecule(n_atoms=10)
+    
+    def test_promolecule_list_constructor(self):
+        # This more or less just tests if all elements can end up in the promolecule upon such a creation
+        pm = chem.Promolecule([elt for elt in chem.Element])
 
     def test_new_atom(self):
         """Tests programmatic creation of a simple water promolecule"""

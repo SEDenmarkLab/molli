@@ -12,7 +12,7 @@ from . import (
     StructureLike,
     PromoleculeLike,
 )
-from .geometry import _nans
+# from .geometry import _nans
 from .structure import RE_MOL_NAME, RE_MOL_ILLEGAL
 from ..parsing import read_mol2
 
@@ -41,7 +41,7 @@ class ConformerEnsemble(Connectivity):
 
         self.weights = weights
         self.atomic_charges = atomic_charges
-        self._coords = _nans((n_conformers, n_atoms, 3))
+        self._coords = np.empty((n_conformers, n_atoms, 3))
 
     @property
     def weights(self):
