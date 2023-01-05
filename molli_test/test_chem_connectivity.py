@@ -35,7 +35,9 @@ class ConnectivityTC(ut.TestCase):
         self.assertEqual(cn.n_atoms, 3, "H2O must have 3 atoms")
         self.assertEqual(cn.n_bonds, 2, "H2O must have 2 bonds")
 
-        self.assertIsNone(cn.lookup_bond(h1, h2), "H2O must have no bond between hydrogens")
+        self.assertIsNone(
+            cn.lookup_bond(h1, h2), "H2O must have no bond between hydrogens"
+        )
         self.assertEqual(cn.lookup_bond(o3, h2), b2)
 
         self.assertSetEqual(
