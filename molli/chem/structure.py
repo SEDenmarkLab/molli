@@ -20,23 +20,21 @@ class Structure(CartesianGeometry, Connectivity):
     """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
 
     # Improve efficiency of attribute access
-    __slots__ = ("_name", "_dtype", "_atoms", "_bonds", "_coords")
+    __slots__ = ("_name", "_atoms", "_bonds", "_coords")
 
     def __init__(
         self,
+        other: Structure = None,
+        /,
+        *,
         n_atoms: int = 0,
         name: str = "unnamed",
-        *,
-        dtype: str = "float32",
+        coords: ArrayLike = None,
+        copy_atoms: bool = False,
+        **kwds,
     ):
         """Structure."""
-        super().__init__(n_atoms=n_atoms, dtype=dtype)
-        self.name = name
-
-    @classmethod
-    def clone(cls: type[Structure], other: Structure) -> Structure:
-        return cls.concatenate(other)
-
+        super().__init__(other, n_atoms=n_atoms, coords=coords, name=name, copy_atoms=copy_atoms, **kwds)
 
     @classmethod
     def yield_from_xyz(
@@ -63,13 +61,12 @@ class Structure(CartesianGeometry, Connectivity):
         cls: type[Structure],
         input: str | StringIO,
         name: str = "unnamed",
-        dtype: str = "float32",
     ):
         mol2io = StringIO(input) if isinstance(input, str) else input
 
         for block in read_mol2(mol2io):
             _name = name or block.header.name 
-            res = cls(n_atoms=block.header.n_atoms, name=_name, dtype=dtype)
+            res = cls(None, n_atoms=block.header.n_atoms, name=_name)
 
             for i, a in enumerate(block.atoms):
                 try:
@@ -77,11 +74,11 @@ class Structure(CartesianGeometry, Connectivity):
                 except:
                     res.atoms[i].element = Element.Unknown
 
-                res.atoms[i]._mol2_type = a.typ
                 res.coords[i] = a.xyz
+                res.atoms[i].mol2_type = a.typ
             
             for i, b in enumerate(block.bonds):
-                Bond.add_to(res, res.atoms[b.a1 - 1], res.atoms[b.a2 - 1], b.order, _mol2_type = b.typ)
+                res.append_bond(Bond(res.atoms[b.a1 - 1], res.atoms[b.a2 - 1], mol2_type=b.typ))
             
             yield res
     
@@ -90,9 +87,8 @@ class Structure(CartesianGeometry, Connectivity):
         cls: type[Structure],
         input: str | StringIO,
         name: str = None,
-        dtype: str = "float32",
     ):
-        return next(cls.yield_from_mol2(input=input, name=name, dtype=dtype))
+        return next(cls.yield_from_mol2(input=input, name=name))
     
     def to_dict(self):
         bonds = []
@@ -116,17 +112,16 @@ class Structure(CartesianGeometry, Connectivity):
     
     @classmethod
     def concatenate(cls: type[Structure], *structs: Structure) -> Structure:
-        res = cls(sum(x.n_atoms for x in structs))
 
-        atom_map = {}
-        for i, a in enumerate(chain.from_iterable(x.atoms for x in structs)):
-            res.atoms[i].copy(a)
-            atom_map[a] = res.atoms[i]
+        source_atoms = list(chain.from_iterable(x.atoms for x in structs))
+        res = cls(source_atoms, copy_atoms=True)
+
+        atom_map = {source_atoms[i] : res.atoms[i] for i in range(res.n_atoms) }
         
         for j, b in enumerate(chain.from_iterable(x.bonds for x in structs)):
-            Bond.add_to(res, atom_map[b.a1], atom_map[b.a2], b.order, stereo=b.stereo, aromatic=b.aromatic)
+            res.append_bond(Bond.evolve(b, a1 = atom_map[b.a1], a2 = atom_map[b.a2]))
         
-        res.coords = np.vstack([x._coords for x in structs])
+        res.coords = np.vstack([x.coords for x in structs])
 
         return res
 

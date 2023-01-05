@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# === MOLLI IMPORTS ===
 from . import (
     Element,
     ElementLike,
@@ -12,8 +11,6 @@ from . import (
     Connectivity,
 )
 from ..parsing import read_xyz
-
-# =====================
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, Callable
 from enum import Enum
 import numpy as np
@@ -44,12 +41,6 @@ def _angle(v1, v2):
     return np.arccos(dt)
 
 
-def _nans(shape, dtype) -> np.ndarray:
-    res = np.empty(shape, dtype=dtype)
-    res.fill(np.nan)
-    return res
-
-
 class CartesianGeometry(Promolecule):
     """
     Cartesian Geometry Class
@@ -57,25 +48,38 @@ class CartesianGeometry(Promolecule):
     This version is generalizable to arbitrary coordinates and data types
     """
 
+    _coords_dtype = np.float64
     __slots__ = ("_atoms", "_coords", "_name", "_dtype")
+
+    def __init_subclass__(cls, coords_dtype=np.float64, **kwds) -> None:
+        super().__init_subclass__(**kwds)
+        cls._coords_dtype = np.dtype(coords_dtype)
 
     def __init__(
         self,
+        other: Promolecule = None,
+        /,
+        *,
         n_atoms: int = 0,
         name: str = "unnamed",
-        *,
-        dtype: str = "float32",
+        coords: ArrayLike = None,
+        copy_atoms: bool = False,
+        **kwds,
     ):
         # Type of coordinates
-        super().__init__(n_atoms=n_atoms, name=name)
-        self._dtype = str(dtype)
-        self._coords = _nans((self.n_atoms, 3), dtype=self._dtype)
+        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
+        self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
+
+        if isinstance(other, CartesianGeometry):
+            self.coords = other.coords
+        else:
+            self.coords = coords or np.nan
 
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 
     def add_atom(self, a: Atom, coord: ArrayLike):
         _a = super().add_atom(a)
-        _coord = np.array(coord, dtype=self._dtype)
+        _coord = np.array(coord, dtype=self._coords_dtype)
         if not _coord.shape == (3,):
             raise ValueError(
                 "Inappropriate coordinates for atom (interpreted as {_coord})"
@@ -100,21 +104,7 @@ class CartesianGeometry(Promolecule):
 
     @coords.setter
     def coords(self, other: ArrayLike):
-        _coords = np.array(other, self._dtype)
-
-        na = self.n_atoms
-
-        match _coords.shape:
-            case (x,) if x == na * 3:
-                self._coords = np.reshape(_coords, (na, 3))
-
-            case (x, y) if x == na and y == 3:
-                self._coords = _coords
-
-            case _:
-                raise ValueError(
-                    f"Failed to assign array of shape {_coords.shape} to a geometry with {na} atoms."
-                )
+        self._coords[:] = other
 
     @property
     def coords_as_list(self):
@@ -168,15 +158,13 @@ class CartesianGeometry(Promolecule):
                 xyzio = input
 
         for xyzblock in read_xyz(xyzio):
-            g = cls(xyzblock.n_atoms)
-            for i, s in enumerate(xyzblock.symbols):
-                g.atoms[i].element = Element[s]
-            g.coords = xyzblock.coords
+            geom = cls(xyzblock.symbols)
+            geom.coords = xyzblock.coords
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
-                g.scale(DistanceUnit[source_units].value)
+                geom.scale(DistanceUnit[source_units].value)
 
-            yield g
+            yield geom
 
     def scale(self, factor: float, allow_inversion=False):
         """

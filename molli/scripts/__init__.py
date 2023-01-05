@@ -1,16 +1,15 @@
 __all__ = [
     "info",
     "run",
-    "test",
     "compile",
     "recollect",
     "show",
     "grid",
-    "descriptor",
+    "gbca",
     "parse",
     "align",
 ]
 
 __all__.sort()
 
-from . import *
+# from . import *

@@ -1,89 +1,113 @@
 from __future__ import annotations
 from . import Atom, AtomLike, Promolecule, PromoleculeLike
 from dataclasses import dataclass, field, KW_ONLY
-from typing import Iterable, List, Generator, Tuple
+from typing import Iterable, List, Generator, Tuple, Any
 from copy import deepcopy
-from enum import Enum
+from enum import IntEnum
 from collections import deque
 from struct import pack, unpack, Struct
 from io import BytesIO
+import attrs
 
-class BondType(Enum):
-    # Compatibility
+class BondType(IntEnum):
     Unknown = 0
-
-    # Default
     Single = 1
     Double = 2
     Triple = 3
     Quadruple = 4
     Quintuple = 5
     Sextuple = 6
-    FractionalOrder = 9
 
-    # Special cases of bonds
-    Aromatic = 10
-    Amide = 11
-    Dative = 20
+    FractionalOrder = 10
+
+    Aromatic = 20
+    Amide = 30
+
+    H_Donor = 100
+    H_Acceptor = 101
+
+class BondStereo(IntEnum):
+    Unknown = 0
+    NotStereogenic = 1
     
-    # Ligands
-    PiMulticenter = 100
+    E = 10
+    Z = 11
 
-    
+    Trans = E
+    Cis = Z
+
+    Axial_R = 20
+    Axial_S = 21
+
+    R = Axial_R
+    S = Axial_S
 
 
+@attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Bond:
     """`a1` and `a2` are always assumed to be interchangeable"""
 
-    __slots__ = (
-        "a1",
-        "a2",
-        "order",
-        "stereo",
-        "aromatic",
-        "_mol2_type"
+    a1: Atom
+    a2: Atom
+
+    label: str = attrs.field(default=None, kw_only=True)
+    f_order: float = attrs.field(default=1.0, converter=float, kw_only=True)
+    btype: BondType = attrs.field(
+        default=BondType.Single,
+        kw_only=True,
+        repr=lambda x: x.name,
+    )
+    stereo: BondStereo = attrs.field(
+        default=BondStereo.Unknown,
+        kw_only=True,
+        repr=lambda x: x.name,
     )
 
-    def __init__(
-        self,
-        a1: Atom,
-        a2: Atom,
-        order: float = 1.0,
-        *,
-        stereo: bool = False,
-        aromatic: bool = False,
-        _mol2_type: str = "un"
-    ):
-        if a1 == a2:
-            raise ValueError("Cannot connect the same atom with a bond.")
+    mol2_type: str = attrs.field(default="1", kw_only=True, repr=False)
 
-        self.a1 = a1
-        self.a2 = a2
-        self.order = float(order)
-        self.stereo = stereo
-        self.aromatic = aromatic
-        self._mol2_type = _mol2_type    
+    def evolve(self, **changes):
+        return attrs.evolve(self, **changes)
+
+    @property
+    def order(self) -> float:
+        # if self.btype == BondType.FractionalOrder:
+        #     return self._order
+        # elif 0 < self.btype < 9:
+        #     return float(self.btype)
+        # elif self.btype in {BondType.Aromatic}
+
+        match self.btype:
+
+            case 0|1|2|3|4|5|6 as b:
+                return float(b)
+            
+            case BondType.Aromatic:
+                return 1.5
+
+            case BondType.FractionalOrder:
+                return self.f_order
+            
+            case BondType.H_Acceptor:
+                return 0.0
+            
+            case _:
+                return 1.0
     
-    @classmethod
-    def add_to(cls: type[Bond], parent: Connectivity,/, a1: Atom, a2: Atom, order: float = 1.0, stereo: bool = False, aromatic: bool = False, _mol2_type: str = "un",):
-        b = Bond(a1, a2, order=order, stereo=stereo, aromatic=aromatic, _mol2_type=_mol2_type)
-        parent.append_bond(b)
-        return b
-
     def copy(self, other: Bond):
         for f in Bond.__slots__:
             setattr(self, f, getattr(other, f))
 
     def __contains__(self, other: Atom):
-        return other in (self.a1, self.a2)
+        return other in {self.a1, self.a2}
 
     def __eq__(self, other: Bond | set):
         # return self is other
         match other:
             case Bond():
                 return {self.a1, self.a2} == {other.a1, other.a2}
-            case set():
-                return {self.a1, self.a2} == other
+            case list()|set() as l:
+                a1, a2 = l
+                return {self.a1, self.a2} == {a1, a2}
             case _:
                 raise ValueError(
                     f"Cannot equate <{type(other)}: {other}>, {self}"
@@ -107,21 +131,23 @@ class Bond:
 
     @property
     def expected_length(self) -> float:
-        match int(self.order):
-            case 1:
-                return self.a1.cov_radius_1 + self.a2.cov_radius_1
-            case 2:
-                return self.a1.cov_radius_2 + self.a2.cov_radius_2
-            case 3:
-                return self.a1.cov_radius_3 + self.a2.cov_radius_3
-            case _:
-                return self.a1.cov_radius_1 + self.a2.cov_radius_1
+        return self.a1.cov_radius_1 + self.a2.cov_radius_1
+       
 
 
 class Connectivity(Promolecule):
-    def __init__(self, n_atoms: int = 0, name="unnamed"):
-        super().__init__(n_atoms=n_atoms, name=name)
-        self._bonds = list()
+    def __init__(
+        self, other: Promolecule = None, /, *, n_atoms: int = 0, name="unnamed", copy_atoms: bool = False, **kwds, 
+    ):
+        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
+
+        if isinstance(other, Connectivity):
+            atom_map = {other.atoms[i] : self.atoms[i] for i in range(self.n_atoms)}
+            self._bonds = list(b.evolve(a1 = atom_map[b.a1], a2 = atom_map[b.a2]) for b in other.bonds)
+        else:
+            self._bonds = list()
+        
+
 
     @property
     def bonds(self) -> List[Bond]:
@@ -142,7 +168,7 @@ class Connectivity(Promolecule):
         try:
             return self.bonds[self.index_bond({_a1, _a2})]
         except:
-            return None
+            return None 
 
     def index_bond(self, b: Bond) -> int:
         return self._bonds.index(b)
@@ -161,8 +187,15 @@ class Connectivity(Promolecule):
             case _:
                 raise ValueError(f"Unable to fetch a bond with {type(b)}: {b}")
 
-    def append_bond(self, b: Bond):
-        self._bonds.append(b)
+    def append_bond(self, bond: Bond):
+        self._bonds.append(bond)
+
+    def append_bonds(self, *bonds: Bond):
+        self._bonds.extend(bonds)
+    
+    def extend_bonds(self, bonds: Iterable[Bond]):
+        self._bonds.extend(bonds)
+    
 
     def del_bond(self, b: Bond):
         match b:
@@ -219,40 +252,4 @@ class Connectivity(Promolecule):
             yield from self._bfs_single(q, visited)
 
 
-def is_equivalent_1(c1: Connectivity, c2: Connectivity) -> bool:
-    """
-    
-    # `is_equivalent_1`
-    This function assesses if the two connectivities are equivalent
-    
-    _extended_summary_
-    
-    ## Parameters
-    
-    `c1 : Connectivity`
-    `c2 : Connectivity`
-        The two connectivities to compare.
-    
-    ## Returns
-    
-    `bool`
-        `True`: if the two atom lists and bond lists are equivalents of one another
-        `False`: if the aobve condition does not hold
-    """
-    
-    # Step 1. Eliminate non-isomeric structures
-    if c1.formula != c2.formula:
-        return False
-    
-    # Step 2. Eliminate structures with non-equal length lists of bonds
-    if c1.n_bonds != c2.n_bonds:
-        return False
-    
-    # Step 3.
-    for a1, a2 in zip(c1.atoms, c2.atoms):
-        if a1.element != a2.element:
-            ...
-
-
-    return True
     

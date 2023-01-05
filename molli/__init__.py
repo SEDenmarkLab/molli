@@ -39,8 +39,11 @@ from . import data
 from . import math
 from . import parsing
 from . import storage
-from . import chem
+
+# from . import chem
 from . import descriptor
 from . import external
 from . import files
 from . import storage
+
+from .chem import *

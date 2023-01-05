@@ -1,11 +1,12 @@
 #include <_molli_xt.hpp>
-
+#include <math.h>
 using namespace molli;
 
 // Squared euclidean distance between two points
 template <typename T, ssize_t ND>
 inline T molli::euclidean2(const T *vec1, const T *vec2)
 {
+
     T dist = 0.0f;
     for (ssize_t i = 0; i < ND; i++)
         dist += square(vec1[i] - vec2[i]);

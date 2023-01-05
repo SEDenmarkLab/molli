@@ -4,8 +4,25 @@ Main subpackage of the molli library.
 Will eventually contain everything that is needed to do chemistry in silico.
 """
 
-from .atom import Element, ElementLike, Atom, AtomLike, Promolecule, PromoleculeLike
-from .bond import Bond, Connectivity
+from .atom import (
+    Element,
+    ElementLike,
+    Atom,
+    AtomLike,
+    AtomType,
+    AtomStereo,
+    AtomGeom,
+    Promolecule,
+    PromoleculeLike,
+)
+
+from .bond import (
+    Bond,
+    Connectivity,
+    BondStereo,
+    BondType,
+)
+
 from .geometry import CartesianGeometry
 from .structure import Structure, Substructure
 from .molecule import Molecule, StructureLike

@@ -34,24 +34,16 @@ class StructureTC(ut.TestCase):
         self.assertEqual(m.name, "water")
 
     def test_structure_from_xyz_file(self):
-        fpath = Path(__file__).parent / "files" / "dendrobine.xyz"
-
         # This opens in text mode
-        with open(fpath, "rt") as f:
+        with ml.files.xyz.dendrobine.open() as f:
             m1 = chem.Structure.from_xyz(f, name="dendrobine", source_units="Angstrom")
 
-        # This opens in binary mode
-        # In principle, there should be no difference (except for speed, maybe) for .xyz files
-        with open(fpath, "rt") as f:
-            m2 = chem.Structure.from_xyz(f, name="dendrobine", source_units="Angstrom")
-
+        m2 = chem.Structure(m1)
         # This just makes sure that
         self.assertTrue(np.allclose(m1.coords, m2.coords, atol=1e-5))
 
     def test_yield_structures_from_xyz_file(self):
-        fpath = Path(__file__).parent / "files" / "pentane_confs.xyz"
-
-        with open(fpath, "rt") as f:
+        with ml.files.xyz.pentane_confs.open() as f:
             lst_structs = list(chem.Structure.yield_from_xyz(f, name="pentane"))
 
         self.assertEqual(len(lst_structs), 7)
@@ -59,16 +51,18 @@ class StructureTC(ut.TestCase):
     def test_add_bonds(self):
         m = chem.Structure.from_xyz(H2O_XYZ)
         self.assertEqual(m.n_bonds, 0)
-        chem.Bond.add_to(m, 0, 1)
-        chem.Bond.add_to(m, 0, 2)
+        b1 = chem.Bond(m.atoms[0], m.atoms[2])
+        b2 = chem.Bond(m.atoms[0], m.atoms[1])
+        m.append_bonds(b1, b2)
         self.assertEqual(m.n_bonds, 2)
 
     def test_concatenate(self):
         with ml.files.mol2.dendrobine.open() as f:
             s1 = chem.Structure.from_mol2(f)
 
-        s2 = chem.Structure.clone(s1)
+        s2 = chem.Structure(s1)
         s2.translate([50, 0, 0])
+
         s3 = s1 | s2
 
         self.assertEqual(s3.n_atoms, s1.n_atoms * 2)
