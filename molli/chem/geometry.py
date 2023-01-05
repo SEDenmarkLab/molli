@@ -57,19 +57,23 @@ class CartesianGeometry(Promolecule):
 
     def __init__(
         self,
-        other: Promolecule = None, 
-        /, 
+        other: Promolecule = None,
+        /,
         *,
         n_atoms: int = 0,
         name: str = "unnamed",
         coords: ArrayLike = None,
-        **kw
+        copy_atoms: bool = False,
+        **kwds,
     ):
         # Type of coordinates
-        super().__init__(other, n_atoms=n_atoms, name=name)
+        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
         self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 
-        self.coords = coords if coords is not None else np.nan
+        if isinstance(other, CartesianGeometry):
+            self.coords = other.coords
+        else:
+            self.coords = coords or np.nan
 
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 

@@ -9,6 +9,7 @@ from warnings import warn
 
 from . import (
     Element,
+    PromoleculeLike,
     Atom,
     AtomLike,
     Bond,
@@ -18,6 +19,7 @@ from . import (
     Substructure,
 )
 
+
 class Molecule(Structure):
     """Fundamental class of the MOLLI Package."""
 
@@ -25,6 +27,8 @@ class Molecule(Structure):
 
     def __init__(
         self,
+        other: Structure | PromoleculeLike = None,
+        /,
         n_atoms: int = 0,
         *,
         charge: int = 0,
@@ -37,7 +41,7 @@ class Molecule(Structure):
         """
         # if isinstance(other, Molecule | Structure):
         #     ...
-        super().__init__(n_atoms=n_atoms, name=name)
+        super().__init__(other, n_atoms=n_atoms, name=name)
         self.charge = charge
         self.multiplicity = multiplicity
         self.atomic_charges = atomic_charges
@@ -90,7 +94,6 @@ class Molecule(Structure):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
             bond_type = "ar" if b.aromatic else f"{b.order:1.0f}"
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {bond_type:>10}\n")
-
 
 
 StructureLike = Molecule | Structure | Substructure

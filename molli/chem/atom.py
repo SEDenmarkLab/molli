@@ -343,9 +343,10 @@ class Atom:
         repr=lambda x: x.name,
     )
 
-    @staticmethod
-    def evolve(other: Atom, **changes):
-        return attrs.evolve(other, **changes)
+    mol2_type: str = attrs.field(default="Any", kw_only=True, repr=False)
+
+    def evolve(self, **changes):
+        return attrs.evolve(self, **changes)
 
     @property
     def is_dummy(self) -> bool:
@@ -397,14 +398,6 @@ class Atom:
     def color_cpk(self) -> str:
         return self.element.color_cpk
 
-    @property
-    def mol2_type(self) -> str:
-        raise NotImplementedError
-
-    @mol2_type.setter
-    def mol2_type(self, val):
-        raise NotImplementedError
-
 
 AtomLike = Atom | int
 
@@ -450,14 +443,11 @@ class Promolecule:
                 self._atoms = list(Atom() for _ in range(n_atoms))
 
             case Promolecule() as pm:
-                if copy_atoms:
-                    self._atoms = list(Atom.evolve(a) for a in pm.atoms)
-                else:
-                    self._atoms = pm.atoms
+                self._atoms = list(a.evolve() for a in pm.atoms)
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
-                    self._atoms = list(Atom.evolve(a) for a in atoms)
+                    self._atoms = list(a.evolve() for a in atoms)
                 else:
                     self._atoms = atoms
 
@@ -465,7 +455,9 @@ class Promolecule:
                 self._atoms = list(Atom(a) for a in atoms)
 
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    f"Cannot interpret {other} of type {type(other)}"
+                )
 
         self.name = name
 

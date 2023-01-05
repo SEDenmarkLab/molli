@@ -51,7 +51,7 @@ class Bond:
     a2: Atom
 
     label: str = attrs.field(default=None, kw_only=True)
-    _order: float = attrs.field(default=1.0, converter=float, kw_only=True)
+    f_order: float = attrs.field(default=1.0, converter=float, kw_only=True)
     btype: BondType = attrs.field(
         default=BondType.Single,
         kw_only=True,
@@ -62,6 +62,11 @@ class Bond:
         kw_only=True,
         repr=lambda x: x.name,
     )
+
+    mol2_type: str = attrs.field(default="1", kw_only=True, repr=False)
+
+    def evolve(self, **changes):
+        return attrs.evolve(self, **changes)
 
     @property
     def order(self) -> float:
@@ -80,7 +85,7 @@ class Bond:
                 return 1.5
 
             case BondType.FractionalOrder:
-                return self._order
+                return self.f_order
             
             case BondType.H_Acceptor:
                 return 0.0
@@ -127,21 +132,22 @@ class Bond:
     @property
     def expected_length(self) -> float:
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
-        # match int(self.order):
-        #     case 1:
-        #         return self.a1.cov_radius_1 + self.a2.cov_radius_1
-        #     case 2:
-        #         return self.a1.cov_radius_2 + self.a2.cov_radius_2
-        #     case 3:
-        #         return self.a1.cov_radius_3 + self.a2.cov_radius_3
-        #     case _:
-        #         return self.a1.cov_radius_1 + self.a2.cov_radius_1
+       
 
 
 class Connectivity(Promolecule):
-    def __init__(self, other: Promolecule = None, /, *, n_atoms: int = 0, name="unnamed"):
-        super().__init__(other, n_atoms=n_atoms, name=name)
-        self._bonds = list()
+    def __init__(
+        self, other: Promolecule = None, /, *, n_atoms: int = 0, name="unnamed", copy_atoms: bool = False, **kwds, 
+    ):
+        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
+
+        if isinstance(other, Connectivity):
+            atom_map = {other.atoms[i] : self.atoms[i] for i in range(self.n_atoms)}
+            self._bonds = list(b.evolve(a1 = atom_map[b.a1], a2 = atom_map[b.a2]) for b in other.bonds)
+        else:
+            self._bonds = list()
+        
+
 
     @property
     def bonds(self) -> List[Bond]:
@@ -246,40 +252,4 @@ class Connectivity(Promolecule):
             yield from self._bfs_single(q, visited)
 
 
-def is_equivalent_1(c1: Connectivity, c2: Connectivity) -> bool:
-    """
-    
-    # `is_equivalent_1`
-    This function assesses if the two connectivities are equivalent
-    
-    _extended_summary_
-    
-    ## Parameters
-    
-    `c1 : Connectivity`
-    `c2 : Connectivity`
-        The two connectivities to compare.
-    
-    ## Returns
-    
-    `bool`
-        `True`: if the two atom lists and bond lists are equivalents of one another
-        `False`: if the aobve condition does not hold
-    """
-    
-    # Step 1. Eliminate non-isomeric structures
-    if c1.formula != c2.formula:
-        return False
-    
-    # Step 2. Eliminate structures with non-equal length lists of bonds
-    if c1.n_bonds != c2.n_bonds:
-        return False
-    
-    # Step 3.
-    for a1, a2 in zip(c1.atoms, c2.atoms):
-        if a1.element != a2.element:
-            ...
-
-
-    return True
     
