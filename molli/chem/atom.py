@@ -486,6 +486,11 @@ class Promolecule:
         return self._atoms
 
     @property
+    def elements(self) -> List[Element]:
+        """List of elements in the protomolecule"""
+        return [a.element for a in self.atoms]
+
+    @property
     def n_atoms(self) -> int:
         """Number of atoms in the promolecule"""
         return len(self.atoms)

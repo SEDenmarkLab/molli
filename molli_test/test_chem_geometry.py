@@ -1,6 +1,6 @@
 import unittest as ut
 
-from molli import chem
+import molli as ml
 import numpy as np
 
 
@@ -22,7 +22,7 @@ class GeometryTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
     def test_xyzimport(self):
-        m = chem.CartesianGeometry.from_xyz(H2O_XYZ)
+        m = ml.CartesianGeometry.loads_xyz(H2O_XYZ)
         self.assertEqual(m.n_atoms, 3)
         self.assertTupleEqual(m.coords.shape, (3, 3))
         self.assertAlmostEqual(np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0)
@@ -30,9 +30,34 @@ class GeometryTC(ut.TestCase):
         self.assertAlmostEqual(m.distance(2, 1), 1.52694, places=5)
         self.assertEqual(m.formula, "H2 O1")
 
-    ##### This is likely not needed anymore #####
+    def test_load_xyz(self):
+        m1 = ml.CartesianGeometry.load_xyz(ml.files.xyz.pentane_confs.path)
+        lm2 = ml.CartesianGeometry.load_all_xyz(ml.files.xyz.pentane_confs.path)
+    
+    @ut.skip("Not implemented yet")
+    def test_loads_xyz(self):
+        raise NotImplementedError
+    
+    @ut.skip("Not implemented yet")
+    def test_dump_xyz(self):
+        raise NotImplementedError
 
-    # def test_coords_protected(self):
-    #     m = chem.CartesianGeometry.from_xyz(H2O_XYZ)
-    #     with self.assertRaises(AttributeError):
-    #         m.coords = [1, 2, 3]
+    @ut.skip("Not implemented yet")
+    def test_dumps_xyz(self):
+        raise NotImplementedError
+
+    @ut.skip("Not implemented yet")
+    def test_distance(self):
+        raise NotImplementedError
+
+    @ut.skip("Not implemented yet")
+    def test_distance_to_point(self):
+        raise NotImplementedError
+    
+    @ut.skip("Not implemented yet")
+    def test_angle(self):
+        raise NotImplementedError
+    
+    @ut.skip("Not implemented yet")
+    def test_dihedral(self):
+        raise NotImplementedError

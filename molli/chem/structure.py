@@ -36,26 +36,7 @@ class Structure(CartesianGeometry, Connectivity):
         """Structure."""
         super().__init__(other, n_atoms=n_atoms, coords=coords, name=name, copy_atoms=copy_atoms, **kwds)
 
-    @classmethod
-    def yield_from_xyz(
-        cls,
-        input: str | StringIO,
-        name: str = "unnamed",
-        source_units: str = "Angstrom",
-    ):
-        for g in super().yield_from_xyz(input, source_units):
-            g.name = name
-            yield g
-
-    @classmethod
-    def from_xyz(
-        cls,
-        input: str | StringIO,
-        name: str = "unnamed",
-        source_units: str = "Angstrom",
-    ):
-        return next(cls.yield_from_xyz(input, name, source_units))
-    
+   
     @classmethod
     def yield_from_mol2(
         cls: type[Structure],

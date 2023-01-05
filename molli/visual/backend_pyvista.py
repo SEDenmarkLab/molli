@@ -36,3 +36,4 @@ def plot_structure_as_wireframe(plt: pv.Plotter, s: Structure, opacity=1.0):
         point_size=3,
         opacity=opacity,
     )
+
