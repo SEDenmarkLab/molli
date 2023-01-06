@@ -35,6 +35,7 @@ class Molecule(Structure):
         multiplicity: int = 1,
         name: str = "unnamed",
         atomic_charges: ArrayLike = ...,
+        **kwds,
     ):
         """
         If other is not none, that molecule will be cloned.

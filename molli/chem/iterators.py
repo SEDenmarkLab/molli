@@ -44,7 +44,7 @@ def sglob(pattern: str, loader: Callable[[str | Path], StructureLike], strict: b
             yield loader(fn)
         except Exception as xc:
             if strict:
-                raise xc.with_traceback()
+                raise xc
             else:
                 warn(
                     f"An error occurred while loading {fn}: {xc}. Skipping the file..."
@@ -90,7 +90,7 @@ def dglob(pattern: str, loader: Callable[[str | Path], Iterable[StructureLike]],
             yield from loader(fn)
         except Exception as xc:
             if strict:
-                raise xc.with_traceback()
+                raise xc
             else:
                 warn(
                     f"An error occurred while loading {fn}: {xc}. Skipping the file..."

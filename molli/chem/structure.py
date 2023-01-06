@@ -100,7 +100,7 @@ class Structure(CartesianGeometry, Connectivity):
         atom_map = {source_atoms[i] : res.atoms[i] for i in range(res.n_atoms) }
         
         for j, b in enumerate(chain.from_iterable(x.bonds for x in structs)):
-            res.append_bond(Bond.evolve(b, a1 = atom_map[b.a1], a2 = atom_map[b.a2]))
+            res.append_bond(b.evolve(a1 = atom_map[b.a1], a2 = atom_map[b.a2]))
         
         res.coords = np.vstack([x.coords for x in structs])
 
