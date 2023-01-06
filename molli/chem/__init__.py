@@ -29,3 +29,4 @@ from .molecule import Molecule, StructureLike
 from .ensemble import ConformerEnsemble, Conformer
 from .library import ConformerLibrary, MoleculeLibrary
 from .legacy import ensemble_from_molli_old_xml
+from .iterators import sglob, dglob
