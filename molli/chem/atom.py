@@ -572,17 +572,20 @@ class Promolecule:
 
     @property
     def formula(self) -> str:
-        ctr = Counter(x.element.symbol for x in self.atoms)
-        f = []
-        if "C" in ctr:
-            f.append(f"""C{ctr.pop("C")}""")
-        if "H" in ctr:
-            f.append(f"""H{ctr.pop("H")}""")
+        if self.n_atoms > 0:
+            ctr = Counter(x.element.symbol for x in self.atoms)
+            f = []
+            if "C" in ctr:
+                f.append(f"""C{ctr.pop("C")}""")
+            if "H" in ctr:
+                f.append(f"""H{ctr.pop("H")}""")
 
-        for x in sorted(ctr):
-            f.append(f"""{x}{ctr.pop(x)}""")
+            for x in sorted(ctr):
+                f.append(f"""{x}{ctr.pop(x)}""")
 
-        return " ".join(f)
+            return " ".join(f)
+        else:
+            return "[no atoms]"
 
     @property
     def molecular_weight(self) -> float:
