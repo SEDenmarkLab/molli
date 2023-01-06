@@ -462,7 +462,7 @@ class Promolecule:
         self.name = name
 
     def __repr__(self) -> str:
-        return f"Promolecule(name={self.name!r}, formula={self.formula!r})"
+        return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
 
     @property
     def name(self) -> str:
