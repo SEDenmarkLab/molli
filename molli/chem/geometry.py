@@ -280,7 +280,7 @@ class CartesianGeometry(Promolecule):
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
-        i = self.index_atom(a)
+        i = self.index_atom(self.get_atom(a))
         return np.linalg.norm(self.coords[i] - p)
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
