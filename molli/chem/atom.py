@@ -343,7 +343,7 @@ class Atom:
         repr=lambda x: x.name,
     )
 
-    mol2_type: str = attrs.field(default="Any", kw_only=True, repr=False)
+    mol2_type: str = attrs.field(default=None, kw_only=True, repr=False)
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -462,7 +462,7 @@ class Promolecule:
         self.name = name
 
     def __repr__(self) -> str:
-        return f"Promolecule(name={self.name!r}, formula={self.formula!r})"
+        return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
 
     @property
     def name(self) -> str:
@@ -484,6 +484,11 @@ class Promolecule:
     def atoms(self) -> List[Atom]:
         """List of atoms in the promolecule"""
         return self._atoms
+
+    @property
+    def elements(self) -> List[Element]:
+        """List of elements in the protomolecule"""
+        return [a.element for a in self.atoms]
 
     @property
     def n_atoms(self) -> int:
@@ -567,17 +572,20 @@ class Promolecule:
 
     @property
     def formula(self) -> str:
-        ctr = Counter(x.element.symbol for x in self.atoms)
-        f = []
-        if "C" in ctr:
-            f.append(f"""C{ctr.pop("C")}""")
-        if "H" in ctr:
-            f.append(f"""H{ctr.pop("H")}""")
+        if self.n_atoms > 0:
+            ctr = Counter(x.element.symbol for x in self.atoms)
+            f = []
+            if "C" in ctr:
+                f.append(f"""C{ctr.pop("C")}""")
+            if "H" in ctr:
+                f.append(f"""H{ctr.pop("H")}""")
 
-        for x in sorted(ctr):
-            f.append(f"""{x}{ctr.pop(x)}""")
+            for x in sorted(ctr):
+                f.append(f"""{x}{ctr.pop(x)}""")
 
-        return " ".join(f)
+            return " ".join(f)
+        else:
+            return "[no atoms]"
 
     @property
     def molecular_weight(self) -> float:

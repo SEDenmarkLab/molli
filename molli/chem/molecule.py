@@ -35,6 +35,7 @@ class Molecule(Structure):
         multiplicity: int = 1,
         name: str = "unnamed",
         atomic_charges: ArrayLike = ...,
+        **kwds,
     ):
         """
         If other is not none, that molecule will be cloned.
@@ -68,12 +69,6 @@ class Molecule(Structure):
                 self._atomic_charges = _pc
             else:
                 raise ValueError("Inappropriate shape of atomic charge array")
-
-    def __str__(self):
-        _fml = self.formula if self.n_atoms > 0 else "[no atoms]"
-        s = f"Molecule(name='{self.name}', formula='{_fml}')"
-        return s
-        ...
 
     def dump_mol2(self, stream: StringIO):
         stream.write(f"# Produced with molli package\n")

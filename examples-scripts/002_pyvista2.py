@@ -19,7 +19,7 @@ a_sizes = [a.cov_radius_1 for a in mol.atoms]
 
 # sph = pv.Sphere(theta_resolution=24, phi_resolution=24)
 
-plotter = pv.Plotter(multi_samples=4)
+plotter = pv.Plotter(line_smoothing=True)
 
 atoms = pv.MultiBlock()
 for i, a in enumerate(mol.atoms):
@@ -29,20 +29,20 @@ for i, a in enumerate(mol.atoms):
     else:
         atoms.append(
             pv.Sphere(
-                a_size / 2, center=mol.coords[i], phi_resolution=12, theta_resolution=12
+                a_size / 2, center=mol.coords[i], phi_resolution=8, theta_resolution=8
             )
         )
 
 bonds = pv.MultiBlock()
 for j, b in enumerate(mol.bonds):
     r1, r2 = mol.bond_coords(b)
-    bonds.append(pv.Tube(r1, r2, radius=0.03, n_sides=16))
+    bonds.append(pv.Tube(r1, r2, radius=0.03, n_sides=8))
 
 
 actor, mapper = plotter.add_composite(
     atoms,
     smooth_shading=True,
-    culling=True,
+    # culling=True,
     ambient=0.2,
     diffuse=0.6,
     specular=0.2,
@@ -55,12 +55,12 @@ actor, mapper = plotter.add_composite(
     bonds,
     color=(0.9, 0.9, 0.9),
     smooth_shading=True,
-    culling=True,
-    diffuse=0.7,
-    specular=0.3,
+    # culling=True,
+    diffuse=0.9,
+    specular=0.1,
 )
 
-plotter.enable_anti_aliasing(aa_type="fxaa", multi_samples=4)
+# plotter.enable_anti_aliasing(aa_type="fxaa")
 plotter.background_color = "000002"
 plotter.view_xy()
 plotter.add_axes()

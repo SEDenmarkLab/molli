@@ -11,11 +11,20 @@ from . import (
     Connectivity,
 )
 from ..parsing import read_xyz
-from typing import Any, List, Iterable, Generator, TypeVar, Generic, Callable
+from typing import (
+    Any,
+    List,
+    Iterable,
+    Generator,
+    TypeVar,
+    Generic,
+    Callable,
+    IO,
+)
 from enum import Enum
 import numpy as np
 from numpy.typing import ArrayLike
-from io import StringIO, BytesIO
+from io import StringIO, BytesIO, IOBase
 from functools import wraps
 from pathlib import Path
 import math
@@ -67,7 +76,9 @@ class CartesianGeometry(Promolecule):
         **kwds,
     ):
         # Type of coordinates
-        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
+        super().__init__(
+            other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds
+        )
         self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 
         if isinstance(other, CartesianGeometry):
@@ -121,7 +132,10 @@ class CartesianGeometry(Promolecule):
         # Header need not be written in certain files
         # Like ORCA inputs
         if write_header:
-            comment = f"{self.name} [produced with molli]"
+            if hasattr(self, "name"):
+                comment = f"{self.name} [produced with molli]"
+            else:
+                comment = f"{self!r} [produced with molli]"
             output.write(f"{self.n_atoms}\n{comment}\n")
 
         for i in range(self.n_atoms):
@@ -129,41 +143,135 @@ class CartesianGeometry(Promolecule):
             x, y, z = self.coords[i]
             output.write(f"{s:<5} {x:12.6f} {y:12.6f} {z:12.6f}\n")
 
-    def to_xyzblock(self) -> str:
-        strio = StringIO()
-        self.dump_xyz(strio)
-        return strio.getvalue()
+    def dumps_xyz(self, write_header: bool = True) -> str:
+        """
+        This returns an xyz file as a string
+        """
+        # Header need not be written in certain files
+        # Like ORCA inputs
+        res = StringIO()
+        self.dump_xyz(res, write_header=write_header)
+
+        return res.getvalue()
 
     @classmethod
-    def from_xyz(
-        cls,
-        input: str | StringIO | BytesIO,
+    def load_xyz(
+        cls: type[CartesianGeometry],
+        input: str | Path | IO,
+        *,
+        name: str = None,
         source_units: str = "Angstrom",
-    ):
-        """This method imports an xyz string and produces a cartesian geometry object"""
-        return next(cls.yield_from_xyz(input, source_units))
+    ) -> CartesianGeometry:
+        """# `load_xyz`
+        This function loads a *single* xyz file into the current instance
+        The input should be a stream or file name/path
+
+        ## Parameters
+
+        `cls: type[CartesianGeometry]`
+            class instance
+
+        `input: str | Path | IO`
+            Input must be an IOBase instance (typically, an open file)
+            Alternatively, a string or path will be considered as a path to file that will need to be opened.
+        `source_units: str`, optional, default: `"Angstrom"`
+            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
+        """
+
+        if isinstance(input, str | Path):
+            stream = open(input, "rt")
+        else:
+            stream = input
+
+        with stream:
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
+
+    @classmethod
+    def loads_xyz(
+        cls: type[CartesianGeometry],
+        input: str,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> CartesianGeometry:
+        """# `load_xyz`
+        This function loads a *single* xyz file into the current instance
+        The input should be a string instance
+
+        ## Parameters
+
+        `cls: type[CartesianGeometry]`
+            class instance
+
+        `input: str`
+            Input must be an IOBase instance (typically, an open file)
+            Alternatively, a string or path will be considered as a path to file that will need to be opened.
+        `source_units: str`, optional, default: `"Angstrom"`
+            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
+        """
+        stream = StringIO(input)
+        with stream:
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
+
+    @classmethod
+    def load_all_xyz(
+        cls: type[CartesianGeometry],
+        input: str | Path | IO,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> List[CartesianGeometry]:
+        if isinstance(input, str | Path):
+            stream = open(input, "rt")
+        else:
+            stream = input
+
+        with stream:
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
+
+    @classmethod
+    def loads_all_xyz(
+        cls: type[CartesianGeometry],
+        input: str | Path | IO,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> List[CartesianGeometry]:
+        stream = StringIO(input)
+        with stream:
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
 
     @classmethod
     def yield_from_xyz(
-        cls,
-        input: str | StringIO,
+        cls: type[CartesianGeometry],
+        stream: StringIO,
+        *,
+        name: str = None,
         source_units: str = "Angstrom",
     ):
-        match input:
-            case str():
-                xyzio = StringIO(input)
-            case StringIO():
-                xyzio = input
-            case _:
-                xyzio = input
-
-        for xyzblock in read_xyz(xyzio):
-            geom = cls(xyzblock.symbols)
-            geom.coords = xyzblock.coords
+        for xyzblock in read_xyz(stream):
+            geom = cls(xyzblock.symbols, coords=xyzblock.coords)
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 geom.scale(DistanceUnit[source_units].value)
 
+            geom.name = name or "unnamed"
             yield geom
 
     def scale(self, factor: float, allow_inversion=False):
@@ -173,7 +281,8 @@ class CartesianGeometry(Promolecule):
         """
         if factor < 0 and not allow_inversion:
             raise ValueError(
-                "Scaling with a negative factor can only be performed with explicit `scale(factor, allow_inversion = True)`"
+                "Scaling with a negative factor can only be performed with"
+                " explicit `scale(factor, allow_inversion = True)`"
             )
 
         if factor == 0:
@@ -192,7 +301,7 @@ class CartesianGeometry(Promolecule):
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
-        i = self.index_atom(a)
+        i = self.index_atom(self.get_atom(a))
         return np.linalg.norm(self.coords[i] - p)
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
@@ -240,3 +349,16 @@ class CartesianGeometry(Promolecule):
     def centroid(self) -> np.ndarray:
         """Return the centroid of the molecule"""
         return np.average(self.coords, axis=0)
+
+    def rmsd(self, other: CartesianGeometry, validate_elements=True):
+        if other.n_atoms != self.n_atoms:
+            raise ValueError(
+                "Cannot compare geometries with different number of atoms"
+            )
+
+        if validate_elements == True and self.elements != other.elements:
+            raise ValueError(
+                "Cannot compare two molecules with different lists of elements"
+            )
+
+        raise NotImplementedError

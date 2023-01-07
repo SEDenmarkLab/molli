@@ -24,7 +24,7 @@ class StructureTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
     def test_structure_3d(self):
-        m = chem.Structure.from_xyz(H2O_XYZ, name="water", source_units="Angstrom")
+        m = chem.Structure.loads_xyz(H2O_XYZ, name="water", source_units="Angstrom")
         self.assertEqual(m.n_atoms, 3)
         self.assertTupleEqual(m.coords.shape, (3, 3))
         self.assertAlmostEqual(np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0)
@@ -36,7 +36,7 @@ class StructureTC(ut.TestCase):
     def test_structure_from_xyz_file(self):
         # This opens in text mode
         with ml.files.xyz.dendrobine.open() as f:
-            m1 = chem.Structure.from_xyz(f, name="dendrobine", source_units="Angstrom")
+            m1 = chem.Structure.load_xyz(f, name="dendrobine", source_units="Angstrom")
 
         m2 = chem.Structure(m1)
         # This just makes sure that
@@ -49,7 +49,7 @@ class StructureTC(ut.TestCase):
         self.assertEqual(len(lst_structs), 7)
 
     def test_add_bonds(self):
-        m = chem.Structure.from_xyz(H2O_XYZ)
+        m = chem.Structure.loads_xyz(H2O_XYZ)
         self.assertEqual(m.n_bonds, 0)
         b1 = chem.Bond(m.atoms[0], m.atoms[2])
         b2 = chem.Bond(m.atoms[0], m.atoms[1])
@@ -57,8 +57,7 @@ class StructureTC(ut.TestCase):
         self.assertEqual(m.n_bonds, 2)
 
     def test_concatenate(self):
-        with ml.files.mol2.dendrobine.open() as f:
-            s1 = chem.Structure.from_mol2(f)
+        s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
 
         s2 = chem.Structure(s1)
         s2.translate([50, 0, 0])

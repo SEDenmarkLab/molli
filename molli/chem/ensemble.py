@@ -25,6 +25,8 @@ from io import StringIO
 class ConformerEnsemble(Connectivity):
     def __init__(
         self,
+        other: ConformerEnsemble = None,
+        /,
         n_conformers: int = 0,
         n_atoms: int = 0,
         *,
@@ -33,11 +35,12 @@ class ConformerEnsemble(Connectivity):
         multiplicity: int = 1,
         weights: ArrayLike = ...,
         atomic_charges: ArrayLike = ...,
+        **kwds,
     ):
+        super().__init__(other, n_atoms=n_atoms, name=name)
+
         self.charge = charge
         self.multiplicity = multiplicity
-
-        super().__init__(n_atoms, name=name)
 
         self.weights = weights
         self.atomic_charges = atomic_charges
@@ -135,14 +138,13 @@ class ConformerEnsemble(Connectivity):
     ) -> ConformerEnsemble:
         """ """
         mol2io = StringIO(input) if isinstance(input, str) else input
-        mols = list(Molecule.yield_from_mol2(mol2io, name=name, dtype=dtype))
+        mols = list(Molecule.yield_from_mol2(mol2io, name=name))
 
         res = cls(
-            len(mols),
-            mols[0].n_atoms,
+            n_conformers= len(mols),
+            n_atoms = mols[0].n_atoms,
             charge=charge,
             multiplicity=multiplicity,
-            dtype=dtype,
         )
 
         res._atoms = mols[0].atoms
