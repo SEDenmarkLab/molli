@@ -1,14 +1,18 @@
 from glob import glob
-from typing import Callable, Iterable
+from typing import Callable, Iterable, TypeVar, Generator
 from pathlib import Path
 from warnings import warn
-from . import Molecule, ConformerEnsemble, StructureLike
 
+T = TypeVar("T")
 
-def sglob(pattern: str, loader: Callable[[str | Path], StructureLike], strict: bool = True):
+def sglob(
+    pattern: str,
+    loader: Callable[[str | Path], T],
+    strict: bool = True,
+) -> Generator[T, None, None]:
     """# `sglob`
     This function provides a simple way of shallow globbing over files while simultaneously reading them as molli objects.
-    
+
     ## Example
 
     ```python
@@ -36,7 +40,7 @@ def sglob(pattern: str, loader: Callable[[str | Path], StructureLike], strict: b
 
     `xc.with_traceback`
         _description_
-    """    
+    """
     all_files = glob(pattern)
 
     for fn in all_files:
@@ -47,14 +51,19 @@ def sglob(pattern: str, loader: Callable[[str | Path], StructureLike], strict: b
                 raise xc
             else:
                 warn(
-                    f"An error occurred while loading {fn}: {xc}. Skipping the file..."
+                    f"An error occurred while loading {fn}: {xc}. Skipping the"
+                    " file..."
                 )
 
 
-def dglob(pattern: str, loader: Callable[[str | Path], Iterable[StructureLike]], strict: bool = True):
+def dglob(
+    pattern: str,
+    loader: Callable[[str | Path], Iterable[T]],
+    strict: bool = True,
+) -> Generator[T, None, None]:
     """# `dglob`
-    This function provides a simple way of shallow globbing over files while simultaneously reading them as molli objects.
-    
+    This function provides a simple way of deep globbing over files while simultaneously reading them as molli objects.
+
     ## Example
 
     ```python
@@ -82,7 +91,7 @@ def dglob(pattern: str, loader: Callable[[str | Path], Iterable[StructureLike]],
 
     `xc.with_traceback`
         _description_
-    """    
+    """
     all_files = glob(pattern)
 
     for fn in all_files:
@@ -93,5 +102,6 @@ def dglob(pattern: str, loader: Callable[[str | Path], Iterable[StructureLike]],
                 raise xc
             else:
                 warn(
-                    f"An error occurred while loading {fn}: {xc}. Skipping the file..."
+                    f"An error occurred while loading {fn}: {xc}. Skipping the"
+                    " file..."
                 )
