@@ -11,7 +11,16 @@ from . import (
     Connectivity,
 )
 from ..parsing import read_xyz
-from typing import Any, List, Iterable, Generator, TypeVar, Generic, Callable, IO
+from typing import (
+    Any,
+    List,
+    Iterable,
+    Generator,
+    TypeVar,
+    Generic,
+    Callable,
+    IO,
+)
 from enum import Enum
 import numpy as np
 from numpy.typing import ArrayLike
@@ -67,7 +76,9 @@ class CartesianGeometry(Promolecule):
         **kwds,
     ):
         # Type of coordinates
-        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
+        super().__init__(
+            other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds
+        )
         self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 
         if isinstance(other, CartesianGeometry):
@@ -121,14 +132,17 @@ class CartesianGeometry(Promolecule):
         # Header need not be written in certain files
         # Like ORCA inputs
         if write_header:
-            comment = f"{self.name} [produced with molli]"
+            if hasattr(self, "name"):
+                comment = f"{self.name} [produced with molli]"
+            else:
+                comment = f"{self!r} [produced with molli]"
             output.write(f"{self.n_atoms}\n{comment}\n")
 
         for i in range(self.n_atoms):
             s = self.atoms[i].element.symbol
             x, y, z = self.coords[i]
             output.write(f"{s:<5} {x:12.6f} {y:12.6f} {z:12.6f}\n")
-    
+
     def dumps_xyz(self, write_header: bool = True) -> str:
         """
         This returns an xyz file as a string
@@ -161,19 +175,20 @@ class CartesianGeometry(Promolecule):
             Input must be an IOBase instance (typically, an open file)
             Alternatively, a string or path will be considered as a path to file that will need to be opened.
         `source_units: str`, optional, default: `"Angstrom"`
-            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm  
+            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
         """
-        
+
         if isinstance(input, str | Path):
             stream = open(input, "rt")
         else:
             stream = input
-        
-        with stream:
-            res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
-        
-        return res
 
+        with stream:
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
 
     @classmethod
     def loads_xyz(
@@ -196,11 +211,13 @@ class CartesianGeometry(Promolecule):
             Input must be an IOBase instance (typically, an open file)
             Alternatively, a string or path will be considered as a path to file that will need to be opened.
         `source_units: str`, optional, default: `"Angstrom"`
-            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm  
+            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
         """
         stream = StringIO(input)
         with stream:
-            res = next(cls.yield_from_xyz(stream,name=name,  source_units=source_units))
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
 
         return res
 
@@ -216,12 +233,14 @@ class CartesianGeometry(Promolecule):
             stream = open(input, "rt")
         else:
             stream = input
-        
+
         with stream:
-            res = list(cls.yield_from_xyz(stream,name=name,  source_units=source_units))
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
 
         return res
-    
+
     @classmethod
     def loads_all_xyz(
         cls: type[CartesianGeometry],
@@ -232,10 +251,11 @@ class CartesianGeometry(Promolecule):
     ) -> List[CartesianGeometry]:
         stream = StringIO(input)
         with stream:
-            res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
 
         return res
-    
 
     @classmethod
     def yield_from_xyz(
@@ -250,7 +270,7 @@ class CartesianGeometry(Promolecule):
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 geom.scale(DistanceUnit[source_units].value)
-            
+
             geom.name = name or "unnamed"
             yield geom
 
@@ -261,7 +281,8 @@ class CartesianGeometry(Promolecule):
         """
         if factor < 0 and not allow_inversion:
             raise ValueError(
-                "Scaling with a negative factor can only be performed with explicit `scale(factor, allow_inversion = True)`"
+                "Scaling with a negative factor can only be performed with"
+                " explicit `scale(factor, allow_inversion = True)`"
             )
 
         if factor == 0:
@@ -329,11 +350,15 @@ class CartesianGeometry(Promolecule):
         """Return the centroid of the molecule"""
         return np.average(self.coords, axis=0)
 
-    def rmsd(self, other: CartesianGeometry, validate_elements = True):
+    def rmsd(self, other: CartesianGeometry, validate_elements=True):
         if other.n_atoms != self.n_atoms:
-            raise ValueError("Cannot compare geometries with different number of atoms")
+            raise ValueError(
+                "Cannot compare geometries with different number of atoms"
+            )
 
         if validate_elements == True and self.elements != other.elements:
-            raise ValueError("Cannot compare two molecules with different lists of elements")
-        
+            raise ValueError(
+                "Cannot compare two molecules with different lists of elements"
+            )
+
         raise NotImplementedError

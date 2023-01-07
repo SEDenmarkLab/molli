@@ -343,7 +343,7 @@ class Atom:
         repr=lambda x: x.name,
     )
 
-    mol2_type: str = attrs.field(default="Any", kw_only=True, repr=False)
+    mol2_type: str = attrs.field(default=None, kw_only=True, repr=False)
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)

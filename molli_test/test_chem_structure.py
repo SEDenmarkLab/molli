@@ -57,8 +57,7 @@ class StructureTC(ut.TestCase):
         self.assertEqual(m.n_bonds, 2)
 
     def test_concatenate(self):
-        with ml.files.mol2.dendrobine.open() as f:
-            s1 = chem.Structure.from_mol2(f)
+        s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
 
         s2 = chem.Structure(s1)
         s2.translate([50, 0, 0])

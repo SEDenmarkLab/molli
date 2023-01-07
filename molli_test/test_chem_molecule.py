@@ -23,7 +23,7 @@ class MoleculeTC(ut.TestCase):
     # @ut.skip("Not implemented yet")
     def test_molecule_cloning(self):
         with files.mol2.pentane_confs.open("t") as f:
-            m1 = chem.Molecule.from_mol2(f, name="pentane")
+            m1 = chem.Molecule.load_mol2(f, name="pentane")
 
         m2 = chem.Molecule(m1)
 
