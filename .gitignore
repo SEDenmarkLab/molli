@@ -13,7 +13,7 @@
 molli.egg-info/
 
 # Jupyter residues
-**/.ipynb_checkpoints/*
+**/.ipynb_checkpoints
 molli_xt.*.so
 
 # Files not to be uploaded to repo

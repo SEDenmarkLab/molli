@@ -54,7 +54,7 @@ setup(
         "networkx>=2.8.7",
         "tqdm~=4.64.0",
         "h5py~=3.7.0",
-        "pyvista~=0.37"
+        "pyvista~=0.37",
     ],
     python_requires=">=3.10,<3.11",
     entry_points={"console_scripts": ["molli = molli.__main__:main"]},

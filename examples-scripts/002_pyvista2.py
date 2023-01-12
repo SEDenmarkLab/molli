@@ -5,7 +5,7 @@ from matplotlib.colors import ListedColormap
 import numpy as np
 
 with ml.files.mol2.pdb_4a05.open() as f, ml.aux.timeit("Parsing mol2"):
-    _mol = ml.chem.Molecule.from_mol2(f)
+    _mol = ml.chem.Molecule.load_mol2(f)
 
 # mol = _mol.heavy
 mol = _mol
@@ -29,20 +29,23 @@ for i, a in enumerate(mol.atoms):
     else:
         atoms.append(
             pv.Sphere(
-                a_size / 2, center=mol.coords[i], phi_resolution=8, theta_resolution=8
+                a_size / 2,
+                center=mol.coords[i],
+                phi_resolution=32,
+                theta_resolution=32,
             )
         )
 
 bonds = pv.MultiBlock()
 for j, b in enumerate(mol.bonds):
     r1, r2 = mol.bond_coords(b)
-    bonds.append(pv.Tube(r1, r2, radius=0.03, n_sides=8))
+    bonds.append(pv.Tube(r1, r2, radius=0.03, n_sides=16))
 
 
 actor, mapper = plotter.add_composite(
     atoms,
     smooth_shading=True,
-    # culling=True,
+    culling=True,
     ambient=0.2,
     diffuse=0.6,
     specular=0.2,
@@ -55,7 +58,7 @@ actor, mapper = plotter.add_composite(
     bonds,
     color=(0.9, 0.9, 0.9),
     smooth_shading=True,
-    # culling=True,
+    culling=True,
     diffuse=0.9,
     specular=0.1,
 )

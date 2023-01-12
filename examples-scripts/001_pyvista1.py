@@ -20,7 +20,7 @@ plotter = pv.Plotter()
 
 b_lines = []
 for b in mol.bonds:
-    i1, i2 = mol.yield_atom_indices((b.a1, b.a2))
+    i1, i2 = map(mol.get_atom_index, (b.a1, b.a2))
     b_lines.append((2, i1, i2))
 
 points = pv.PolyData(mol.coords, lines=b_lines, n_lines=mol.n_bonds)
@@ -34,7 +34,9 @@ for i, elt in enumerate(ml.chem.Element):
     r, g, b = ImageColor.getrgb(clr)
     colors[val > (elt.z - 0.5)] = [r / 255, g / 255, b / 255, 1]
 
-cmap_cpk = pv.LookupTable(ListedColormap(colors), n_values=120, scalar_range=(-1, 118))
+cmap_cpk = pv.LookupTable(
+    ListedColormap(colors), n_values=120, scalar_range=(-1, 118)
+)
 
 spherez = points.glyph(
     geom=sph,

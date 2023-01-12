@@ -8,6 +8,7 @@ from collections import deque
 from struct import pack, unpack, Struct
 from io import BytesIO
 import attrs
+from bidict import bidict
 
 class BondType(IntEnum):
     Unknown = 0
@@ -18,10 +19,13 @@ class BondType(IntEnum):
     Quintuple = 5
     Sextuple = 6
 
-    FractionalOrder = 10
+    Dummy = 10
+    NotConnected = 11
 
     Aromatic = 20
-    Amide = 30
+    Amide = 21
+
+    FractionalOrder = 99
 
     H_Donor = 100
     H_Acceptor = 101
@@ -42,6 +46,22 @@ class BondStereo(IntEnum):
     R = Axial_R
     S = Axial_S
 
+# orders of 4, 5, 6 are not canonical per the mol2 definition file
+MOL2_BOND_TYPE_MAP = bidict(
+    {
+        "1" : BondType.Single,
+        "2" : BondType.Double,
+        "3" : BondType.Triple,
+        # "4" : BondType.Quadruple,
+        # "5" : BondType.Quintuple,
+        # "6" : BondType.Sextuple,
+        "ar" : BondType.Aromatic,
+        "am" : BondType.Amide,
+        "du" : BondType.Dummy,
+        "un" : BondType.Unknown,
+        "nc" : BondType.NotConnected,
+    }
+)
 
 @attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Bond:
@@ -63,7 +83,7 @@ class Bond:
         repr=lambda x: x.name,
     )
 
-    mol2_type: str = attrs.field(default="1", kw_only=True, repr=False)
+    mol2_type: str = attrs.field(default="1", kw_only=True, repr=False, init=False)
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -88,6 +108,9 @@ class Bond:
                 return self.f_order
             
             case BondType.H_Acceptor:
+                return 0.0
+            
+            case BondType.Dummy | BondType.NotConnected:
                 return 0.0
             
             case _:
@@ -132,7 +155,10 @@ class Bond:
     @property
     def expected_length(self) -> float:
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
-       
+
+    def set_mol2_type(self, m2t: str):
+        self.btype = MOL2_BOND_TYPE_MAP[m2t]
+            
 
 
 class Connectivity(Promolecule):

@@ -24,10 +24,14 @@ class StructureTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
     def test_structure_3d(self):
-        m = chem.Structure.loads_xyz(H2O_XYZ, name="water", source_units="Angstrom")
+        m = chem.Structure.loads_xyz(
+            H2O_XYZ, name="water", source_units="Angstrom"
+        )
         self.assertEqual(m.n_atoms, 3)
         self.assertTupleEqual(m.coords.shape, (3, 3))
-        self.assertAlmostEqual(np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0)
+        self.assertAlmostEqual(
+            np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0
+        )
         self.assertAlmostEqual(m.distance(0, 1), 0.96900, places=5)
         self.assertAlmostEqual(m.distance(2, 1), 1.52694, places=5)
         self.assertEqual(m.formula, "H2 O1")
@@ -36,7 +40,9 @@ class StructureTC(ut.TestCase):
     def test_structure_from_xyz_file(self):
         # This opens in text mode
         with ml.files.xyz.dendrobine.open() as f:
-            m1 = chem.Structure.load_xyz(f, name="dendrobine", source_units="Angstrom")
+            m1 = chem.Structure.load_xyz(
+                f, name="dendrobine", source_units="Angstrom"
+            )
 
         m2 = chem.Structure(m1)
         # This just makes sure that
@@ -68,3 +74,14 @@ class StructureTC(ut.TestCase):
         self.assertEqual(s3.n_bonds, s1.n_bonds * 2)
 
         self.assertAlmostEqual(s3.distance(0, s1.n_atoms), 50.0, 6)
+
+    def test_zincdb(self):
+        with ml.files.mol2.zincdb_fda.open() as f:
+            structs = ml.Structure.yield_from_mol2(f)
+
+            names = []
+
+            for s in structs:
+                names.append(s.name)
+
+            self.assertFalse(any(n == "unnamed" for n in names))
