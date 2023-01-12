@@ -297,7 +297,7 @@ class CartesianGeometry(Promolecule):
         self.scale(-1, allow_inversion=True)
 
     def distance(self, a1: AtomLike, a2: AtomLike) -> float:
-        i1, i2 = self.yield_atom_indices((a1, a2))
+        i1, i2 = map(self.get_atom_index, (a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
@@ -308,7 +308,7 @@ class CartesianGeometry(Promolecule):
         """
         Compute an angle
         """
-        i1, i2, i3 = self.yield_atom_indices((a1, a2, a3))
+        i1, i2, i3 = map(self.get_atom_index, (a1, a2, a3))
 
         v1 = self.coords[i1] - self.coords[i2]
         v2 = self.coords[i3] - self.coords[i2]
@@ -319,7 +319,7 @@ class CartesianGeometry(Promolecule):
         return _angle(v1, v2)
 
     def coord_subset(self, atoms: Iterable[AtomLike]) -> np.ndarray:
-        indices = list(self.yield_atom_indices(atoms))
+        indices = list(map(self.get_atom_index, atoms))
         return self.coords[indices]
 
     def dihedral(
@@ -329,7 +329,7 @@ class CartesianGeometry(Promolecule):
         a3: AtomLike,
         a4: AtomLike,
     ) -> float:
-        i1, i2, i3, i4 = self.yield_atom_indices((a1, a2, a3, a4))
+        i1, i2, i3, i4 = map(self.get_atom_index, (a1, a2, a3, a4))
 
         u1 = self.coords[i2] - self.coords[i1]
         u2 = self.coords[i3] - self.coords[i2]

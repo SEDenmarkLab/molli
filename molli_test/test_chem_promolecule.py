@@ -27,7 +27,7 @@ class PromoleculeTC(ut.TestCase):
 
     def test_promolecule_natoms_constructor(self):
         pm = chem.Promolecule(n_atoms=10)
-    
+
     def test_promolecule_list_constructor(self):
         # This more or less just tests if all elements can end up in the promolecule upon such a creation
         pm = chem.Promolecule([elt for elt in chem.Element])
@@ -40,7 +40,9 @@ class PromoleculeTC(ut.TestCase):
         pm.append_atom(chem.Atom("H", label="H2"))
         pm.append_atom(chem.Atom(8, label="O3"))
 
-        self.assertEqual(pm.n_atoms, 3, "This promolecule (H2O) must have 3 atoms")
+        self.assertEqual(
+            pm.n_atoms, 3, "This promolecule (H2O) must have 3 atoms"
+        )
         self.assertEqual(
             pm.molecular_weight,
             18.0150,
@@ -58,7 +60,11 @@ class PromoleculeTC(ut.TestCase):
 
         self.assertIsInstance(pm.atoms, list)
         with self.assertRaises(AttributeError):
-            pm.atoms = [1, 2, 3]  # This should fail as the property is protected
+            pm.atoms = [
+                1,
+                2,
+                3,
+            ]  # This should fail as the property is protected
 
     def test_atom_indexing(self):
         """Tests atom indexing procedures and their stability with respect to atom creation/deletion/rearrangement"""
@@ -76,7 +82,9 @@ class PromoleculeTC(ut.TestCase):
 
         # Simple tests of atom indexing
         self.assertEqual(
-            pm.index_atom(o3), 2, "That would be the third atom in that promolecule"
+            pm.index_atom(o3),
+            2,
+            "That would be the third atom in that promolecule",
         )
 
         # Atom deletion tests
@@ -84,15 +92,18 @@ class PromoleculeTC(ut.TestCase):
         self.assertEqual(
             pm.index_atom(o3),
             1,
-            "That would now be the second atom in that promolecule, since h2 was deleted",
+            "That would now be the second atom in that promolecule, since h2"
+            " was deleted",
         )
 
         with self.assertRaises(ValueError):
-            pm.index_atom(h2)  # This should fail as h2 is no longer in the atom list
+            pm.index_atom(
+                h2
+            )  # This should fail as h2 is no longer in the atom list
 
         h2 = chem.Atom(chem.Element.H, label="H2")
         pm.append_atom(h2)
-        hydrogens = list(pm.get_atoms_by_element("H"))
+        hydrogens = list(pm.yield_atoms_by_element("H"))
 
         self.assertListEqual(
             hydrogens, [h1, h2], "This is the correct list of hydrogens"

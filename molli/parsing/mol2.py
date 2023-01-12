@@ -14,7 +14,7 @@ class MOL2Atom:
     _x: str
     _y: str
     _z: str
-    typ: str = None
+    mol2_type: str = None
     _subst_idx: str = None
     subst_name: str = None
     _charge: str = None
@@ -47,7 +47,7 @@ class MOL2Bond:
     _idx: str
     _a1: str
     _a2: str
-    typ: str
+    mol2_type: str
     status_bit: str = None
     unknown: str = None
 
@@ -62,18 +62,6 @@ class MOL2Bond:
     @property
     def a2(self):
         return int(self._a2)
-
-    @property
-    def order(self):
-        try:
-            ord = float(self.typ)
-        except:
-            if self.typ == "ar":
-                return 1.5
-            else:
-                return -1
-        else:
-            return ord
 
 
 @dataclass(slots=True, init=True)
@@ -134,7 +122,9 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                 match m[1]:
                     case "MOLECULE":
                         if parsed_header is not None:
-                            yield MOL2Block(parsed_header, parsed_atoms, parsed_bonds)
+                            yield MOL2Block(
+                                parsed_header, parsed_atoms, parsed_bonds
+                            )
 
                         mol_name = next(reader)
                         mol_record_counts = next(reader)
@@ -167,7 +157,8 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
 
                             case _:
                                 raise MOL2SyntaxError(
-                                    f"Invalid molecule record counts (line {reader.pos})"
+                                    "Invalid molecule record counts (line"
+                                    f" {reader.pos})"
                                 )
 
                         if RE_TRIPOS.match(status_bits):
@@ -219,7 +210,9 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                             #         charge=float(_chrg),
                             #     )
                             # )
-                            parsed_atoms.append(MOL2Atom(*atom_def.split(maxsplit=10)))
+                            parsed_atoms.append(
+                                MOL2Atom(*atom_def.split(maxsplit=10))
+                            )
 
                     case "BOND":
                         parsed_bonds = []
@@ -240,14 +233,18 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                             #         idx=int(_id), a1=int(_a1), a2=int(_a2), typ=_type
                             #     )
                             # )
-                            parsed_bonds.append(MOL2Bond(*bond_def.split(maxsplit=5)))
+                            parsed_bonds.append(
+                                MOL2Bond(*bond_def.split(maxsplit=5))
+                            )
 
                     # case "SUBSTRUCTURE":
                     #     ...
 
                     case _:
                         warn(
-                            f"TRIPOS block '{m[1]}' is not implemented in current version of MOLLI!. Lines will be skipped.",
+                            f"TRIPOS block '{m[1]}' is not implemented in"
+                            " current version of MOLLI!. Lines will be"
+                            " skipped.",
                         )
                         skip_lines = True
 
@@ -261,7 +258,8 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
 
     if skipped > 0:
         warn(
-            f"This mol2 stream contained lines within TRIPOS blocks not supported by MOLLI. skipped {skipped} lines",
+            "This mol2 stream contained lines within TRIPOS blocks not"
+            f" supported by MOLLI. skipped {skipped} lines",
         )
 
     yield MOL2Block(parsed_header, parsed_atoms, parsed_bonds)

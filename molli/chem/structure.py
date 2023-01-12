@@ -58,7 +58,7 @@ class Structure(CartesianGeometry, Connectivity):
     def yield_from_mol2(
         cls: type[Structure],
         input: str | StringIO,
-        name: str = "unnamed",
+        name: str = None,
         source_units: str = "Angstrom",
     ):
         mol2io = StringIO(input) if isinstance(input, str) else input
@@ -74,16 +74,16 @@ class Structure(CartesianGeometry, Connectivity):
                     res.atoms[i].element = Element.Unknown
 
                 res.coords[i] = a.xyz
-                res.atoms[i].mol2_type = a.typ
+                res.atoms[i].set_mol2_type(a.mol2_type)
 
             for i, b in enumerate(block.bonds):
                 res.append_bond(
-                    Bond(
+                    bond := Bond(
                         res.atoms[b.a1 - 1],
                         res.atoms[b.a2 - 1],
-                        mol2_type=b.typ,
                     )
                 )
+                bond.set_mol2_type(b.mol2_type)
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 res.scale(DistanceUnit[source_units].value)
@@ -258,7 +258,7 @@ class Structure(CartesianGeometry, Connectivity):
         return self.distance(b.a1, b.a2)
 
     def bond_vector(self, b: Bond) -> np.ndarray:
-        i1, i2 = self.yield_atom_indices((b.a1, b.a2))
+        i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
         return self.coords[i2] - self.coords[i1]
 
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
@@ -313,14 +313,14 @@ class Substructure(Structure):
     def yield_parent_atom_indices(
         self, atoms: Iterable[AtomLike]
     ) -> Generator[int, None, None]:
-        yield from self._parent.yield_atom_indices(atoms)
+        yield from map(self._parent.get_atom_index, atoms)
 
     def __repr__(self):
         return f"""{type(self).__name__}(parent={self._parent!r}, atoms={self.parent_atom_indices!r})"""
 
     @property
     def parent_atom_indices(self):
-        return list(self._parent.yield_atom_indices(self._atoms))
+        return list(self.yield_parent_atom_indices)
 
     @property
     def coords(self):
