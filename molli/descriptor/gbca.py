@@ -7,29 +7,29 @@ from numpy.typing import ArrayLike
 
 
 def rectangular_grid(
-    q1: ArrayLike,
-    q2: ArrayLike,
+    r1: ArrayLike,
+    r2: ArrayLike,
     padding: float = 0.0,
     spacing: float = 1.0,
     dtype: str = "float32",
 ) -> np.ndarray:
-    l = np.array(q1, dtype=dtype) - padding
-    r = np.array(q2, dtype=dtype) + padding
+    l = np.array(r1, dtype=dtype) - padding
+    r = np.array(r2, dtype=dtype) + padding
 
     # Number of points
-    nx = int((r[0] - l[0]) // spacing)
-    ny = int((r[1] - l[1]) // spacing)
-    nz = int((r[2] - l[2]) // spacing)
+    nx = int((r[0] - l[0]) // spacing) + 1
+    ny = int((r[1] - l[1]) // spacing) + 1
+    nz = int((r[2] - l[2]) // spacing) + 1
 
     # Offsets
-    ox = (r[0] - l[0] - nx * spacing) / 2
-    oy = (r[1] - l[1] - nx * spacing) / 2
-    oz = (r[2] - l[2] - nx * spacing) / 2
+    ox = (r[0] - l[0] - (nx - 1) * spacing) / 2
+    oy = (r[1] - l[1] - (ny - 1) * spacing) / 2
+    oz = (r[2] - l[2] - (nz - 1) * spacing) / 2
 
     # X linsp
-    xs = np.linspace(l[0] + ox, r[0] - ox, nx, dtype=dtype)
-    ys = np.linspace(l[1] + ox, r[1] - ox, nx, dtype=dtype)
-    zs = np.linspace(l[2] + ox, r[2] - ox, nx, dtype=dtype)
+    xs = np.linspace(l[0] + ox, r[0] - ox, nx, endpoint=True, dtype=dtype)
+    ys = np.linspace(l[1] + oy, r[1] - oy, ny, endpoint=True, dtype=dtype)
+    zs = np.linspace(l[2] + oz, r[2] - oz, nz, endpoint=True, dtype=dtype)
 
     xx, yy, zz = np.meshgrid(xs, ys, zs)
 

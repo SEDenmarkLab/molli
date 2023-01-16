@@ -5,6 +5,8 @@ from importlib import import_module
 import yaml
 from . import scripts
 from warnings import warn
+from logging import getLogger
+
 
 # KNOWN_CMDS = ["info", "split", "optimize", "whatever"]
 KNOWN_CMDS = ["list", *scripts.__all__]
@@ -23,28 +25,50 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "-O",
-    "--OUTPUT",
-    action="store",
-    metavar="<file.log>",
-    help="Sets the file that molli output will be printed into",
-)
-
-arg_parser.add_argument(
     "-C",
     "--CONFIG",
     action="store",
     metavar="<file.yml>",
+    default=None,
     help="Sets the file from which molli configuration will be read from",
 )
 
 arg_parser.add_argument(
-    "-H",
-    "--HELP",
-    action="help",
+    "-O",
+    "--OUTPUT",
+    action="store",
+    metavar="<file.log>",
+    default=None,
+    help="Sets the file that will contain the output of molli routines.",
 )
 
-arg_parser.add_argument("-V", "--VERSION", action="version", version=ml.__version__)
+arg_parser.add_argument(
+    "-V",
+    "--VERBOSITY",
+    action="store",
+    metavar="0..5",
+    default=0,
+    type=int,
+    help="Sets the level of verbosity for molli output. Negative numbers will remove all output. Defaults to 0.",
+)
+
+arg_parser.add_argument(
+    "-D",
+    "--DEBUG",
+    action="store_true",
+    default=False,
+    help="Output will contain debug information",
+)
+
+arg_parser.add_argument(
+    "-H", "--HELP", action="help", help="show help message and exit"
+)
+
+arg_parser.add_argument(
+    "--VERSION",
+    action="version",
+    version=ml.__version__,
+)
 
 
 def main():
@@ -79,6 +103,7 @@ def main():
                             print("No documentation available")
 
         case _:
+
             if parsed.CONFIG is not None:
                 warn(
                     "CONFIG file option is implemented as EXPERIMENTAL. Do not rely on its results."

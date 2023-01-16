@@ -13,7 +13,7 @@ This file defines all constituent elements of
 """
 from __future__ import annotations
 from typing import Any, List, Iterable, Generator, Callable
-from enum import Enum
+from enum import Enum, IntEnum
 from dataclasses import dataclass, field, KW_ONLY
 from collections import Counter, UserList
 import numpy as np
@@ -22,6 +22,8 @@ from io import BytesIO
 from functools import cache
 from warnings import warn
 import re
+from bidict import bidict
+import attrs
 
 
 class Element(Enum):
@@ -34,10 +36,8 @@ class Element(Enum):
         match elt:
             case Element() | int():
                 return cls(elt)
-            case str():
-                return cls[elt]
-            case bytes():
-                return cls[elt.decode("ascii")]
+            case str() as s:
+                return cls[s.capitalize()]
             case _:
                 return cls(elt)
 
@@ -88,12 +88,14 @@ class Element(Enum):
     def color_cpk(self) -> str:
         return self.get_property_value("color_cpk")
 
+    @property
+    def group(self) -> int | str:
+        """element group identifier"""
+        return self.get_property_value("group")
+
     def _serialize(self) -> int:
         return self.value
 
-    # Just for compatibility reasons
-    LonePair = -1
-    Lp = LonePair
     Unknown = 0
 
     # Regular elements
@@ -225,76 +227,193 @@ Integer is interpreted as atomic number
 """
 
 
+# class Atom:
+#     """
+#     Atom is a mutable object that is compared by id.
+#     It stores atomic properties for the molecule.
+#     Performance of the class was optimized through the use of __slots__
+#     attrs allows for the storage of arbitrary atomic attributes
+#     """
+
+#     __slots__ = (
+#         "_parent",
+#         "element",
+#         "label",
+#         "isotope",
+#         "traits",
+#         "attrs",
+#     )
+
+#     def __init__(
+#         self,
+#         element: ElementLike = Element.Unknown,
+#         isotope: int = None,
+#         *,
+#         traits: str = None,
+#         label: str = None,
+#         parent: Promolecule = None,
+#         **attrs: Any,
+#     ):
+
+#         self.element = Element.get(element)
+#         self.isotope = isotope
+#         self.atype = atype
+#         self.label = label
+#         self.attrs = dict(**attrs)
+#         self._parent = parent
+
+#     def update(self, other: Atom):
+#         self.element = other.element
+#         self.label = other.label
+#         self.atype = other.atype
+#         self.isotope = other.isotope
+#         self.dummy = other.dummy
+#         self.attrs |= other.attrs
+
+#     @property
+#     def parent(self):
+#         return self._parent
+
+
+class AtomType(IntEnum):
+    Unknown = 0
+    Regular = 1
+    Aromatic = 2
+    CoordinationCenter = 10
+    Hypervalent = 20
+
+    # Main Group Types
+    MainGroup_sp3 = 31
+    MainGroup_sp2 = 32
+    MainGroup_sp = 33
+
+    # Non-atom placeholders
+    Dummy = 100
+    AttachmentPoint = 101
+    LonePair = 102
+
+    # Wildcards
+
+    # Specific atom classes
+    C_Guanidinium = 201
+    N_Amide = 202
+    N_Nitro = 203
+    O_Sulfoxide = 204
+    O_Sulfone = 205
+    O_Carboxylate = 206
+
+
+class AtomStereo(IntEnum):
+    Unknown = 0
+    NotStereogenic = 1
+
+    R = 10
+    S = 11
+
+    Delta = 20
+    Lambda = 21
+
+
+class AtomGeom(IntEnum):
+    Unknown = 0
+    R1 = 10
+
+    R2 = 20
+    R2_Linear = 21
+    R2_Bent = 22
+    # R2_Bent120 = 23
+    # R2_Bent109 = 24
+    # R2_Bent90 = 25
+
+    R3 = 30
+    R3_Planar = 31
+    R3_Pyramidal = 32
+    R3_TShape = 33
+
+    R4 = 40
+    R4_Tetrahedral = 41
+    R4_SquarePlanar = 42
+    R4_Seesaw = 43
+
+    R5 = 50
+    R5_TrigonalBipyramidal = 51
+    R5_SquarePyramid = 52
+
+    R6 = 60
+    R6_Octahedral = 61
+
+
+@attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Atom:
     """
-    Atom is a mutable object that is compared by id.
-    It stores atomic properties for the molecule.
-    Performance of the class was optimized through the use of __slots__
+    Atom class is the most fundamental class that a molecule can have
     """
 
-    __slots__ = (
-        "element",
-        "label",
-        "isotope",
-        "stereo",
-        "dummy",
+    element: Element = attrs.field(
+        default=Element.Unknown,
+        converter=Element.get,
+        on_setattr=lambda s, a, v: Element.get(v),
     )
 
-    def __init__(
-        self,
-        element: ElementLike = Element.Unknown,
-        label: str = ...,
-        *,
-        isotope: int = -1,
-        dummy: bool = False,
-        stereo: bool = False,
-    ):
-        self.element = Element.get(element)
-        self.isotope = isotope
-        self.dummy = dummy
-        self.stereo = stereo
-        self.label = label if label is not Ellipsis else self.element.symbol
+    isotope: int = attrs.field(default=None)
 
-    @classmethod
-    def add_to(
-        cls: type[Atom],
-        parent: Promolecule,
-        /,
-        element: ElementLike = Element.Unknown,
-        label: str = ...,
-        isotope: int = -1,
-        dummy: bool = False,
-        stereo: bool = False,
-    ):
-        a = cls(
-            element=element,
-            label=label,
-            isotope=isotope,
-            dummy=dummy,
-            stereo=stereo,
-        )
+    label: str = attrs.field(default=None, kw_only=True)
 
-        parent.append_atom(a)
-        return a
+    atype: AtomType = attrs.field(
+        default=AtomType.Regular,
+        kw_only=True,
+        repr=False
+        # repr=lambda x: x.name,
+    )
+    stereo: AtomStereo = attrs.field(
+        default=AtomStereo.Unknown,
+        kw_only=True,
+        repr=False
+        # repr=lambda x: x.name,
+    )
+    geom: AtomGeom = attrs.field(
+        default=AtomGeom.Unknown,
+        kw_only=True,
+        repr=False
+        # repr=lambda x: x.name,
+    )
 
-    def __repr__(self):
+    formal_charge: int = attrs.field(default=0, kw_only=True, repr=False)
 
-        _i = self.isotope if self.isotope > 0 else ""
-        _d = " #" if self.dummy else ""
-        _s = " *" if self.stereo else ""
+    mol2_type: str = attrs.field(
+        default=None,
+        kw_only=True,
+        repr=False,
+        init=False,
+    )
 
-        inner = f"{_i}{self.element.symbol}"
+    def evolve(self, **changes):
+        return attrs.evolve(self, **changes)
 
-        inner += f""", label='{self.label}'{_d}{_s}"""
+    @property
+    def is_dummy(self) -> bool:
+        return self.atype == AtomType.Dummy
 
-        return f"Atom({inner})"
+    @property
+    def is_attachment_point(self) -> bool:
+        return self.atype == AtomType.AttachmentPoint
 
-    # def __eq__(self, other: AtomLike):
-    #     return self is other
+    @property
+    def idx(self) -> int | None:
+        if self._parent is None:
+            return None
+        else:
+            return self._parent.index_atom(self)
+
+    # def __repr__(self):
+    #     return f"Atom([{self.isotope or ''}{self.element!r}], label={self.label!r}, atype={self.atype!r})"
+
+    def __eq__(self, other: AtomLike):
+        return self is other
 
     # This is a default version of hash function for objects
-    # def __hash__(self) -> int:
-    #     return id(self) >> 4  # Equivalent to id(self) // 16
+    def __hash__(self) -> int:
+        return id(self)
 
     @property
     def Z(self) -> int:
@@ -310,8 +429,71 @@ class Atom:
         return self.element.cov_radius_1
 
     @property
+    def cov_radius_2(self) -> float:
+        return self.element.cov_radius_2
+
+    @property
+    def cov_radius_3(self) -> float:
+        return self.element.cov_radius_3
+
+    @property
     def color_cpk(self) -> str:
         return self.element.color_cpk
+
+    def set_mol2_type(self, m2t: str):
+
+        if "." in m2t:
+            mol2_elt, mol2_type = m2t.split(".", maxsplit=1)
+        else:
+            mol2_elt, mol2_type = m2t, None
+
+        self.element = mol2_elt
+        self.mol2_type = mol2_type
+
+        match mol2_type:
+
+            case "3":
+                self.atype = AtomType.MainGroup_sp3
+
+            case "2":
+                self.atype = AtomType.MainGroup_sp2
+
+            case "1":
+                self.atype = AtomType.MainGroup_sp
+
+            case "ar":
+                self.atype = AtomType.Aromatic
+
+            case "am":
+                if self.element == Element.N:
+                    self.atype = AtomType.N_Amide
+                    self.geom = AtomGeom.R3_Planar
+
+            case "cat" if self.element == Element.C:
+                self.formal_charge = 1
+                self.atype = AtomType.C_Guanidinium
+                self.geom = AtomGeom.R3_Planar
+
+            case "pl3":
+                self.geom = AtomGeom.R3_Planar
+
+            case "co2" if self.element == Element.O:
+                self.atype = AtomType.O_Carboxylate
+                self.geom = AtomGeom.R1
+
+            case "O" if self.element == Element.S:
+                self.geom = AtomGeom.R3_Pyramidal
+                self.atype = AtomType.O_Sulfoxide
+
+            case "O2" if self.element == Element.S:
+                self.geom = AtomGeom.R4_Tetrahedral
+                self.atype = AtomType.O_Sulfone
+
+            case "oh":
+                self.geom = AtomGeom.R6_Octahedral
+
+            case "th":
+                self.geom = AtomGeom.R4_Tetrahedral
 
 
 AtomLike = Atom | int
@@ -329,42 +511,87 @@ class Promolecule:
     for API compatibility reasons.
     """
 
-    __slots__ = ("_atoms", "_name")
+    __slots__ = ("_atoms", "_atom_index_cache", "_name")
 
-    def __init__(self, n_atoms: int = 0, name="unnamed"):
+    def __init__(
+        self,
+        other: Promolecule | Iterable[Atom] | Iterable[ElementLike] = None,
+        /,
+        *,
+        n_atoms: int = 0,
+        name: str = None,
+        copy_atoms: bool = False,
+        **kwds,  # mostly just for subclassing compatibility
+    ):
         """
-        Initialization of promolecule pre-allocates storage space
+        Initialization of promolecule pre-allocates storage space.
+        n_atoms is ignored in cas
         """
-        if n_atoms < 0:
-            raise ValueError("Cannot instantiate with negative number of atoms")
+        self._atom_index_cache = bidict()
 
-        self._atoms = list()
-        for _ in range(n_atoms):
-            Atom.add_to(self)
+        # if other is not None:
+        #     raise NotImplementedError
+        # else:
+        match other:
+            case None:
+                if n_atoms < 0:
+                    raise ValueError(
+                        "Cannot instantiate with negative number of atoms"
+                    )
+
+                self._atoms = list(Atom() for _ in range(n_atoms))
+
+            case Promolecule() as pm:
+                self._atoms = list(a.evolve() for a in pm.atoms)
+
+            case [*atoms] if all(isinstance(a, Atom) for a in atoms):
+                if copy_atoms:
+                    self._atoms = list(a.evolve() for a in atoms)
+                else:
+                    self._atoms = atoms
+
+            case [*atoms] if all(isinstance(a, ElementLike) for a in atoms):
+                self._atoms = list(Atom(a) for a in atoms)
+
+            case _:
+                raise NotImplementedError(
+                    f"Cannot interpret {other} of type {type(other)}"
+                )
 
         self.name = name
 
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}(name={self.name!r},"
+            f" formula={self.formula!r})"
+        )
+
     @property
-    def name(self):
+    def attachment_points(self) -> List[Atom]:
+        return [a for a in self.atoms if a.atype == AtomType.AttachmentPoint]
+
+    @property
+    def n_attachment_points(self) -> int:
+        return len(self.attachment_points)
+
+    @property
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, value: str | bytes):
-        if isinstance(value, bytes):
-            _value = value.decode("ascii")
-        else:
-            _value = value
+    def name(self, value: str):
+        if value is None or value is Ellipsis:
+            self._name = "unknown"
 
-        if RE_MOL_NAME.fullmatch(_value):
-            self._name = _value
+        elif RE_MOL_NAME.fullmatch(value):
+            self._name = value
         else:
-            sub = RE_MOL_ILLEGAL.sub("_", _value)
+            sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {_value} --> {sub}")
-
-            # raise ValueError(
-            #     f"Inappropriate name for a molecule: {value}. Must match {RE_MOL_NAME.pattern}"
-            # )
+            warn(
+                f"Replaced illegal characters in molecule name: {value} -->"
+                f" {sub}"
+            )
 
     @property
     def atoms(self) -> List[Atom]:
@@ -372,71 +599,81 @@ class Promolecule:
         return self._atoms
 
     @property
+    def elements(self) -> List[Element]:
+        """List of elements in the protomolecule"""
+        return [a.element for a in self.atoms]
+
+    @property
     def n_atoms(self) -> int:
         """Number of atoms in the promolecule"""
         return len(self.atoms)
 
-    def append_atom(self, a: Atom):
-        self._atoms.append(a)
-
-    def del_atom(self, a: AtomLike):
-        match a:
+    def get_atom(self, _a: AtomLike) -> Atom:
+        match _a:
             case Atom():
-                idx = self.index_atom(a)
-            case int():
-                idx = a
-
-        del self._atoms[idx]
-
-    def get_atom(self, a: AtomLike) -> Atom:
-        match a:
-            case Atom():
-                if a in self.atoms:
-                    return a
-                else:
-                    raise ValueError(f"Atom {a} does not belong to this molecule.")
-
-            case int():
-                return self._atoms[a]
-
-            case _:
-                raise ValueError(f"Unable to fetch an atom with {type(a)}: {a}")
-
-    def index_atom(self, a: AtomLike) -> int:
-        # return self._atoms.index(a)
-        match a:
-            case Atom():
-                return self._atoms.index(a)
-
-            case int():
-                if 0 <= a < self.n_atoms:
-                    return a
+                if _a in self.atoms:
+                    return _a
                 else:
                     raise ValueError(
-                        f"Atom with index {a} does not exist in a molecule with {self.n_atoms} atoms"
+                        f"Atom {_a} does not belong to this molecule."
+                    )
+
+            case int():
+                return self._atoms[_a]
+
+            case _:
+                raise ValueError(
+                    f"Unable to fetch an atom with {type(_a)}: {_a}"
+                )
+
+    def get_atom_index(self, _a: AtomLike):
+        match _a:
+            case Atom():
+                return self._atoms.index(_a)
+
+            case int():
+                if 0 <= _a < self.n_atoms:
+                    return _a
+                else:
+                    raise ValueError(
+                        f"Atom with index {_a} does not exist in a molecule"
+                        f" with {self.n_atoms} atoms"
                     )
 
             case _:
-                raise ValueError(f"Unable to fetch an atom with {type(a)}: {a}")
+                raise ValueError(
+                    f"Unable to fetch an atom with {type(_a)}: {_a}"
+                )
 
-    def yield_atom_indices(
-        self, atoms: Iterable[AtomLike]
-    ) -> Generator[int, None, None]:
-        for a in atoms:
-            yield self.index_atom(a)
+    def del_atom(self, _a: AtomLike):
+        a = self.get_atom_index(_a)
+        del self.atoms[a]
 
-    def yield_atoms(self, atoms: Iterable[AtomLike]) -> Generator[Atom, None, None]:
-        for a in atoms:
-            yield self.get_atom(a)
+    def append_atom(self, a: Atom):
+        self._atoms.append(a)
 
-    def get_atoms_by_element(
+    def index_atom(self, _a: Atom) -> int:
+        return self._atoms.index(_a)
+
+    # def yield_atom_indices(
+    #     self, atoms: Iterable[AtomLike]
+    # ) -> Generator[int, None, None]:
+    #     for x in map(self.get_atom_index, atoms):
+    #         yield x
+
+    # def yield_atoms(
+    #     self, atoms: Iterable[AtomLike]
+    # ) -> Generator[Atom, None, None]:
+    #     return map(self.get_atom, atoms)
+
+    def yield_atoms_by_element(
         self, elt: Element | str | int
     ) -> Generator[Atom, None, None]:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
 
-    def get_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
+    def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
         for a in self.atoms:
             if a.label == lbl:
                 yield a
@@ -450,24 +687,58 @@ class Promolecule:
 
     @property
     def formula(self) -> str:
-        ctr = Counter(x.element.symbol for x in self.atoms)
-        f = []
-        if "C" in ctr:
-            f.append(f"""C{ctr.pop("C")}""")
-        if "H" in ctr:
-            f.append(f"""H{ctr.pop("H")}""")
+        if self.n_atoms > 0:
+            ctr = Counter(x.element.symbol for x in self.atoms)
+            f = []
+            if "C" in ctr:
+                f.append(f"""C{ctr.pop("C")}""")
+            if "H" in ctr:
+                f.append(f"""H{ctr.pop("H")}""")
 
-        for x in sorted(ctr):
-            f.append(f"""{x}{ctr.pop(x)}""")
+            for x in sorted(ctr):
+                f.append(f"""{x}{ctr.pop(x)}""")
 
-        return " ".join(f)
+            return " ".join(f)
+        else:
+            return "[no atoms]"
 
     @property
     def molecular_weight(self) -> float:
+        """
+        # `molecular_weight`
+        Molecular weight of the molecule
+
+        Warning: currently there is no support for isotopic masses.
+
+        ## Returns
+
+        `float`
+            molecular weight in Da
+        """
         _mw = 0.0
         for a in self.atoms:
             _mw += a.element.atomic_weight
         return _mw
+
+    def label_atoms(self, template: str = "{e}{n0}"):
+        """# `label_atoms`
+
+        Format code:
+        - `n0`: atom number (begin with 0)
+        - `n1`: atom number (begin with 1)
+        - `e`: element symbol
+
+        ## Parameters
+
+        `template: str`, optional, default: `"{e}{n}"`
+            Template for atom name
+        """
+        for i, a in enumerate(self.atoms):
+            a.label = template.format(
+                e=a.element.symbol,
+                n0=i,
+                n1=i + 1,
+            )
 
 
 PromoleculeLike = Promolecule | Iterable[Atom | ElementLike]

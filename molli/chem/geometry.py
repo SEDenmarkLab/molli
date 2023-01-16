@@ -1,16 +1,34 @@
 from __future__ import annotations
-# === MOLLI IMPORTS ===
-from . import Element, ElementLike, Atom, AtomLike, Bond, Promolecule, PromoleculeLike, Connectivity
+
+from . import (
+    Element,
+    ElementLike,
+    Atom,
+    AtomLike,
+    Bond,
+    Promolecule,
+    PromoleculeLike,
+    Connectivity,
+)
 from ..parsing import read_xyz
-# =====================
-from typing import Any, List, Iterable, Generator, TypeVar, Generic, Callable
+from typing import (
+    Any,
+    List,
+    Iterable,
+    Generator,
+    TypeVar,
+    Generic,
+    Callable,
+    IO,
+)
 from enum import Enum
 import numpy as np
 from numpy.typing import ArrayLike
-from io import StringIO, BytesIO
+from io import StringIO, BytesIO, IOBase
 from functools import wraps
 from pathlib import Path
 import math
+
 
 class DistanceUnit(Enum):
     """
@@ -25,15 +43,11 @@ class DistanceUnit(Enum):
     pm = 100.0
     nm = 0.100
 
+
 def _angle(v1, v2):
     """computes the angle formed by two vectors"""
     dt = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
     return np.arccos(dt)
-
-def _nans(shape, dtype) -> np.ndarray:
-    res = np.empty(shape, dtype=dtype)
-    res.fill(np.nan)
-    return res
 
 
 class CartesianGeometry(Promolecule):
@@ -43,26 +57,40 @@ class CartesianGeometry(Promolecule):
     This version is generalizable to arbitrary coordinates and data types
     """
 
+    _coords_dtype = np.float64
     __slots__ = ("_atoms", "_coords", "_name", "_dtype")
+
+    def __init_subclass__(cls, coords_dtype=np.float64, **kwds) -> None:
+        super().__init_subclass__(**kwds)
+        cls._coords_dtype = np.dtype(coords_dtype)
 
     def __init__(
         self,
-        n_atoms: int = 0,
-        name: str="unnamed",
+        other: Promolecule = None,
+        /,
         *,
-        dtype: str = "float32",
+        n_atoms: int = 0,
+        name: str = "unnamed",
+        coords: ArrayLike = None,
+        copy_atoms: bool = False,
+        **kwds,
     ):
         # Type of coordinates
-        super().__init__(n_atoms=n_atoms, name=name)
-        self._dtype = str(dtype)
-        self._coords = _nans((self.n_atoms, 3), dtype=self._dtype)
+        super().__init__(
+            other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds
+        )
+        self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 
+        if isinstance(other, CartesianGeometry):
+            self.coords = other.coords
+        else:
+            self.coords = coords or np.nan
 
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 
     def add_atom(self, a: Atom, coord: ArrayLike):
         _a = super().add_atom(a)
-        _coord = np.array(coord, dtype=self._dtype)
+        _coord = np.array(coord, dtype=self._coords_dtype)
         if not _coord.shape == (3,):
             raise ValueError(
                 "Inappropriate coordinates for atom (interpreted as {_coord})"
@@ -84,23 +112,10 @@ class CartesianGeometry(Promolecule):
     def coords(self):
         """Set of atomic positions in shape (n_atoms, 3)"""
         return self._coords
-    
+
     @coords.setter
     def coords(self, other: ArrayLike):
-        _coords = np.array(other, self._dtype)
-
-        na = self.n_atoms
-        
-        match _coords.shape:
-            case (x,) if x == na * 3:
-                self._coords = np.reshape(_coords, (na, 3))
-            
-            case (x, y) if x == na and y == 3:
-                self._coords = _coords
-            
-            case _:
-                raise ValueError(f"Failed to assign array of shape {_coords.shape} to a geometry with {na} atoms.")
-
+        self._coords[:] = other
 
     @property
     def coords_as_list(self):
@@ -110,14 +125,17 @@ class CartesianGeometry(Promolecule):
         """This extends current geometry with another one"""
         raise NotImplementedError
 
-    def dump_xyz(self, output: StringIO, write_header: bool=True) -> None:
+    def dump_xyz(self, output: StringIO, write_header: bool = True) -> None:
         """
         This dumps an xyz file into the output stream.
         """
         # Header need not be written in certain files
         # Like ORCA inputs
         if write_header:
-            comment = f"{self.name} [produced with molli]"
+            if hasattr(self, "name"):
+                comment = f"{self.name} [produced with molli]"
+            else:
+                comment = f"{self!r} [produced with molli]"
             output.write(f"{self.n_atoms}\n{comment}\n")
 
         for i in range(self.n_atoms):
@@ -125,44 +143,136 @@ class CartesianGeometry(Promolecule):
             x, y, z = self.coords[i]
             output.write(f"{s:<5} {x:12.6f} {y:12.6f} {z:12.6f}\n")
 
-    def to_xyzblock(self) -> str:
-        strio = StringIO()
-        self.dump_xyz(strio)
-        return strio.getvalue()
+    def dumps_xyz(self, write_header: bool = True) -> str:
+        """
+        This returns an xyz file as a string
+        """
+        # Header need not be written in certain files
+        # Like ORCA inputs
+        res = StringIO()
+        self.dump_xyz(res, write_header=write_header)
+
+        return res.getvalue()
 
     @classmethod
-    def from_xyz(
-        cls,
-        input: str | StringIO | BytesIO,
+    def load_xyz(
+        cls: type[CartesianGeometry],
+        input: str | Path | IO,
+        *,
+        name: str = None,
         source_units: str = "Angstrom",
-    ):
-        """This method imports an xyz string and produces a cartesian geometry object"""
-        return next(cls.yield_from_xyz(input, source_units))
+    ) -> CartesianGeometry:
+        """# `load_xyz`
+        This function loads a *single* xyz file into the current instance
+        The input should be a stream or file name/path
+
+        ## Parameters
+
+        `cls: type[CartesianGeometry]`
+            class instance
+
+        `input: str | Path | IO`
+            Input must be an IOBase instance (typically, an open file)
+            Alternatively, a string or path will be considered as a path to file that will need to be opened.
+        `source_units: str`, optional, default: `"Angstrom"`
+            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
+        """
+
+        if isinstance(input, str | Path):
+            stream = open(input, "rt")
+        else:
+            stream = input
+
+        with stream:
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
+
+    @classmethod
+    def loads_xyz(
+        cls: type[CartesianGeometry],
+        input: str,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> CartesianGeometry:
+        """# `load_xyz`
+        This function loads a *single* xyz file into the current instance
+        The input should be a string instance
+
+        ## Parameters
+
+        `cls: type[CartesianGeometry]`
+            class instance
+
+        `input: str`
+            Input must be an IOBase instance (typically, an open file)
+            Alternatively, a string or path will be considered as a path to file that will need to be opened.
+        `source_units: str`, optional, default: `"Angstrom"`
+            Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
+        """
+        stream = StringIO(input)
+        with stream:
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
+
+    @classmethod
+    def load_all_xyz(
+        cls: type[CartesianGeometry],
+        input: str | Path | IO,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> List[CartesianGeometry]:
+        if isinstance(input, str | Path):
+            stream = open(input, "rt")
+        else:
+            stream = input
+
+        with stream:
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
+
+    @classmethod
+    def loads_all_xyz(
+        cls: type[CartesianGeometry],
+        input: str | Path | IO,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> List[CartesianGeometry]:
+        stream = StringIO(input)
+        with stream:
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
+
+        return res
 
     @classmethod
     def yield_from_xyz(
-        cls,
-        input: str | StringIO,
+        cls: type[CartesianGeometry],
+        stream: StringIO,
+        *,
+        name: str = None,
         source_units: str = "Angstrom",
     ):
-        match input:
-            case str():
-                xyzio = StringIO(input)
-            case StringIO():
-                xyzio = input
-            case _:
-                xyzio = input
-
-        for xyzblock in read_xyz(xyzio):
-            g = cls(xyzblock.n_atoms)
-            for i, s in enumerate(xyzblock.symbols):
-                g.atoms[i].element = Element[s]
-            g.coords = xyzblock.coords
+        for xyzblock in read_xyz(stream):
+            geom = cls(xyzblock.symbols, coords=xyzblock.coords)
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
-                g.scale(DistanceUnit[source_units].value)
-            
-            yield g
+                geom.scale(DistanceUnit[source_units].value)
+
+            geom.name = name or "unnamed"
+            yield geom
 
     def scale(self, factor: float, allow_inversion=False):
         """
@@ -171,7 +281,8 @@ class CartesianGeometry(Promolecule):
         """
         if factor < 0 and not allow_inversion:
             raise ValueError(
-                "Scaling with a negative factor can only be performed with explicit `scale(factor, allow_inversion = True)`"
+                "Scaling with a negative factor can only be performed with"
+                " explicit `scale(factor, allow_inversion = True)`"
             )
 
         if factor == 0:
@@ -185,20 +296,19 @@ class CartesianGeometry(Promolecule):
         """
         self.scale(-1, allow_inversion=True)
 
-    
     def distance(self, a1: AtomLike, a2: AtomLike) -> float:
-        i1, i2 = self.yield_atom_indices((a1, a2))
+        i1, i2 = map(self.get_atom_index, (a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
-        i = self.index_atom(a)
+        i = self.index_atom(self.get_atom(a))
         return np.linalg.norm(self.coords[i] - p)
-    
+
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
         """
-        Compute an angle 
+        Compute an angle
         """
-        i1, i2, i3 = self.yield_atom_indices((a1, a2, a3))
+        i1, i2, i3 = map(self.get_atom_index, (a1, a2, a3))
 
         v1 = self.coords[i1] - self.coords[i2]
         v2 = self.coords[i3] - self.coords[i2]
@@ -207,13 +317,19 @@ class CartesianGeometry(Promolecule):
         # return np.arccos(dt)
 
         return _angle(v1, v2)
-    
+
     def coord_subset(self, atoms: Iterable[AtomLike]) -> np.ndarray:
-        indices = list(self.yield_atom_indices(atoms))
+        indices = list(map(self.get_atom_index, atoms))
         return self.coords[indices]
-    
-    def dihedral(self, a1: AtomLike, a2: AtomLike, a3: AtomLike, a4: AtomLike,) -> float:
-        i1, i2, i3, i4 = self.yield_atom_indices((a1, a2, a3, a4))
+
+    def dihedral(
+        self,
+        a1: AtomLike,
+        a2: AtomLike,
+        a3: AtomLike,
+        a4: AtomLike,
+    ) -> float:
+        i1, i2, i3, i4 = map(self.get_atom_index, (a1, a2, a3, a4))
 
         u1 = self.coords[i2] - self.coords[i1]
         u2 = self.coords[i3] - self.coords[i2]
@@ -226,4 +342,23 @@ class CartesianGeometry(Promolecule):
 
         return np.arctan2(arg1, arg2)
 
-        
+    def translate(self, vector: ArrayLike):
+        v = np.array(vector)
+        self.coords += v[np.newaxis, :]
+
+    def centroid(self) -> np.ndarray:
+        """Return the centroid of the molecule"""
+        return np.average(self.coords, axis=0)
+
+    def rmsd(self, other: CartesianGeometry, validate_elements=True):
+        if other.n_atoms != self.n_atoms:
+            raise ValueError(
+                "Cannot compare geometries with different number of atoms"
+            )
+
+        if validate_elements == True and self.elements != other.elements:
+            raise ValueError(
+                "Cannot compare two molecules with different lists of elements"
+            )
+
+        raise NotImplementedError

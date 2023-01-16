@@ -1,7 +1,8 @@
 import unittest as ut
 
-from molli import chem
+import molli as ml
 import numpy as np
+import math
 
 
 H2O_XYZ = """3
@@ -18,11 +19,22 @@ H2O_XYZ_LIST = [
 ]
 
 
+try:
+    WATER = ml.CartesianGeometry.loads_xyz(H2O_XYZ)
+except:
+    WATER = None
+
+try:
+    PENTANE = ml.CartesianGeometry.loads_xyz(H2O_XYZ)
+except:
+    PENTANE = None
+
+
 class GeometryTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
-    def test_xyzimport(self):
-        m = chem.CartesianGeometry.from_xyz(H2O_XYZ)
+    def test_loads_xyz(self):
+        m = ml.CartesianGeometry.loads_xyz(H2O_XYZ)
         self.assertEqual(m.n_atoms, 3)
         self.assertTupleEqual(m.coords.shape, (3, 3))
         self.assertAlmostEqual(np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0)
@@ -30,9 +42,34 @@ class GeometryTC(ut.TestCase):
         self.assertAlmostEqual(m.distance(2, 1), 1.52694, places=5)
         self.assertEqual(m.formula, "H2 O1")
 
-    ##### This is likely not needed anymore #####
+    def test_load_xyz(self):
+        m1 = ml.CartesianGeometry.load_xyz(ml.files.xyz.pentane_confs.path)
+        lm2 = ml.CartesianGeometry.load_all_xyz(ml.files.xyz.pentane_confs.path)
 
-    # def test_coords_protected(self):
-    #     m = chem.CartesianGeometry.from_xyz(H2O_XYZ)
-    #     with self.assertRaises(AttributeError):
-    #         m.coords = [1, 2, 3]
+    
+    @ut.skip("Not implemented yet")
+    def test_dump_xyz(self):
+        raise NotImplementedError
+
+    @ut.skip("Not implemented yet")
+    def test_dumps_xyz(self):
+        raise NotImplementedError
+
+    def test_distance(self):
+        d1 = WATER.distance(0, 1)
+        d2 = WATER.distance(0, 2)
+
+        self.assertAlmostEqual(d1, d2, 6)
+        self.assertAlmostEqual(d1, math.dist(H2O_XYZ_LIST[0], H2O_XYZ_LIST[1]), 6)
+
+    def test_distance_to_point(self):
+        d = WATER.distance_to_point(0, [50,0,0])
+        self.assertAlmostEqual(d, 50, 6)
+    
+    @ut.skip("Not implemented yet")
+    def test_angle(self):
+        raise NotImplementedError
+    
+    @ut.skip("Not implemented yet")
+    def test_dihedral(self):
+        raise NotImplementedError

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Iterable, Iterator, List
+from typing import Iterable, Iterator, List, Callable
 from . import (
     Molecule,
     Atom,
@@ -12,7 +12,7 @@ from . import (
     StructureLike,
     PromoleculeLike,
 )
-from .geometry import _nans
+# from .geometry import _nans
 from .structure import RE_MOL_NAME, RE_MOL_ILLEGAL
 from ..parsing import read_mol2
 
@@ -25,6 +25,8 @@ from io import StringIO
 class ConformerEnsemble(Connectivity):
     def __init__(
         self,
+        other: ConformerEnsemble = None,
+        /,
         n_conformers: int = 0,
         n_atoms: int = 0,
         *,
@@ -33,17 +35,16 @@ class ConformerEnsemble(Connectivity):
         multiplicity: int = 1,
         weights: ArrayLike = ...,
         atomic_charges: ArrayLike = ...,
-        dtype: str = "float32",
+        **kwds,
     ):
+        super().__init__(other, n_atoms=n_atoms, name=name)
+
         self.charge = charge
         self.multiplicity = multiplicity
-        self._dtype = dtype
-
-        super().__init__(n_atoms, name=name)
 
         self.weights = weights
         self.atomic_charges = atomic_charges
-        self._coords = _nans((n_conformers, n_atoms, 3), dtype)
+        self._coords = np.empty((n_conformers, n_atoms, 3))
 
     @property
     def weights(self):
@@ -54,7 +55,7 @@ class ConformerEnsemble(Connectivity):
         if other is Ellipsis:
             self._weights = Ellipsis
         else:
-            _weights = np.array(other, dtype=self._dtype)
+            _weights = np.array(other)
             if _weights.shape == (self.n_conformers,):
                 self._weights = _weights
             else:
@@ -69,7 +70,7 @@ class ConformerEnsemble(Connectivity):
         if other is Ellipsis:
             self._atomic_charges = Ellipsis
         else:
-            _charges = np.array(other, dtype=self.dtype)
+            _charges = np.array(other)
             if _charges.shape == (self.n_atoms,) or _charges.shape == (
                 self.n_conformers,
                 self.n_atoms,
@@ -101,7 +102,9 @@ class ConformerEnsemble(Connectivity):
                 return Conformer(self, _i)
 
             case slice() as _s:
-                return [Conformer(self, _i) for _i in range(_s.start, _s.stop, _s.step)]
+                return [
+                    Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))
+                ]
 
             case _:
                 raise ValueError("Cannot use this locator")
@@ -117,6 +120,12 @@ class ConformerEnsemble(Connectivity):
     def append(self, other: Iterable[Molecule]):
         ...
 
+    def filter(
+        self,
+        fx: Callable[[Conformer], bool],
+    ):
+        ...
+
     @classmethod
     def from_mol2(
         cls: type[ConformerEnsemble],
@@ -129,15 +138,17 @@ class ConformerEnsemble(Connectivity):
     ) -> ConformerEnsemble:
         """ """
         mol2io = StringIO(input) if isinstance(input, str) else input
-        mols = list(Molecule.yield_from_mol2(mol2io, name=name, dtype=dtype))
+        mols = list(Molecule.yield_from_mol2(mol2io, name=name))
 
         res = cls(
-            mols[0],
-            len(mols),
+            n_conformers= len(mols),
+            n_atoms = mols[0].n_atoms,
             charge=charge,
             multiplicity=multiplicity,
-            dtype=dtype,
         )
+
+        res._atoms = mols[0].atoms
+        res._bonds = mols[0].bonds
 
         for i, m in enumerate(mols):
             res._coords[i] = m.coords
@@ -147,8 +158,7 @@ class ConformerEnsemble(Connectivity):
     def serialize(self):
         atom_index = {a: i for i, a in enumerate(self.atoms)}
         atoms = [
-            (a.element.z, a.label, a.isotope, a.dummy, a.stereo) 
-            for a in self.atoms
+            (a.element.z, a.label, a.isotope, a.dummy, a.stereo) for a in self.atoms
         ]
         bonds = [
             (atom_index[b.a1], atom_index[b.a2], b.order, b.aromatic, b.stereo)
@@ -163,7 +173,6 @@ class ConformerEnsemble(Connectivity):
             bonds,
             self.charge,
             self.multiplicity,
-            self._dtype,
             None if self._coords is Ellipsis else self._coords.astype(">f4").tobytes(),
             None if self.weights is Ellipsis else self.weights.astype(">f4").tobytes(),
             None
@@ -201,7 +210,7 @@ class ConformerEnsemble(Connectivity):
             name=name,
             charge=charge,
             multiplicity=mult,
-            dtype=dt,
+            # dtype=dt,
         )
 
         atom_index = {}
@@ -212,22 +221,23 @@ class ConformerEnsemble(Connectivity):
             a.element = Element.get(elt)
             a.label = lbl
             a.isotope = iso
-            a.dummy = (dum,)
-            a.stereo = ste
+            # a.dummy = (dum,)
+            # a.stereo = ste
             atom_index[i] = a
 
         for i, b in enumerate(bonds):
             a1, a2, order, arm, ste = b
-            Bond.add_to(
-                res,
-                atom_index[a1],
-                atom_index[a2],
-                order=order,
-                stereo=ste,
-                aromatic=arm,
+            res.append_bond(
+                Bond(
+                    atom_index[a1],
+                    atom_index[a2],
+                    order=order,
+                    # stereo=ste,
+                    # aromatic=arm,
+                )
             )
 
-        res._coords = np.array(coords, dtype=res._dtype).reshape((nc, na, 3))
+        res._coords = np.array(coords).reshape((nc, na, 3))
         return res
 
     def scale(self, factor: float, allow_inversion=False):
@@ -258,9 +268,9 @@ class Conformer(Molecule):
     yet is completely virtual.
     """
 
-    def __init__(self, parent: ConformerEnsemble, cid: int):
+    def __init__(self, parent: ConformerEnsemble, conf_id: int):
         self._parent = parent
-        self._cid = cid
+        self._conf_id = conf_id
 
     @property
     def name(self):
@@ -271,20 +281,16 @@ class Conformer(Molecule):
         return self._parent.atoms
 
     @property
-    def _dtype(self):
-        return self._parent._dtype
-
-    @property
     def _bonds(self):
         return self._parent.bonds
 
     @property
     def _coords(self):
-        return self._parent._coords[self._cid]
+        return self._parent._coords[self._conf_id]
 
     @_coords.setter
     def _coords(self, other):
-        self._parent._coords[self._cid] = other
+        self._parent._coords[self._conf_id] = other
 
     @property
     def charge(self):
@@ -296,5 +302,5 @@ class Conformer(Molecule):
 
     def __str__(self):
         _fml = self.formula if self.n_atoms > 0 else "[no atoms]"
-        s = f"Conformer(name='{self.name}', cid={self._cid})"
+        s = f"Conformer(name='{self.name}', conf_id={self._conf_id})"
         return s
