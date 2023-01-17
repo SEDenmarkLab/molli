@@ -6,7 +6,6 @@ from numpy.typing import ArrayLike
 from io import StringIO, BytesIO
 import re
 from warnings import warn
-import openbabel as ob
 
 from . import (
     Element,
@@ -70,28 +69,6 @@ class Molecule(Structure):
                 self._atomic_charges = _pc
             else:
                 raise ValueError("Inappropriate shape of atomic charge array")
-
-    def dump_mol2(self, stream: StringIO):
-        stream.write(f"# Produced with molli package\n")
-        stream.write(
-            f"@<TRIPOS>MOLECULE\n{self.name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
-        )
-
-        stream.write("@<TRIPOS>ATOM\n")
-        for i, a in enumerate(self.atoms):
-            x, y, z = self.coords[i]
-            c = self.atomic_charges[i]
-            stream.write(
-                f"{i+1:>6} {a.label:<3} {x:>12.6f} {y:>12.6f} {z:>12.6f} {a.element.symbol:<10} 1 UNL1 {c}\n"
-            )
-
-        stream.write("@<TRIPOS>BOND\n")
-        for i, b in enumerate(self.bonds):
-            a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
-            bond_type = "ar" if b.aromatic else f"{b.order:1.0f}"
-            stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {bond_type:>10}\n")
-        
-        return stream.getvalue()
 
 StructureLike = Molecule | Structure | Substructure
 
