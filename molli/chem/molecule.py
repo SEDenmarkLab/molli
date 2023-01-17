@@ -6,7 +6,7 @@ from numpy.typing import ArrayLike
 from io import StringIO, BytesIO
 import re
 from warnings import warn
-import openbabel as ob
+# import openbabel as ob
 
 from . import (
     Element,
@@ -93,25 +93,25 @@ class Molecule(Structure):
         
         return stream.getvalue()
 
-    def to_mol2_w_ob(self,ftype:str):
-        '''
-        This returns basic mol2 data when writing the mol2 file that would be expected using Avogadro/Openbabel
-        '''
-        obm = ob.OBMol()
+    # def to_mol2_w_ob(self,ftype:str):
+    #     '''
+    #     This returns basic mol2 data when writing the mol2 file that would be expected using Avogadro/Openbabel
+    #     '''
+    #     obm = ob.OBMol()
 
-        for i, a in enumerate(self.atoms):
-            oba: ob.OBAtom = obm.NewAtom()
-            oba.SetAtomicNum(a.Z)
-            x, y, z = map(float, self.coords[i])
-            oba.SetVector(x, y, z)
+    #     for i, a in enumerate(self.atoms):
+    #         oba: ob.OBAtom = obm.NewAtom()
+    #         oba.SetAtomicNum(a.Z)
+    #         x, y, z = map(float, self.coords[i])
+    #         oba.SetVector(x, y, z)
 
-        for j, b in enumerate(self.bonds):
-            a1, a2 = self.yield_atom_indices((b.a1, b.a2))
-            obb: ob.OBBond = obm.AddBond(a1 + 1, a2 + 1, int(b.order))
+    #     for j, b in enumerate(self.bonds):
+    #         a1, a2 = self.yield_atom_indices((b.a1, b.a2))
+    #         obb: ob.OBBond = obm.AddBond(a1 + 1, a2 + 1, int(b.order))
         
-        obm.PerceiveBondOrders()
-        obm.SetTitle(self.name)
-        conv = ob.OBConversion()
-        conv.SetOutFormat(ftype)
+    #     obm.PerceiveBondOrders()
+    #     obm.SetTitle(self.name)
+    #     conv = ob.OBConversion()
+    #     conv.SetOutFormat(ftype)
 
-        return conv.WriteString(obm)
+    #     return conv.WriteString(obm)
