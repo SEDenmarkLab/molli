@@ -77,6 +77,10 @@ class Element(IntEnum):
         return self.get_property_value("covalent_radius_3")
 
     @property
+    def cov_radius_grimme(self) -> float:
+        return self.get_property_value("covalent_radius_grimme")
+        
+    @property
     def vdw_radius(self) -> float:
         return self.get_property_value("vdw_radius")
 

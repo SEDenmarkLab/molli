@@ -5,7 +5,7 @@ whatis:
   reference_doi:
     - 10.1063/1.3382344
 
-grimme_cov_rad:
+data:
   H: 0.32
   He: 0.46
   Li: 1.2
