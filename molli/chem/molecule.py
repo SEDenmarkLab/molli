@@ -6,6 +6,7 @@ from numpy.typing import ArrayLike
 from io import StringIO, BytesIO
 import re
 from warnings import warn
+import openbabel as ob
 
 from . import (
     Element,
@@ -89,6 +90,52 @@ class Molecule(Structure):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
             bond_type = "ar" if b.aromatic else f"{b.order:1.0f}"
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {bond_type:>10}\n")
+        
+        return stream.getvalue()
 
+    def to_mol2_w_ob(self,ftype:str):
+        '''
+        This returns basic mol2 data when writing the mol2 file that would be expected using Avogadro/Openbabel
+        '''
+        obm = ob.OBMol()
 
-StructureLike = Molecule | Structure | Substructure
+        for i, a in enumerate(self.atoms):
+            oba: ob.OBAtom = obm.NewAtom()
+            oba.SetAtomicNum(a.Z)
+            x, y, z = map(float, self.coords[i])
+            oba.SetVector(x, y, z)
+
+        for j, b in enumerate(self.bonds):
+            a1, a2 = self.yield_atom_indices((b.a1, b.a2))
+            obb: ob.OBBond = obm.AddBond(a1 + 1, a2 + 1, int(b.order))
+        
+        obm.PerceiveBondOrders()
+        obm.SetTitle(self.name)
+        conv = ob.OBConversion()
+        conv.SetOutFormat(ftype)
+
+        return conv.WriteString(obm)
+
+    def obabel_load(fname: str, input_ext: str = "mol2"):
+        conv = ob.OBConversion()
+        obmol = ob.OBMol()
+        conv.SetInFormat(input_ext)
+        conv.ReadFile(obmol, fname)
+
+        n_atoms = obmol.NumAtoms()
+        n_bonds = obmol.NumBonds()
+        mlmol = Molecule([Element.Unknown for _ in range(n_atoms)])
+
+        for i in range(n_atoms):
+            obat: ob.OBAtom = obmol.GetAtomById(i)
+            mlmol.atoms[i].element = Element.get(obat.GetAtomicNum())
+            mlmol.coords[i] = [obat.GetX(), obat.GetY(), obat.GetZ()]
+
+        for j in range(n_bonds):
+            obbd: ob.OBBond = obmol.GetBondById(j)
+            i1 = obbd.GetBeginAtomIdx()
+            i2 = obbd.GetEndAtomIdx()
+            order = obbd.GetBondOrder()
+            mlmol.new_bond(i1 - 1, i2 - 1, order)
+
+        return mlmol
