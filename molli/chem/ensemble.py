@@ -12,6 +12,7 @@ from . import (
     StructureLike,
     PromoleculeLike,
 )
+
 # from .geometry import _nans
 from .structure import RE_MOL_NAME, RE_MOL_ILLEGAL
 from ..parsing import read_mol2
@@ -20,6 +21,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 from warnings import warn
 from io import StringIO
+from pathlib import Path
 
 
 class ConformerEnsemble(Connectivity):
@@ -30,21 +32,45 @@ class ConformerEnsemble(Connectivity):
         n_conformers: int = 0,
         n_atoms: int = 0,
         *,
-        name: str = "unnamed",
+        name: str = None,
         charge: int = 0,
         multiplicity: int = 1,
-        weights: ArrayLike = ...,
-        atomic_charges: ArrayLike = ...,
+        coords: ArrayLike = None,
+        weights: ArrayLike = None,
+        atomic_charges: ArrayLike = None,
+        copy_atoms: bool = False,
         **kwds,
     ):
-        super().__init__(other, n_atoms=n_atoms, name=name)
+        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms)
 
         self.charge = charge
         self.multiplicity = multiplicity
+        self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+        self._atomic_charges = np.zeros((self.n_atoms,))
+        self._weights = np.ones((n_conformers,))
 
-        self.weights = weights
-        self.atomic_charges = atomic_charges
-        self._coords = np.empty((n_conformers, n_atoms, 3))
+        if isinstance(other, ConformerEnsemble):
+            self.atomic_charges = atomic_charges
+            self.coords = other.coords
+            self.weights = other.weights
+        else:
+            if coords is not None:
+                self.coords = coords
+
+            if atomic_charges is not None:
+                self.atomic_charges = atomic_charges
+
+            if weights is not None:
+                self.weights = weights
+
+    @property
+    def coords(self):
+        """Set of atomic positions in shape (n_atoms, 3)"""
+        return self._coords
+
+    @coords.setter
+    def coords(self, other: ArrayLike):
+        self._coords[:] = other
 
     @property
     def weights(self):
@@ -52,14 +78,7 @@ class ConformerEnsemble(Connectivity):
 
     @weights.setter
     def weights(self, other: ArrayLike):
-        if other is Ellipsis:
-            self._weights = Ellipsis
-        else:
-            _weights = np.array(other)
-            if _weights.shape == (self.n_conformers,):
-                self._weights = _weights
-            else:
-                raise ValueError(f"Inappropriate shape for conformer weights")
+        self._weights[:] = other
 
     @property
     def atomic_charges(self):
@@ -67,17 +86,78 @@ class ConformerEnsemble(Connectivity):
 
     @atomic_charges.setter
     def atomic_charges(self, other: ArrayLike):
-        if other is Ellipsis:
-            self._atomic_charges = Ellipsis
+        self._atomic_charges[:] = other
+
+    @classmethod
+    def from_mol2(
+        cls: type[ConformerEnsemble],
+        input: str | StringIO,
+        /,
+        name: str = None,
+        charge: int = 0,
+        multiplicity: int = 1,
+        source_units: str = "Angstrom",
+    ) -> ConformerEnsemble:
+        """ """
+        mol2io = StringIO(input) if isinstance(input, str) else input
+        mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
+
+        res = cls(
+            mols[0],
+            n_conformers=len(mols),
+            n_atoms=mols[0].n_atoms,
+            name=mols[0].name,
+            charge=charge,
+            multiplicity=multiplicity,
+            atomic_charges=mols[0].atomic_charges,
+        )
+
+        for i, m in enumerate(mols):
+            res._coords[i] = m.coords
+
+        return res
+
+    @classmethod
+    def load_mol2(
+        cls: type[ConformerEnsemble],
+        input: str | Path | IO,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> ConformerEnsemble:
+        """Load mol2 from a file stream or file"""
+        if isinstance(input, str | Path):
+            stream = open(input, "rt")
         else:
-            _charges = np.array(other)
-            if _charges.shape == (self.n_atoms,) or _charges.shape == (
-                self.n_conformers,
-                self.n_atoms,
-            ):
-                self._atomic_charges = _charges
-            else:
-                raise ValueError(f"Inappropriate shape for atomic charges")
+            stream = input
+
+        with stream:
+            res = cls.from_mol2(
+                stream,
+                name=name,
+                source_units=source_units,
+            )
+
+        return res
+
+    @classmethod
+    def loads_mol2(
+        cls: type[ConformerEnsemble],
+        input: str,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> ConformerEnsemble:
+        """Load mol2 file from string"""
+        stream = StringIO(input)
+        with stream:
+            res = cls.from_mol2(
+                stream,
+                name=name,
+                source_units=source_units,
+            )
+
+        return res
 
     @property
     def n_conformers(self):
@@ -114,10 +194,12 @@ class ConformerEnsemble(Connectivity):
         s = f"ConformerEnsemble(name='{self.name}', formula='{_fml}', n_conformers={self.n_conformers})"
         return s
 
-    def extend(self, others: Iterable[Molecule]):
+    def extend(self, others: Iterable[StructureLike]):
+        # TODO: Convince Lena to commit these changes
         ...
 
-    def append(self, other: Iterable[Molecule]):
+    def append(self, other: StructureLike):
+        # TODO: Convince Lena to commit these changes
         ...
 
     def filter(
@@ -126,44 +208,19 @@ class ConformerEnsemble(Connectivity):
     ):
         ...
 
-    @classmethod
-    def from_mol2(
-        cls: type[ConformerEnsemble],
-        input: str | StringIO,
-        /,
-        name: str = ...,
-        charge: int = 0,
-        multiplicity: int = 1,
-        dtype: str = "float32",
-    ) -> ConformerEnsemble:
-        """ """
-        mol2io = StringIO(input) if isinstance(input, str) else input
-        mols = list(Molecule.yield_from_mol2(mol2io, name=name))
-
-        res = cls(
-            n_conformers= len(mols),
-            n_atoms = mols[0].n_atoms,
-            charge=charge,
-            multiplicity=multiplicity,
-        )
-
-        res._atoms = mols[0].atoms
-        res._bonds = mols[0].bonds
-
-        for i, m in enumerate(mols):
-            res._coords[i] = m.coords
-
-        return res
-
     def serialize(self):
-        atom_index = {a: i for i, a in enumerate(self.atoms)}
-        atoms = [
-            (a.element.z, a.label, a.isotope, a.dummy, a.stereo) for a in self.atoms
-        ]
-        bonds = [
-            (atom_index[b.a1], atom_index[b.a2], b.order, b.aromatic, b.stereo)
-            for b in self.bonds
-        ]
+        atom_id_map = {a: i for i, a in enumerate(self.atoms)}
+
+        # atoms = [
+        #     (a.element.z, a.label, a.isotope, a.dummy, a.stereo) for a in self.atoms
+        # ]
+        # bonds = [
+        #     (atom_index[b.a1], atom_index[b.a2], b.order, b.aromatic, b.stereo)
+        #     for b in self.bonds
+        # ]
+
+        atoms = [a.as_tuple() for a in self.atoms]
+        bonds = [b.as_tuple(atom_id_map=atom_id_map) for b in self.bonds]
 
         return (
             self.name,
@@ -173,71 +230,50 @@ class ConformerEnsemble(Connectivity):
             bonds,
             self.charge,
             self.multiplicity,
-            None if self._coords is Ellipsis else self._coords.astype(">f4").tobytes(),
-            None if self.weights is Ellipsis else self.weights.astype(">f4").tobytes(),
-            None
-            if self.atomic_charges is Ellipsis
-            else self.atomic_charges.astype(">f4").tobytes(),
+            self.coords.astype(">f4").tobytes(),
+            self.weights.astype(">f4").tobytes(),
+            self.atomic_charges.astype(">f4").tobytes(),
         )
 
     @classmethod
     def deserialize(cls: type[ConformerEnsemble], struct: tuple):
         (
-            name,
-            nc,
-            na,
-            atoms,
-            bonds,
-            charge,
-            mult,
-            dt,
+            _name,
+            _nc,
+            _na,
+            _atoms,
+            _bonds,
+            _charge,
+            _mult,
             _coords,
             _weights,
             _atomic_charges,
         ) = struct
 
-        coords = None if _coords is None else np.frombuffer(_coords, dtype=">f4")
-        weights = None if _weights is None else np.frombuffer(_weights, dtype=">f4")
-        atomic_charges = (
-            None
-            if _atomic_charges is None
-            else np.frombuffer(_atomic_charges, dtype=">f4")
-        )
+        coords = np.frombuffer(_coords, dtype=">f4").reshape((_nc, _na, 3))
+        weights = np.frombuffer(_weights, dtype=">f4")
+        atomic_charges = np.frombuffer(_atomic_charges, dtype=">f4")
+
+        atoms = []
+        for i, a in enumerate(_atoms):
+            atoms.append(Atom(*a))
 
         res = cls(
-            nc,
-            na,
-            name=name,
-            charge=charge,
-            multiplicity=mult,
-            # dtype=dt,
+            atoms,
+            n_conformers=_nc,
+            n_atoms=_na,
+            name=_name,
+            charge=_charge,
+            multiplicity=_mult,
+            coords=coords,
+            weights=weights,
+            atomic_charges=atomic_charges,
         )
 
-        atom_index = {}
+        for i, b in enumerate(_bonds):
+            a1, a2, *b_attr = b
+            res.append_bond(Bond(atoms[a1], atoms[a2], *b_attr))
 
-        for i, a in enumerate(atoms):
-            elt, lbl, iso, dum, ste = a
-            a = res.atoms[i]
-            a.element = Element.get(elt)
-            a.label = lbl
-            a.isotope = iso
-            # a.dummy = (dum,)
-            # a.stereo = ste
-            atom_index[i] = a
-
-        for i, b in enumerate(bonds):
-            a1, a2, order, arm, ste = b
-            res.append_bond(
-                Bond(
-                    atom_index[a1],
-                    atom_index[a2],
-                    order=order,
-                    # stereo=ste,
-                    # aromatic=arm,
-                )
-            )
-
-        res._coords = np.array(coords).reshape((nc, na, 3))
         return res
 
     def scale(self, factor: float, allow_inversion=False):

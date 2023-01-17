@@ -33,7 +33,7 @@ class Molecule(Structure):
         *,
         charge: int = 0,
         multiplicity: int = 1,
-        name: str = "unnamed",
+        name: str = None,
         atomic_charges: ArrayLike = ...,
         **kwds,
     ):

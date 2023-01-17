@@ -9,6 +9,7 @@ from struct import pack, unpack, Struct
 from io import BytesIO
 import attrs
 from bidict import bidict
+from functools import cache
 
 class BondType(IntEnum):
     Unknown = 0
@@ -70,20 +71,21 @@ class Bond:
     a1: Atom
     a2: Atom
 
-    label: str = attrs.field(default=None, kw_only=True)
-    f_order: float = attrs.field(default=1.0, converter=float, kw_only=True)
+    label: str = attrs.field(
+        default=None, 
+    )
+
     btype: BondType = attrs.field(
         default=BondType.Single,
-        kw_only=True,
-        repr=lambda x: x.name,
-    )
-    stereo: BondStereo = attrs.field(
-        default=BondStereo.Unknown,
-        kw_only=True,
         repr=lambda x: x.name,
     )
 
-    mol2_type: str = attrs.field(default="1", kw_only=True, repr=False, init=False)
+    stereo: BondStereo = attrs.field(
+        default=BondStereo.Unknown,
+        repr=lambda x: x.name,
+    )
+
+    f_order: float = attrs.field(default=1.0, converter=float,)
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -116,9 +118,23 @@ class Bond:
             case _:
                 return 1.0
     
-    def copy(self, other: Bond):
-        for f in Bond.__slots__:
-            setattr(self, f, getattr(other, f))
+    def as_dict(self, atom_id_map: dict = None):
+        res = attrs.asdict(self)
+        if atom_id_map is not None:
+            res["a1"] = atom_id_map[self.a1]
+            res["a2"] = atom_id_map[self.a2]
+        return res
+    
+    def as_tuple(self, atom_id_map: dict = None):
+        res = attrs.astuple(self)
+        
+        if atom_id_map is not None:
+            a1, a2, *rest = res
+            res = (atom_id_map[self.a1], atom_id_map[self.a2], *rest)
+        
+        return res
+
+
 
     def __contains__(self, other: Atom):
         return other in {self.a1, self.a2}
@@ -156,6 +172,7 @@ class Bond:
     def expected_length(self) -> float:
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
 
+    @cache
     def set_mol2_type(self, m2t: str):
         self.btype = MOL2_BOND_TYPE_MAP[m2t]
             
@@ -163,7 +180,7 @@ class Bond:
 
 class Connectivity(Promolecule):
     def __init__(
-        self, other: Promolecule = None, /, *, n_atoms: int = 0, name="unnamed", copy_atoms: bool = False, **kwds, 
+        self, other: Promolecule = None, /, *, n_atoms: int = 0, name=None, copy_atoms: bool = False, **kwds, 
     ):
         super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
 

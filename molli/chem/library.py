@@ -14,11 +14,11 @@ class MoleculeLibrary(_Library[Molecule]):
 class ConformerLibrary(_Library[ConformerEnsemble]):
     @staticmethod
     def default_encoder(ens: ConformerEnsemble) -> bytes:
-        return msgpack.dumps(ens.serialize())
+        return msgpack.dumps(ens.serialize(), use_single_float=True)
 
     @staticmethod
     def default_decoder(bts: bytes) -> ConformerEnsemble:
-        return ConformerEnsemble.deserialize(msgpack.loads(bts))
+        return ConformerEnsemble.deserialize(msgpack.loads(bts, use_list=False))
 
     @classmethod
     def new(
