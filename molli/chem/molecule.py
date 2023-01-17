@@ -115,27 +115,3 @@ class Molecule(Structure):
         conv.SetOutFormat(ftype)
 
         return conv.WriteString(obm)
-
-    def obabel_load(fname: str, input_ext: str = "mol2"):
-        conv = ob.OBConversion()
-        obmol = ob.OBMol()
-        conv.SetInFormat(input_ext)
-        conv.ReadFile(obmol, fname)
-
-        n_atoms = obmol.NumAtoms()
-        n_bonds = obmol.NumBonds()
-        mlmol = Molecule([Element.Unknown for _ in range(n_atoms)])
-
-        for i in range(n_atoms):
-            obat: ob.OBAtom = obmol.GetAtomById(i)
-            mlmol.atoms[i].element = Element.get(obat.GetAtomicNum())
-            mlmol.coords[i] = [obat.GetX(), obat.GetY(), obat.GetZ()]
-
-        for j in range(n_bonds):
-            obbd: ob.OBBond = obmol.GetBondById(j)
-            i1 = obbd.GetBeginAtomIdx()
-            i2 = obbd.GetEndAtomIdx()
-            order = obbd.GetBondOrder()
-            mlmol.new_bond(i1 - 1, i2 - 1, order)
-
-        return mlmol
