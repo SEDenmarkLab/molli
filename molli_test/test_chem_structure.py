@@ -85,3 +85,14 @@ class StructureTC(ut.TestCase):
                 names.append(s.name)
 
             self.assertFalse(any(n == "unnamed" for n in names))
+            
+    def test_substruct(self):
+        s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
+        a_test = (1,3,5)
+        sub = ml.Substructure(s1,a_test)
+        sub_coord = sub.coords
+        s1_coord = s1.coord_subset(a_test)
+
+        np.testing.assert_allclose(s1_coord, sub_coord)
+
+        
