@@ -56,13 +56,12 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
         aid, s, l, at = a.attrib["id"], a.attrib["s"], a.attrib["l"], a.attrib["t"]
         ens.atoms[i].element = Element[s]
         ens.atoms[i].label = l
+        ens.atoms[i].set_mol2_type(at)
 
     for j, b in enumerate(xbonds):
         ia1, ia2 = map(int, b.attrib["c"].split())
-        ord, ar = (
-            (1.5, True) if b.attrib["t"] == "ar" else (float(b.attrib["t"]), False)
-        )
-        ens.append_bond(Bond(ens.atoms[ia1 - 1], ens.atoms[ia2 - 1], ord, aromatic=ar))
+        ens.append_bond(_b := Bond(ens.atoms[ia1 - 1], ens.atoms[ia2 - 1]))
+        _b.set_mol2_type(b.attrib["t"])
 
     for k, g in enumerate(xconfs):
         m = re.match(r"#(?P<L>[0-9]+),(?P<D>[0-9]+):(?P<G>.+);", g.text)

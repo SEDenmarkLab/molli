@@ -70,7 +70,7 @@ class CartesianGeometry(Promolecule):
         /,
         *,
         n_atoms: int = 0,
-        name: str = "unnamed",
+        name: str = None,
         coords: ArrayLike = None,
         copy_atoms: bool = False,
         **kwds,
@@ -184,9 +184,7 @@ class CartesianGeometry(Promolecule):
             stream = input
 
         with stream:
-            res = next(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -215,9 +213,7 @@ class CartesianGeometry(Promolecule):
         """
         stream = StringIO(input)
         with stream:
-            res = next(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -235,9 +231,7 @@ class CartesianGeometry(Promolecule):
             stream = input
 
         with stream:
-            res = list(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -251,9 +245,7 @@ class CartesianGeometry(Promolecule):
     ) -> List[CartesianGeometry]:
         stream = StringIO(input)
         with stream:
-            res = list(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -352,9 +344,7 @@ class CartesianGeometry(Promolecule):
 
     def rmsd(self, other: CartesianGeometry, validate_elements=True):
         if other.n_atoms != self.n_atoms:
-            raise ValueError(
-                "Cannot compare geometries with different number of atoms"
-            )
+            raise ValueError("Cannot compare geometries with different number of atoms")
 
         if validate_elements == True and self.elements != other.elements:
             raise ValueError(

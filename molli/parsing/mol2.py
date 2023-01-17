@@ -67,6 +67,8 @@ class MOL2Bond:
 @dataclass(slots=True, init=True)
 class MOL2Header:
     name: str = None
+    mol_type: str = None
+    chrg_type: str = None
     n_atoms: int = None
     n_bonds: int = None
     n_substructs: int = None
@@ -129,7 +131,7 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                         mol_name = next(reader)
                         mol_record_counts = next(reader)
                         mol_type = next(reader)
-                        charge_type = next(reader)
+                        chrg_type = next(reader)
                         # So the tricky thing is that status bits are not necessarily going to be there...
                         # in this case they should match RE_TRIPOS
                         status_bits = next(reader)
@@ -171,6 +173,8 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
 
                         parsed_header = MOL2Header(
                             name=mol_name,
+                            mol_type=mol_type,
+                            chrg_type=chrg_type,
                             n_atoms=n_atoms,
                             n_bonds=n_bonds,
                             n_substructs=n_substructs,
