@@ -39,7 +39,7 @@ class Structure(CartesianGeometry, Connectivity):
         /,
         *,
         n_atoms: int = 0,
-        name: str = "unnamed",
+        name: str = None,
         coords: ArrayLike = None,
         copy_atoms: bool = False,
         **kwds,
@@ -88,12 +88,17 @@ class Structure(CartesianGeometry, Connectivity):
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 res.scale(DistanceUnit[source_units].value)
 
+            if block.header.chrg_type != "NO_CHARGES" and hasattr(
+                res, "atomic_charges"
+            ):
+                res.atomic_charges = [a.charge for a in block.atoms]
+
             yield res
 
     def dump_mol2(
         self,
         output: StringIO,
-        name: str = "unnamed",
+        name: str = None,
         source_units: str = "Angstrom",
     ) -> None:
         """
@@ -250,9 +255,7 @@ class Structure(CartesianGeometry, Connectivity):
 
     @property
     def heavy(self) -> Substructure:
-        return Substructure(
-            self, [a for a in self.atoms if a.element != Element.H]
-        )
+        return Substructure(self, [a for a in self.atoms if a.element != Element.H])
 
     def bond_length(self, b: Bond) -> float:
         return self.distance(b.a1, b.a2)

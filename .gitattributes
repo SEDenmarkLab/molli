@@ -1,0 +1,4 @@
+# These overrides are needed to prevent documentation files from destroying code statistics
+examples-jupyter/* linguist-documentation
+examples-scripts/* linguist-documentation
+dev/* linguist-generated

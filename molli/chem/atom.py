@@ -26,7 +26,7 @@ from bidict import bidict
 import attrs
 
 
-class Element(Enum):
+class Element(IntEnum):
     """Element enumerator"""
 
     @classmethod
@@ -357,38 +357,38 @@ class Atom:
 
     isotope: int = attrs.field(default=None)
 
-    label: str = attrs.field(default=None, kw_only=True)
+    label: str = attrs.field(
+        default=None,
+        # kw_only=True,
+    )
 
     atype: AtomType = attrs.field(
         default=AtomType.Regular,
-        kw_only=True,
+        # kw_only=True,
         repr=False
         # repr=lambda x: x.name,
     )
     stereo: AtomStereo = attrs.field(
         default=AtomStereo.Unknown,
-        kw_only=True,
+        # kw_only=True,
         repr=False
         # repr=lambda x: x.name,
     )
     geom: AtomGeom = attrs.field(
         default=AtomGeom.Unknown,
-        kw_only=True,
+        # kw_only=True,
         repr=False
         # repr=lambda x: x.name,
     )
 
-    formal_charge: int = attrs.field(default=0, kw_only=True, repr=False)
-
-    mol2_type: str = attrs.field(
-        default=None,
-        kw_only=True,
-        repr=False,
-        init=False,
-    )
-
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
+
+    def as_dict(self):
+        return attrs.asdict(self)
+
+    def as_tuple(self):
+        return attrs.astuple(self)
 
     @property
     def is_dummy(self) -> bool:
@@ -448,7 +448,7 @@ class Atom:
             mol2_elt, mol2_type = m2t, None
 
         self.element = mol2_elt
-        self.mol2_type = mol2_type
+        # self.mol2_type = mol2_type
 
         match mol2_type:
 
@@ -470,7 +470,6 @@ class Atom:
                     self.geom = AtomGeom.R3_Planar
 
             case "cat" if self.element == Element.C:
-                self.formal_charge = 1
                 self.atype = AtomType.C_Guanidinium
                 self.geom = AtomGeom.R3_Planar
 
@@ -535,14 +534,13 @@ class Promolecule:
         match other:
             case None:
                 if n_atoms < 0:
-                    raise ValueError(
-                        "Cannot instantiate with negative number of atoms"
-                    )
+                    raise ValueError("Cannot instantiate with negative number of atoms")
 
                 self._atoms = list(Atom() for _ in range(n_atoms))
 
             case Promolecule() as pm:
                 self._atoms = list(a.evolve() for a in pm.atoms)
+                self.name = name or other.name
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
@@ -562,8 +560,7 @@ class Promolecule:
 
     def __repr__(self) -> str:
         return (
-            f"{type(self).__name__}(name={self.name!r},"
-            f" formula={self.formula!r})"
+            f"{type(self).__name__}(name={self.name!r}," f" formula={self.formula!r})"
         )
 
     @property
@@ -588,10 +585,7 @@ class Promolecule:
         else:
             sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(
-                f"Replaced illegal characters in molecule name: {value} -->"
-                f" {sub}"
-            )
+            warn(f"Replaced illegal characters in molecule name: {value} -->" f" {sub}")
 
     @property
     def atoms(self) -> List[Atom]:
@@ -614,17 +608,13 @@ class Promolecule:
                 if _a in self.atoms:
                     return _a
                 else:
-                    raise ValueError(
-                        f"Atom {_a} does not belong to this molecule."
-                    )
+                    raise ValueError(f"Atom {_a} does not belong to this molecule.")
 
             case int():
                 return self._atoms[_a]
 
             case _:
-                raise ValueError(
-                    f"Unable to fetch an atom with {type(_a)}: {_a}"
-                )
+                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
     def get_atom_index(self, _a: AtomLike):
         match _a:
@@ -641,9 +631,7 @@ class Promolecule:
                     )
 
             case _:
-                raise ValueError(
-                    f"Unable to fetch an atom with {type(_a)}: {_a}"
-                )
+                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
     def del_atom(self, _a: AtomLike):
         a = self.get_atom_index(_a)
