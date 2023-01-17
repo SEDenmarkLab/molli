@@ -5,7 +5,6 @@ def dftd_cn(a1:Atom, mol: Molecule):
     '''
     This is the coordination number defined by Grimme in "https://doi.org/10.1063/1.3382344".
     All covalent radii for metals will be scaled down by 10%, and is built to error if the element used is not 1-94.
-    Designed for use with CPK Rules.
 
     This defines a coordination number for individual atoms based on the location of all atoms
     

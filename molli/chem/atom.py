@@ -427,6 +427,7 @@ class Atom:
     @property
     def vdw_radius(self) -> float:
         return self.element.vdw_radius
+    
 
     @property
     def cov_radius_1(self) -> float:
@@ -439,6 +440,10 @@ class Atom:
     @property
     def cov_radius_3(self) -> float:
         return self.element.cov_radius_3
+
+    @property
+    def cov_radius_grimme(self) -> float:
+        return self.element.cov_radius_grimme
 
     @property
     def color_cpk(self) -> str:
