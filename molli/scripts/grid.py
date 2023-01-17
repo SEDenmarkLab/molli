@@ -15,10 +15,20 @@ arg_parser = ArgumentParser(
     description="Read a molli library and calculate a grid",
 )
 
-arg_parser.add_argument(
-    "library",
+source = arg_parser.add_mutually_exclusive_group()
+
+source.add_argument(
+    "--mlib",
     action="store",
+    default=None,
     help="Library file to perform the calculations on",
+)
+
+source.add_argument(
+    "--mol2_dir",
+    action="store",
+    default=None,
+    help="Directory of multi-conformer mol2 files to perform the calculations on",
 )
 
 
@@ -65,16 +75,63 @@ arg_parser.add_argument(
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = arg_parser.parse_args(args)
 
-    with ml.chem.ConformerLibrary(parsed.library, readonly=True) as lib:
-        mins = np.zeros((len(lib), 3), dtype=np.float32)
-        maxs = np.zeros((len(lib), 3), dtype=np.float32)
+    if parsed.mlib is not None:
+        mlib_path = Path(parsed.mlib)
+        if mlib_path.is_dir():
+            raise FileNotFoundError(
+                "This operation is only meant to work on .mlib files. Received a directory"
+            )
+        else:
+            library = tqdm(
+                ml.ConformerLibrary(mlib_path, readonly=True),
+                # total=len(names),
+                dynamic_ncols=True,
+            )
+        
 
-        for i, ens in enumerate(tqdm(lib, dynamic_ncols=True)):
-            mins[i] = np.min(ens._coords, axis=(0, 1))
-            maxs[i] = np.max(ens._coords, axis=(0, 1))
+    elif parsed.mol2_dir is not None:
+        mol2_dir = Path(parsed.mol2_dir).absolute()
+        if mol2_dir.is_dir():
+            print("Performing calculation on a directory of mol2 files:")
+            print(mol2_dir)
+        else:
+            raise NotADirectoryError(
+                "This operation is only meant to work on directories"
+            )
+
+        names = list(ml.aux.sglob(str(mol2_dir / "*.mol2"), lambda x: x))
+        library = tqdm(
+            ml.aux.sglob(str(mol2_dir / "*.mol2"), ml.ConformerEnsemble.load_mol2),
+            total=len(names),
+            dynamic_ncols=True,
+        )
+
+
+    mins = np.zeros((len(library), 3), dtype=np.float32)
+    maxs = np.zeros((len(library), 3), dtype=np.float32)
+
+    for i, ens in enumerate(library):
+        mins[i] = np.min(ens._coords, axis=(0, 1))
+        maxs[i] = np.max(ens._coords, axis=(0, 1))
 
     q1, q2 = np.min(mins, axis=0), np.max(maxs, axis=0)
     grid = ml.descriptor.rectangular_grid(q1, q2, parsed.padding, parsed.spacing)
     print(grid.shape)
 
     np.save(parsed.output, grid, allow_pickle=False)
+
+    # np.save(parsed.output, grid, allow_pickle=False)
+
+    # with ml.chem.ConformerLibrary(parsed.library, readonly=True) as lib:
+    #     mins = np.zeros((len(lib), 3), dtype=np.float32)
+    #     maxs = np.zeros((len(lib), 3), dtype=np.float32)
+
+    #     for i, ens in enumerate(tqdm(lib, dynamic_ncols=True)):
+    #         mins[i] = np.min(ens._coords, axis=(0, 1))
+    #         maxs[i] = np.max(ens._coords, axis=(0, 1))
+
+    # q1, q2 = np.min(mins, axis=0), np.max(maxs, axis=0)
+    # grid = ml.descriptor.rectangular_grid(q1, q2, parsed.padding, parsed.spacing)
+    # print(grid.shape)
+
+    # np.save(parsed.output, grid, allow_pickle=False)
