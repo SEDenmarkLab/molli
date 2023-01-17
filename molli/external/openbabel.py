@@ -72,3 +72,26 @@ def obabel_load(fname: str, input_ext: str = "mol2"):
         mlmol.new_bond(i1 - 1, i2 - 1, order)
 
     return mlmol
+
+def to_mol2_w_ob(self,ftype:str):
+    '''
+    This returns basic mol2 data when writing the mol2 file that would be expected using Avogadro/Openbabel
+    '''
+    obm = ob.OBMol()
+
+    for i, a in enumerate(self.atoms):
+        oba: ob.OBAtom = obm.NewAtom()
+        oba.SetAtomicNum(a.Z)
+        x, y, z = map(float, self.coords[i])
+        oba.SetVector(x, y, z)
+
+    for j, b in enumerate(self.bonds):
+        a1, a2 = self.yield_atom_indices((b.a1, b.a2))
+        obb: ob.OBBond = obm.AddBond(a1 + 1, a2 + 1, int(b.order))
+    
+    obm.PerceiveBondOrders()
+    obm.SetTitle(self.name)
+    conv = ob.OBConversion()
+    conv.SetOutFormat(ftype)
+
+    return conv.WriteString(obm)
