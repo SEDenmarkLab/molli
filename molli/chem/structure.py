@@ -323,7 +323,7 @@ class Substructure(Structure):
 
     @property
     def parent_atom_indices(self):
-        return list(self.yield_parent_atom_indices)
+        return list(self.yield_parent_atom_indices(self._atoms))
 
     @property
     def coords(self):
