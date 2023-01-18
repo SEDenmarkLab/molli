@@ -260,10 +260,10 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                 else:
                     skipped += 1
 
-    if skipped > 0:
-        warn(
-            "This mol2 stream contained lines within TRIPOS blocks not"
-            f" supported by MOLLI. skipped {skipped} lines",
-        )
+    # if skipped > 0:
+    #     warn(
+    #         "This mol2 stream contained lines within TRIPOS blocks not"
+    #         f" supported by MOLLI. skipped {skipped} lines",
+    #     )
 
     yield MOL2Block(parsed_header, parsed_atoms, parsed_bonds)
