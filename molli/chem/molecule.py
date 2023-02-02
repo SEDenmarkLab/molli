@@ -91,15 +91,14 @@ class Molecule(Structure):
         stream.write("@<TRIPOS>BOND\n")
         for i, b in enumerate(self.bonds):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
-            bond_type = "ar" if b.aromatic else f"{b.order:1.0f}"
+            bond_type = b.btype
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {bond_type:>10}\n")
         
-    def dumps_mol2(self, stream: StringIO=None) -> str:
+    def dumps_mol2(self) -> str:
         """
         This returns a mol2 file as a string
         """
-        if stream is None:
-            stream = StringIO()
+        stream = StringIO()
 
         stream.write(f"# Produced with molli package\n")
         stream.write(
@@ -119,7 +118,7 @@ class Molecule(Structure):
         stream.write("@<TRIPOS>BOND\n")
         for i, b in enumerate(self.bonds):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
-            bond_type = "ar" if b.aromatic else f"{b.order:1.0f}"
+            bond_type = b.btype
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {bond_type:>10}\n")
         return stream.getvalue()
 
