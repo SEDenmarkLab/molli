@@ -31,7 +31,7 @@ class Structure(CartesianGeometry, Connectivity):
     """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
 
     # Improve efficiency of attribute access
-    __slots__ = ("_name", "_atoms", "_bonds", "_coords")
+    __slots__ = ("_name", "_atoms", "_bonds", "_coords", "charge", "mult")
 
     def __init__(
         self,
@@ -42,6 +42,8 @@ class Structure(CartesianGeometry, Connectivity):
         name: str = None,
         coords: ArrayLike = None,
         copy_atoms: bool = False,
+        charge: int = None,
+        mult: int = None,
         **kwds,
     ):
         """Structure."""
@@ -51,6 +53,8 @@ class Structure(CartesianGeometry, Connectivity):
             coords=coords,
             name=name,
             copy_atoms=copy_atoms,
+            charge=charge,
+            mult=mult,
             **kwds,
         )
 

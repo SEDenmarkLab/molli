@@ -510,7 +510,7 @@ class Promolecule:
     for API compatibility reasons.
     """
 
-    __slots__ = ("_atoms", "_atom_index_cache", "_name")
+    __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
 
     def __init__(
         self,
@@ -520,6 +520,8 @@ class Promolecule:
         n_atoms: int = 0,
         name: str = None,
         copy_atoms: bool = False,
+        charge: int = None,
+        mult: int = None,
         **kwds,  # mostly just for subclassing compatibility
     ):
         """
@@ -528,19 +530,25 @@ class Promolecule:
         """
         self._atom_index_cache = bidict()
 
-        # if other is not None:
-        #     raise NotImplementedError
-        # else:
+        self.name = name
+        self.charge = charge or 0
+        self.mult = mult or 1
+
         match other:
             case None:
                 if n_atoms < 0:
                     raise ValueError("Cannot instantiate with negative number of atoms")
 
                 self._atoms = list(Atom() for _ in range(n_atoms))
+                self.name = name
+                self.charge = charge or 0
+                self.mult = mult or 1
 
             case Promolecule() as pm:
                 self._atoms = list(a.evolve() for a in pm.atoms)
-                self.name = name or other.name
+                self.name = name or pm.name
+                self.charge = charge or pm.charge
+                self.mult = mult or pm.mult
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
@@ -555,8 +563,6 @@ class Promolecule:
                 raise NotImplementedError(
                     f"Cannot interpret {other} of type {type(other)}"
                 )
-
-        self.name = name
 
     def __repr__(self) -> str:
         return (

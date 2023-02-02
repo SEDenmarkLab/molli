@@ -58,7 +58,7 @@ class CartesianGeometry(Promolecule):
     """
 
     _coords_dtype = np.float64
-    __slots__ = ("_atoms", "_coords", "_name", "_dtype")
+    __slots__ = "_atoms", "_coords", "_name", "charge", "mult"
 
     def __init_subclass__(cls, coords_dtype=np.float64, **kwds) -> None:
         super().__init_subclass__(**kwds)
@@ -73,11 +73,19 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         coords: ArrayLike = None,
         copy_atoms: bool = False,
+        charge: int = None,
+        mult: int = None,
         **kwds,
     ):
         # Type of coordinates
         super().__init__(
-            other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds
+            other,
+            n_atoms=n_atoms,
+            name=name,
+            copy_atoms=copy_atoms,
+            charge=charge,
+            mult=mult,
+            **kwds,
         )
         self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 

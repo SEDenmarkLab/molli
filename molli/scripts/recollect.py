@@ -109,7 +109,7 @@ def molli_main(args, config=None, output=None, **kwargs):
                     if parsed.skip:
                         continue
                 ens.charge = charge
-                ens.multiplicity = mult
+                ens.mult = mult
 
                 tnm += 1
                 tnc += ens.n_conformers
