@@ -79,6 +79,7 @@ class Structure(CartesianGeometry, Connectivity):
 
                 res.coords[i] = a.xyz
                 res.atoms[i].set_mol2_type(a.mol2_type)
+                res.atoms[i].label = a.label
 
             for i, b in enumerate(block.bonds):
                 res.append_bond(
@@ -259,7 +260,9 @@ class Structure(CartesianGeometry, Connectivity):
 
     @property
     def heavy(self) -> Substructure:
-        return Substructure(self, [a for a in self.atoms if a.element != Element.H])
+        return Substructure(
+            self, [a for a in self.atoms if a.element != Element.H]
+        )
 
     def bond_length(self, b: Bond) -> float:
         return self.distance(b.a1, b.a2)

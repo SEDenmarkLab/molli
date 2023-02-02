@@ -79,9 +79,7 @@ class StructureTC(ut.TestCase):
         with ml.files.mol2.zincdb_fda.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
 
-            names = []
-
             for s in structs:
-                names.append(s.name)
-
-            self.assertFalse(any(n == "unnamed" for n in names))
+                self.assertIsNotNone(s.name)
+                self.assertIsNot(s.name, "unnamed")
+                self.assertTrue(all(a.label is not None for a in s.atoms))
