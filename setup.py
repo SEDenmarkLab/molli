@@ -37,7 +37,7 @@ setup(
     name="molli",
     packages=find_packages(),
     package_data={"molli.data": ["*.yml", "*.yaml"], "molli.files": ["*"]},
-    version="1.0.0a4",
+    version="1.0.0a6",
     author="Alexander S. Shved",
     author_email="shvedalx@illinois.edu",
     install_requires=[
