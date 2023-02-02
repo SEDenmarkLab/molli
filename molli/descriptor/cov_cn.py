@@ -1,7 +1,7 @@
-from ..chem import Molecule, Atom, Substructure
+from ..chem import Molecule, Atom, AtomLike, Substructure
 import numpy as np
 
-def dftd_cn(a1:Atom, mol: Molecule):
+def dftd_coordination_number(mol: Molecule, a: AtomLike):
     '''
     This is the coordination number defined by Grimme in "https://doi.org/10.1063/1.3382344".
     All covalent radii for metals will be scaled down by 10%, and is built to error if the element used is not 1-94.
@@ -13,6 +13,8 @@ def dftd_cn(a1:Atom, mol: Molecule):
 
     k1 = 16
     k2 = 4/3
+
+    a1 = mol.get_atom(a)
 
     # assert 0 < max(elem_list := [a.element.z for a in mol.atoms]) < 94, f'There are elements for in this list that do not fall between 1 to 94! {elem_list}'
     assert all(0 < a.element < 94 for a in mol.atoms), f'There are elements for in this list that do not fall between 1 to 94!'
