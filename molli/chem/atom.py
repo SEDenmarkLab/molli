@@ -443,6 +443,10 @@ class Atom:
 
     @property
     def cov_radius_grimme(self) -> float:
+        '''
+        This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use 
+        with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
+        '''
         return self.element.cov_radius_grimme
 
     @property
