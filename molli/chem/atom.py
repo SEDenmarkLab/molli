@@ -447,8 +447,8 @@ class Atom:
         else:
             mol2_elt, mol2_type = m2t, None
 
-        self.element = mol2_elt
-        # self.mol2_type = mol2_type
+        if mol2_elt != "Du":
+            self.element = mol2_elt
 
         match mol2_type:
 
@@ -494,6 +494,21 @@ class Atom:
             case "th":
                 self.geom = AtomGeom.R4_Tetrahedral
 
+            case _ if mol2_elt == "Du":
+                # This case if to handle Du.X
+                self.element = (
+                    Element[mol2_type]
+                    if mol2_type in Element._member_names_
+                    else Element.Unknown
+                )
+                self.atype = AtomType.Dummy
+
+            case _ if mol2_elt in Element._member_names_:
+                pass
+
+            case _:
+                raise NotImplementedError(f"Cannot interpret mol2 type {m2t!r}")
+
 
 AtomLike = Atom | int
 
@@ -537,7 +552,9 @@ class Promolecule:
         match other:
             case None:
                 if n_atoms < 0:
-                    raise ValueError("Cannot instantiate with negative number of atoms")
+                    raise ValueError(
+                        "Cannot instantiate with negative number of atoms"
+                    )
 
                 self._atoms = list(Atom() for _ in range(n_atoms))
                 self.name = name
@@ -566,7 +583,8 @@ class Promolecule:
 
     def __repr__(self) -> str:
         return (
-            f"{type(self).__name__}(name={self.name!r}," f" formula={self.formula!r})"
+            f"{type(self).__name__}(name={self.name!r},"
+            f" formula={self.formula!r})"
         )
 
     @property
@@ -591,7 +609,10 @@ class Promolecule:
         else:
             sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {value} -->" f" {sub}")
+            warn(
+                f"Replaced illegal characters in molecule name: {value} -->"
+                f" {sub}"
+            )
 
     @property
     def atoms(self) -> List[Atom]:
@@ -614,13 +635,17 @@ class Promolecule:
                 if _a in self.atoms:
                     return _a
                 else:
-                    raise ValueError(f"Atom {_a} does not belong to this molecule.")
+                    raise ValueError(
+                        f"Atom {_a} does not belong to this molecule."
+                    )
 
             case int():
                 return self._atoms[_a]
 
             case _:
-                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
+                raise ValueError(
+                    f"Unable to fetch an atom with {type(_a)}: {_a}"
+                )
 
     def get_atom_index(self, _a: AtomLike):
         match _a:
@@ -637,7 +662,9 @@ class Promolecule:
                     )
 
             case _:
-                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
+                raise ValueError(
+                    f"Unable to fetch an atom with {type(_a)}: {_a}"
+                )
 
     def del_atom(self, _a: AtomLike):
         a = self.get_atom_index(_a)

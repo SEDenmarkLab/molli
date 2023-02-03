@@ -5,6 +5,7 @@ from . import (
     ElementLike,
     Atom,
     AtomLike,
+    AtomType,
     Bond,
     Promolecule,
     PromoleculeLike,
@@ -192,7 +193,9 @@ class CartesianGeometry(Promolecule):
             stream = input
 
         with stream:
-            res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
 
         return res
 
@@ -221,7 +224,9 @@ class CartesianGeometry(Promolecule):
         """
         stream = StringIO(input)
         with stream:
-            res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
+            res = next(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
 
         return res
 
@@ -239,7 +244,9 @@ class CartesianGeometry(Promolecule):
             stream = input
 
         with stream:
-            res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
 
         return res
 
@@ -253,7 +260,9 @@ class CartesianGeometry(Promolecule):
     ) -> List[CartesianGeometry]:
         stream = StringIO(input)
         with stream:
-            res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
+            res = list(
+                cls.yield_from_xyz(stream, name=name, source_units=source_units)
+            )
 
         return res
 
@@ -266,7 +275,13 @@ class CartesianGeometry(Promolecule):
         source_units: str = "Angstrom",
     ):
         for xyzblock in read_xyz(stream):
-            geom = cls(xyzblock.symbols, coords=xyzblock.coords)
+            geom = cls(n_atoms=xyzblock.n_atoms, coords=xyzblock.coords)
+            for i, a in enumerate(xyzblock.atoms):
+                if a.symbol == "*":
+                    geom.atoms[i].atype = AtomType.Dummy
+                    geom.atoms[i].element = Element.Unknown
+                else:
+                    geom.atoms[i].element = Element.get(a.symbol)
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 geom.scale(DistanceUnit[source_units].value)
@@ -352,7 +367,9 @@ class CartesianGeometry(Promolecule):
 
     def rmsd(self, other: CartesianGeometry, validate_elements=True):
         if other.n_atoms != self.n_atoms:
-            raise ValueError("Cannot compare geometries with different number of atoms")
+            raise ValueError(
+                "Cannot compare geometries with different number of atoms"
+            )
 
         if validate_elements == True and self.elements != other.elements:
             raise ValueError(

@@ -83,3 +83,9 @@ class StructureTC(ut.TestCase):
                 self.assertIsNotNone(s.name)
                 self.assertIsNot(s.name, "unnamed")
                 self.assertTrue(all(a.label is not None for a in s.atoms))
+
+    def test_load_mol2_dummy(self):
+        m = ml.Structure.load_mol2(ml.files.mol2.dummy.path)
+        a1, a2 = m.atoms
+        self.assertEqual(a1.atype, ml.AtomType.Dummy)
+        self.assertEqual(a2.atype, ml.AtomType.Dummy)

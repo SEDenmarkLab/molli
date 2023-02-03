@@ -72,11 +72,6 @@ class Structure(CartesianGeometry, Connectivity):
             res = cls(None, n_atoms=block.header.n_atoms, name=_name)
 
             for i, a in enumerate(block.atoms):
-                try:
-                    res.atoms[i].element = Element.get(a.element)
-                except:
-                    res.atoms[i].element = Element.Unknown
-
                 res.coords[i] = a.xyz
                 res.atoms[i].set_mol2_type(a.mol2_type)
                 res.atoms[i].label = a.label
