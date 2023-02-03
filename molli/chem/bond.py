@@ -176,7 +176,29 @@ class Bond:
     def set_mol2_type(self, m2t: str):
         self.btype = MOL2_BOND_TYPE_MAP[m2t]
             
+    def get_mol2_type(self):
+        match self.btype:
+            case BondType.Single:
+                # print()
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Single]
 
+            case BondType.Double:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Double]
+
+            case BondType.Triple:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Triple]
+
+            case BondType.Aromatic:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Aromatic]
+
+            case BondType.Amide:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Amide]
+
+            case BondType.Dummy:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Dummy]
+
+            case BondType.NotConnected:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.NotConnected]
 
 class Connectivity(Promolecule):
     def __init__(
