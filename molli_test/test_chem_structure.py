@@ -89,7 +89,9 @@ class StructureTC(ut.TestCase):
         a1, a2 = m.atoms
         self.assertEqual(a1.atype, ml.AtomType.Dummy)
         self.assertEqual(a2.atype, ml.AtomType.Dummy)
-        names.append(s.name)
+
+        names = [n for n in m.name]
+
         self.assertFalse(any(n == "unnamed" for n in names))
             
     def test_substruct(self):
