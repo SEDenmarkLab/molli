@@ -11,6 +11,7 @@ import attrs
 from bidict import bidict
 from functools import cache
 
+
 class BondType(IntEnum):
     Unknown = 0
     Single = 1
@@ -31,10 +32,11 @@ class BondType(IntEnum):
     H_Donor = 100
     H_Acceptor = 101
 
+
 class BondStereo(IntEnum):
     Unknown = 0
     NotStereogenic = 1
-    
+
     E = 10
     Z = 11
 
@@ -47,22 +49,24 @@ class BondStereo(IntEnum):
     R = Axial_R
     S = Axial_S
 
+
 # orders of 4, 5, 6 are not canonical per the mol2 definition file
 MOL2_BOND_TYPE_MAP = bidict(
     {
-        "1" : BondType.Single,
-        "2" : BondType.Double,
-        "3" : BondType.Triple,
+        "1": BondType.Single,
+        "2": BondType.Double,
+        "3": BondType.Triple,
         # "4" : BondType.Quadruple,
         # "5" : BondType.Quintuple,
         # "6" : BondType.Sextuple,
-        "ar" : BondType.Aromatic,
-        "am" : BondType.Amide,
-        "du" : BondType.Dummy,
-        "un" : BondType.Unknown,
-        "nc" : BondType.NotConnected,
+        "ar": BondType.Aromatic,
+        "am": BondType.Amide,
+        "du": BondType.Dummy,
+        "un": BondType.Unknown,
+        "nc": BondType.NotConnected,
     }
 )
+
 
 @attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Bond:
@@ -72,7 +76,7 @@ class Bond:
     a2: Atom
 
     label: str = attrs.field(
-        default=None, 
+        default=None,
     )
 
     btype: BondType = attrs.field(
@@ -85,7 +89,10 @@ class Bond:
         repr=lambda x: x.name,
     )
 
-    f_order: float = attrs.field(default=1.0, converter=float,)
+    f_order: float = attrs.field(
+        default=1.0,
+        converter=float,
+    )
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -100,41 +107,39 @@ class Bond:
 
         match self.btype:
 
-            case 0|1|2|3|4|5|6 as b:
+            case 0 | 1 | 2 | 3 | 4 | 5 | 6 as b:
                 return float(b)
-            
+
             case BondType.Aromatic:
                 return 1.5
 
             case BondType.FractionalOrder:
                 return self.f_order
-            
+
             case BondType.H_Acceptor:
                 return 0.0
-            
+
             case BondType.Dummy | BondType.NotConnected:
                 return 0.0
-            
+
             case _:
                 return 1.0
-    
+
     def as_dict(self, atom_id_map: dict = None):
         res = attrs.asdict(self)
         if atom_id_map is not None:
             res["a1"] = atom_id_map[self.a1]
             res["a2"] = atom_id_map[self.a2]
         return res
-    
+
     def as_tuple(self, atom_id_map: dict = None):
         res = attrs.astuple(self)
-        
+
         if atom_id_map is not None:
             a1, a2, *rest = res
             res = (atom_id_map[self.a1], atom_id_map[self.a2], *rest)
-        
+
         return res
-
-
 
     def __contains__(self, other: Atom):
         return other in {self.a1, self.a2}
@@ -144,14 +149,11 @@ class Bond:
         match other:
             case Bond():
                 return {self.a1, self.a2} == {other.a1, other.a2}
-            case list()|set() as l:
+            case list() | set() as l:
                 a1, a2 = l
                 return {self.a1, self.a2} == {a1, a2}
             case _:
-                raise ValueError(
-                    f"Cannot equate <{type(other)}: {other}>, {self}"
-                )
-    
+                raise ValueError(f"Cannot equate <{type(other)}: {other}>, {self}")
 
     def __repr__(self):
         return f"Bond({self.a1}, {self.a2}, order={self.order})"
@@ -201,18 +203,37 @@ class Bond:
                 return MOL2_BOND_TYPE_MAP.inverse[BondType.NotConnected]
 
 class Connectivity(Promolecule):
+    # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
+
     def __init__(
-        self, other: Promolecule = None, /, *, n_atoms: int = 0, name=None, copy_atoms: bool = False, **kwds, 
+        self,
+        other: Promolecule = None,
+        /,
+        *,
+        n_atoms: int = 0,
+        name: str = None,
+        copy_atoms: bool = False,
+        charge: int = None,
+        mult: int = None,
+        **kwds,
     ):
-        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds)
+        super().__init__(
+            other,
+            n_atoms=n_atoms,
+            name=name,
+            copy_atoms=copy_atoms,
+            charge=charge,
+            mult=mult,
+            **kwds,
+        )
 
         if isinstance(other, Connectivity):
-            atom_map = {other.atoms[i] : self.atoms[i] for i in range(self.n_atoms)}
-            self._bonds = list(b.evolve(a1 = atom_map[b.a1], a2 = atom_map[b.a2]) for b in other.bonds)
+            atom_map = {other.atoms[i]: self.atoms[i] for i in range(self.n_atoms)}
+            self._bonds = list(
+                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds
+            )
         else:
             self._bonds = list()
-        
-
 
     @property
     def bonds(self) -> List[Bond]:
@@ -233,7 +254,7 @@ class Connectivity(Promolecule):
         try:
             return self.bonds[self.index_bond({_a1, _a2})]
         except:
-            return None 
+            return None
 
     def index_bond(self, b: Bond) -> int:
         return self._bonds.index(b)
@@ -257,10 +278,9 @@ class Connectivity(Promolecule):
 
     def append_bonds(self, *bonds: Bond):
         self._bonds.extend(bonds)
-    
+
     def extend_bonds(self, bonds: Iterable[Bond]):
         self._bonds.extend(bonds)
-    
 
     def del_bond(self, b: Bond):
         match b:
@@ -285,6 +305,7 @@ class Connectivity(Promolecule):
             yield b % _a
 
     def bonded_valence(self, a: AtomLike):
+        # TODO: rewrite using sum()
         _a_bonds = self.bonds_with_atom(a)
 
         val = 0.0
@@ -292,6 +313,10 @@ class Connectivity(Promolecule):
             val += b.order
 
         return val
+    
+    def n_bonds_with_atom(self, a: AtomLike):
+        return sum(1 for _ in self.connected_atoms(a))
+    
 
     def _bfs_single(self, q: deque, visited: set):
         start, dist = q.pop()
@@ -315,6 +340,3 @@ class Connectivity(Promolecule):
         q = deque([(_sa, 0)])
         while q:
             yield from self._bfs_single(q, visited)
-
-
-    

@@ -5,6 +5,7 @@ from . import (
     ElementLike,
     Atom,
     AtomLike,
+    AtomType,
     Bond,
     Promolecule,
     PromoleculeLike,
@@ -58,7 +59,7 @@ class CartesianGeometry(Promolecule):
     """
 
     _coords_dtype = np.float64
-    __slots__ = ("_atoms", "_coords", "_name", "_dtype")
+    __slots__ = "_atoms", "_coords", "_name", "charge", "mult"
 
     def __init_subclass__(cls, coords_dtype=np.float64, **kwds) -> None:
         super().__init_subclass__(**kwds)
@@ -73,11 +74,19 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         coords: ArrayLike = None,
         copy_atoms: bool = False,
+        charge: int = None,
+        mult: int = None,
         **kwds,
     ):
         # Type of coordinates
         super().__init__(
-            other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms, **kwds
+            other,
+            n_atoms=n_atoms,
+            name=name,
+            copy_atoms=copy_atoms,
+            charge=charge,
+            mult=mult,
+            **kwds,
         )
         self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 
@@ -258,7 +267,13 @@ class CartesianGeometry(Promolecule):
         source_units: str = "Angstrom",
     ):
         for xyzblock in read_xyz(stream):
-            geom = cls(xyzblock.symbols, coords=xyzblock.coords)
+            geom = cls(n_atoms=xyzblock.n_atoms, coords=xyzblock.coords)
+            for i, a in enumerate(xyzblock.atoms):
+                if a.symbol == "*":
+                    geom.atoms[i].atype = AtomType.Dummy
+                    geom.atoms[i].element = Element.Unknown
+                else:
+                    geom.atoms[i].element = Element.get(a.symbol)
 
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 geom.scale(DistanceUnit[source_units].value)
@@ -292,9 +307,18 @@ class CartesianGeometry(Promolecule):
         i1, i2 = map(self.get_atom_index, (a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
+    def get_atom_coord(self, _a: AtomLike):
+        return self.coords[self.get_atom_index(_a)]
+
+    def vector(self, a1: AtomLike, a2: AtomLike | np.ndarray) -> np.ndarray:
+        """Get a vector [a1 --> a2], where a2 can be a numpy array or another atom"""
+        v1 = self.get_atom_coord(a1)
+        v2 = self.get_atom_coord(a2) if isinstance(a2, AtomLike) else np.array(a2)
+
+        return v2 - v1
+
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
-        i = self.index_atom(self.get_atom(a))
-        return np.linalg.norm(self.coords[i] - p)
+        return np.linalg.norm(self.vector(a, p))
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
         """
@@ -352,3 +376,7 @@ class CartesianGeometry(Promolecule):
             )
 
         raise NotImplementedError
+
+    def transform(self, _t_matrix: ArrayLike, /, validate=False):
+        t_matrix = np.array(_t_matrix)
+        self.coords = t_matrix @ self.coords

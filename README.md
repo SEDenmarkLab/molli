@@ -44,7 +44,9 @@ python -m unittest molli_test -v
 
 ## Install in development mode
 
+```
 pip install -e . --config-settings editable_mode=compat
+```
 
 # Hello, World!
 
@@ -53,4 +55,3 @@ This section describes your first steps in molli package
 # Package structure
 
 # Benchmarks
-

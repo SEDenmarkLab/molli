@@ -1,0 +1,11 @@
+@<TRIPOS>MOLECULE
+dummy_atom_test
+2 1 0 0 0
+SMALL
+NO_CHARGES
+
+@<TRIPOS>ATOM
+      1 H1    0.0   0.0    0.0      Du.H     1  UNL1
+      2 Cl2   0.0   0.0    1.275    Du.Cl    1  UNL1
+@<TRIPOS>BOND
+     1    1     2    du

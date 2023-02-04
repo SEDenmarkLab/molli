@@ -460,8 +460,8 @@ class Atom:
         else:
             mol2_elt, mol2_type = m2t, None
 
-        self.element = mol2_elt
-        # self.mol2_type = mol2_type
+        if mol2_elt != "Du":
+            self.element = mol2_elt
 
         match mol2_type:
 
@@ -513,6 +513,21 @@ class Atom:
 
             case "th":
                 self.geom = AtomGeom.R4_Tetrahedral
+
+            case _ if mol2_elt == "Du":
+                # This case if to handle Du.X
+                self.element = (
+                    Element[mol2_type]
+                    if mol2_type in Element._member_names_
+                    else Element.Unknown
+                )
+                self.atype = AtomType.Dummy
+
+            case _ if mol2_elt in Element._member_names_:
+                pass
+
+            case _:
+                raise NotImplementedError(f"Cannot interpret mol2 type {m2t!r}")
 
     def get_mol2_type(self):
 
@@ -590,7 +605,7 @@ class Promolecule:
     for API compatibility reasons.
     """
 
-    __slots__ = ("_atoms", "_atom_index_cache", "_name")
+    __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
 
     def __init__(
         self,
@@ -600,6 +615,8 @@ class Promolecule:
         n_atoms: int = 0,
         name: str = None,
         copy_atoms: bool = False,
+        charge: int = None,
+        mult: int = None,
         **kwds,  # mostly just for subclassing compatibility
     ):
         """
@@ -608,19 +625,27 @@ class Promolecule:
         """
         self._atom_index_cache = bidict()
 
-        # if other is not None:
-        #     raise NotImplementedError
-        # else:
+        self.name = name
+        self.charge = charge or 0
+        self.mult = mult or 1
+
         match other:
             case None:
                 if n_atoms < 0:
-                    raise ValueError("Cannot instantiate with negative number of atoms")
+                    raise ValueError(
+                        "Cannot instantiate with negative number of atoms"
+                    )
 
                 self._atoms = list(Atom() for _ in range(n_atoms))
+                self.name = name
+                self.charge = charge or 0
+                self.mult = mult or 1
 
             case Promolecule() as pm:
                 self._atoms = list(a.evolve() for a in pm.atoms)
-                self.name = name or other.name
+                self.name = name or pm.name
+                self.charge = charge or pm.charge
+                self.mult = mult or pm.mult
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
@@ -636,11 +661,10 @@ class Promolecule:
                     f"Cannot interpret {other} of type {type(other)}"
                 )
 
-        self.name = name
-
     def __repr__(self) -> str:
         return (
-            f"{type(self).__name__}(name={self.name!r}," f" formula={self.formula!r})"
+            f"{type(self).__name__}(name={self.name!r},"
+            f" formula={self.formula!r})"
         )
 
     @property
@@ -665,7 +689,10 @@ class Promolecule:
         else:
             sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {value} -->" f" {sub}")
+            warn(
+                f"Replaced illegal characters in molecule name: {value} -->"
+                f" {sub}"
+            )
 
     @property
     def atoms(self) -> List[Atom]:
@@ -688,13 +715,20 @@ class Promolecule:
                 if _a in self.atoms:
                     return _a
                 else:
-                    raise ValueError(f"Atom {_a} does not belong to this molecule.")
+                    raise ValueError(
+                        f"Atom {_a} does not belong to this molecule."
+                    )
 
             case int():
                 return self._atoms[_a]
 
             case _:
-                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
+                raise ValueError(
+                    f"Unable to fetch an atom with {type(_a)}: {_a}"
+                )
+    
+    def get_atoms(self, *_atoms: AtomLike) -> tuple[Atom]:
+        return tuple(map(self.get_atom, _atoms))
 
     def get_atom_index(self, _a: AtomLike):
         match _a:
@@ -711,7 +745,12 @@ class Promolecule:
                     )
 
             case _:
-                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
+                raise ValueError(
+                    f"Unable to fetch an atom with {type(_a)}: {_a}"
+                )
+            
+    def get_atom_indices(self, *_atoms: AtomLike) -> tuple[int]:
+        return tuple(map(self.get_atom_index, _atoms))
 
     def del_atom(self, _a: AtomLike):
         a = self.get_atom_index(_a)
@@ -740,6 +779,13 @@ class Promolecule:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
+    
+    def yield_attachment_points(self):
+        for a in self.atoms:
+            if a.atype == AtomType.AttachmentPoint:
+                yield a
+    def get_attachment_points(self):
+        return tuple(self.yield_attachment_points(self))
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
         for a in self.atoms:

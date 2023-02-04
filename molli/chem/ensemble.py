@@ -33,18 +33,24 @@ class ConformerEnsemble(Connectivity):
         n_atoms: int = 0,
         *,
         name: str = None,
-        charge: int = 0,
-        multiplicity: int = 1,
+        charge: int = None,
+        mult: int = None,
         coords: ArrayLike = None,
         weights: ArrayLike = None,
         atomic_charges: ArrayLike = None,
         copy_atoms: bool = False,
         **kwds,
     ):
-        super().__init__(other, n_atoms=n_atoms, name=name, copy_atoms=copy_atoms)
+        super().__init__(
+            other,
+            n_atoms=n_atoms,
+            name=name,
+            copy_atoms=copy_atoms,
+            charge=charge,
+            mult=mult,
+            **kwds,
+        )
 
-        self.charge = charge
-        self.multiplicity = multiplicity
         self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
         self._atomic_charges = np.zeros((self.n_atoms,))
         self._weights = np.ones((n_conformers,))
@@ -94,8 +100,8 @@ class ConformerEnsemble(Connectivity):
         input: str | StringIO,
         /,
         name: str = None,
-        charge: int = 0,
-        multiplicity: int = 1,
+        charge: int = None,
+        mult: int = None,
         source_units: str = "Angstrom",
     ) -> ConformerEnsemble:
         """ """
@@ -108,7 +114,7 @@ class ConformerEnsemble(Connectivity):
             n_atoms=mols[0].n_atoms,
             name=mols[0].name,
             charge=charge,
-            multiplicity=multiplicity,
+            mult=mult,
             atomic_charges=mols[0].atomic_charges,
         )
 
@@ -229,7 +235,7 @@ class ConformerEnsemble(Connectivity):
             atoms,
             bonds,
             self.charge,
-            self.multiplicity,
+            self.mult,
             self.coords.astype(">f4").tobytes(),
             self.weights.astype(">f4").tobytes(),
             self.atomic_charges.astype(">f4").tobytes(),
@@ -264,7 +270,7 @@ class ConformerEnsemble(Connectivity):
             n_atoms=_na,
             name=_name,
             charge=_charge,
-            multiplicity=_mult,
+            mult=_mult,
             coords=coords,
             weights=weights,
             atomic_charges=atomic_charges,
@@ -333,8 +339,8 @@ class Conformer(Molecule):
         return self._parent.charge
 
     @property
-    def multiplicity(self):
-        return self._parent.multiplicity
+    def mult(self):
+        return self._parent.mult
 
     def __str__(self):
         _fml = self.formula if self.n_atoms > 0 else "[no atoms]"
