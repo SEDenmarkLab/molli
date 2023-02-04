@@ -77,6 +77,10 @@ class Element(IntEnum):
         return self.get_property_value("covalent_radius_3")
 
     @property
+    def cov_radius_grimme(self) -> float:
+        return self.get_property_value("covalent_radius_grimme")
+        
+    @property
     def vdw_radius(self) -> float:
         return self.get_property_value("vdw_radius")
 
@@ -298,10 +302,10 @@ class AtomType(IntEnum):
     C_Guanidinium = 201
     N_Amide = 202
     N_Nitro = 203
-    O_Sulfoxide = 204
-    O_Sulfone = 205
-    O_Carboxylate = 206
-
+    N_Ammonium = 204
+    O_Sulfoxide = 205
+    O_Sulfone = 206
+    O_Carboxylate = 207
 
 class AtomStereo(IntEnum):
     Unknown = 0
@@ -423,6 +427,7 @@ class Atom:
     @property
     def vdw_radius(self) -> float:
         return self.element.vdw_radius
+    
 
     @property
     def cov_radius_1(self) -> float:
@@ -435,6 +440,14 @@ class Atom:
     @property
     def cov_radius_3(self) -> float:
         return self.element.cov_radius_3
+
+    @property
+    def cov_radius_grimme(self) -> float:
+        '''
+        This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use 
+        with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
+        '''
+        return self.element.cov_radius_grimme
 
     @property
     def color_cpk(self) -> str:
@@ -452,6 +465,13 @@ class Atom:
 
         match mol2_type:
 
+            case "4":
+                if self.element != "N":
+                    raise NotImplementedError(f"{mol2_type} not implemented for {mol2_elt}, only N")
+                else:
+                    self.atype = AtomType.N_Ammonium
+                    self.geom = AtomGeom.R4_Tetrahedral
+                    
             case "3":
                 self.atype = AtomType.MainGroup_sp3
 
@@ -494,6 +514,66 @@ class Atom:
             case "th":
                 self.geom = AtomGeom.R4_Tetrahedral
 
+    def get_mol2_type(self):
+
+        match self.element, self.atype, self.geom:
+            case _, AtomType.Regular, _:
+                return f"{self.element.symbol}"
+
+            case _, AtomType.Dummy,_:
+                return f"Du.{self.element.symbol}"
+            
+            case _, AtomType.MainGroup_sp, _:
+                    return f"{self.element.symbol}.1"
+            
+            case _, AtomType.MainGroup_sp2, _:
+                return f"{self.element.symbol}.2"
+
+            case _, AtomType.MainGroup_sp3, _:
+                return f"{self.element.symbol}.3"
+                
+            case Element.C, _, _:
+                if self.atype == AtomType.Aromatic:
+                    return f"{self.element.symbol}.ar"
+                elif (self.atype == AtomType.C_Guanidinium) & (self.geom == AtomGeom.R3_Planar):
+                    return f"{self.element.symbol}.cat"
+                else:
+                    return f"{self.element.symbol}"
+                    
+            case Element.N, _, _:
+                if (self.atype == AtomType.N_Ammonium) & (self.geom == AtomGeom.R4_Tetrahedral):
+                    return f"{self.element.symbol}.4"
+                elif (self.atype == AtomType.N_Amide) & (self.geom == AtomGeom.R3_Planar):
+                    return f"{self.element.symbol}.am"
+                elif self.atype == AtomType.Aromatic:
+                    return f"{self.element.symbol}.ar"
+                elif self.geom == AtomGeom.R3_Planar:
+                    return f"{self.element.symbol}.pl3"
+                else:
+                    return f"{self.element.symbol}"
+            
+            case Element.O, _, _:
+                if (self.atype == AtomType.O_Carboxylate) & (self.geom == AtomGeom.R1):
+                    return f"{self.element.symbol}.co2"
+                else:
+                    return f"{self.element.symbol}"
+            
+            case Element.S, _, _:
+                if (self.atype == AtomType.O_Sulfoxide) & (self.geom == AtomGeom.R3_Pyramidal):
+                    return f"{self.element.symbol}.O"
+                elif (self.atype == AtomType.O_Sulfone) & (self.geom == AtomGeom.R4_Tetrahedral):
+                    return f"{self.element.symbol}.O2"
+                else:
+                    return f"{self.element.symbol}"
+            
+            case _, _, AtomGeom.R3_Planar:
+                return f"{self.element.symbol}.pl3"
+
+            case _,_,AtomGeom.R6_Octahedral:
+                return f"{self.element.symbol}.oh"
+            
+            case _,_,AtomGeom.R4_Tetrahedral:
+                return f"{self.element.symbol}.th"  
 
 AtomLike = Atom | int
 
