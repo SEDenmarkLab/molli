@@ -16,8 +16,8 @@ build-backend = "setuptools.build_meta"
 #     "colorama>=0.4.4",
 #     "networkx>=2.8.7",
 #     "tqdm",
-#     "rdkit>=2022.09.4",
-#     "openbabel>=3.1.1"
+#     "rdkit",
+#     "openbabel"
 # ]
 # [project.scripts]
 # molli = "molli.__main__:main"
