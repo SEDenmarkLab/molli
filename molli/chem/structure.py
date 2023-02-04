@@ -361,6 +361,11 @@ class Structure(CartesianGeometry, Connectivity):
         """
         raise NotImplementedError
 
+    def del_atom(self, _a: AtomLike):
+        idx = self.get_atom_index(_a)
+        self._coords = self._coords[np.arange(self.n_atoms) != idx]
+        super().del_atom(_a)
+
 
 class Substructure(Structure):
     def __init__(self, parent: Structure, atoms: Iterable[AtomLike]):
