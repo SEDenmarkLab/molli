@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, List, Iterable, Generator, TypeVar, Generic, IO
+from typing import Any, List, Iterable, Generator, TypeVar, Generic, IO, Callable
 from enum import Enum
 import numpy as np
 from numpy.typing import ArrayLike
@@ -8,6 +8,8 @@ from . import (
     Atom,
     AtomLike,
     Bond,
+    BondType,
+    BondStereo,
     Connectivity,
     CartesianGeometry,
     Promolecule,
@@ -15,6 +17,7 @@ from . import (
     Element,
     DistanceUnit,
 )
+from ..math import rotation_matrix_from_vectors, _optimize_rotation
 from ..parsing import read_mol2
 import re
 from io import StringIO, BytesIO
@@ -31,7 +34,7 @@ class Structure(CartesianGeometry, Connectivity):
     """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
 
     # Improve efficiency of attribute access
-    __slots__ = ("_name", "_atoms", "_bonds", "_coords")
+    __slots__ = ("_name", "_atoms", "_bonds", "_coords", "charge", "mult")
 
     def __init__(
         self,
@@ -42,6 +45,8 @@ class Structure(CartesianGeometry, Connectivity):
         name: str = None,
         coords: ArrayLike = None,
         copy_atoms: bool = False,
+        charge: int = None,
+        mult: int = None,
         **kwds,
     ):
         """Structure."""
@@ -51,6 +56,8 @@ class Structure(CartesianGeometry, Connectivity):
             coords=coords,
             name=name,
             copy_atoms=copy_atoms,
+            charge=charge,
+            mult=mult,
             **kwds,
         )
 
@@ -68,13 +75,9 @@ class Structure(CartesianGeometry, Connectivity):
             res = cls(None, n_atoms=block.header.n_atoms, name=_name)
 
             for i, a in enumerate(block.atoms):
-                try:
-                    res.atoms[i].element = Element.get(a.element)
-                except:
-                    res.atoms[i].element = Element.Unknown
-
                 res.coords[i] = a.xyz
                 res.atoms[i].set_mol2_type(a.mol2_type)
+                res.atoms[i].label = a.label
 
             for i, b in enumerate(block.bonds):
                 res.append_bond(
@@ -212,32 +215,85 @@ class Structure(CartesianGeometry, Connectivity):
 
         return res
 
-    # @classmethod
-    # def from_mol2(
-    #     cls: type[Structure],
-    #     input: str | StringIO,
-    #     name: str = None,
-    # ):
-    #     return next(cls.yield_from_mol2(input=input, name=name))
-
-    # def to_dict(self):
-    #     bonds = []
-
-    #     res = {
-    #         "name": self.name,
-    #         "n_atoms": self.n_atoms,
-    #         "n_bonds": self.n_bonds,
-    #         "dtype": self._dtype,
-    #         "atoms": [a.to_dict() for a in self.atoms],
-    #         "bonds": [b.to_dict() for b in self.bonds],
-    #         "coords": self._coords.flatten().tolist()
-    #     }
-
-    #     return res
-
     @classmethod
     def from_dict(self):
         ...
+
+    @classmethod
+    def join(
+        cls: type[Structure],
+        struct1: Structure,
+        struct2: Structure,
+        _a1: AtomLike,
+        _a2: AtomLike,
+        *,
+        dist: float = None,
+        optimize_rotation: bool | int = False,
+        name: str = None,
+        charge: float = None,
+        mult: float = None,
+        btype: BondType = BondType.Single,
+        bstereo: BondStereo = BondStereo.Unknown,
+        bforder: float = 1.0,
+    ):
+        assert struct1.n_bonds_with_atom(_a1) == 1
+        assert struct2.n_bonds_with_atom(_a2) == 1
+
+        # Atoms that are bonded to the attachment points
+        a1 = struct1.get_atom(_a1)
+        a2 = struct2.get_atom(_a2)
+        a1r = next(struct1.connected_atoms(_a1))
+        a2r = next(struct2.connected_atoms(_a2))
+
+        atoms = [a for a in chain(struct1.atoms, struct2.atoms) if a not in {a1, a2}]
+        charge = charge or struct1.charge + struct2.charge
+        mult = mult or struct1.mult + struct2.mult - 1
+
+        result = cls(
+            atoms,
+            name=name,
+            copy_atoms=True,
+            charge=charge,
+            mult=mult,
+        )
+
+        atom_map = dict(zip(atoms, result.atoms))
+        for j, b in enumerate(chain(struct1.bonds, struct2.bonds)):
+            if a1 not in b and a2 not in b:
+                result.append_bond(b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]))
+
+        result.append_bond(
+            nb := Bond(
+                result.atoms[atoms.index(a1r)],
+                result.atoms[atoms.index(a2r)],
+                btype=btype,
+                stereo=bstereo,
+                f_order=bforder,
+            )
+        )
+
+        loc1 = ~np.array([a == a1 for a in struct1.atoms])
+        loc2 = ~np.array([a == a2 for a in struct2.atoms])
+
+        v1 = struct1.vector(a1r, a1)
+        v2 = struct2.vector(a2r, a2)
+
+        r1 = struct1.get_atom_coord(a1r)
+        r2 = struct2.get_atom_coord(a2r)
+
+        rotation = rotation_matrix_from_vectors(v2, -v1, tol=1e-6)
+        translation = v1 * (dist or nb.expected_length) / np.linalg.norm(v1)
+
+        c1 = struct1.coords[loc1] - r1
+        c2 = (struct2.coords[loc2] - r2) @ rotation + translation
+
+        if optimize_rotation:
+            c2 = c2 @ _optimize_rotation(c1, c2, v1, resolution=12)
+
+        # c2 += translation
+
+        result.coords = np.vstack((c1, c2))
+        return result
 
     @classmethod
     def concatenate(cls: type[Structure], *structs: Structure) -> Structure:
@@ -251,6 +307,9 @@ class Structure(CartesianGeometry, Connectivity):
             res.append_bond(b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]))
 
         res.coords = np.vstack([x.coords for x in structs])
+
+        res.charge = np.sum(s.charge for s in structs)
+        res.mult = np.sum(s.mult for s in structs) - 1
 
         return res
 
@@ -309,6 +368,11 @@ class Structure(CartesianGeometry, Connectivity):
             _description_
         """
         raise NotImplementedError
+
+    def del_atom(self, _a: AtomLike):
+        idx = self.get_atom_index(_a)
+        self._coords = self._coords[np.arange(self.n_atoms) != idx]
+        super().del_atom(_a)
 
 
 class Substructure(Structure):

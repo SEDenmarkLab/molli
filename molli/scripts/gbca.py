@@ -112,25 +112,31 @@ def molli_main(args, config=None, output=None, **kwargs):
         handles = f.create_dataset("handles", dtype=strdt, shape=(len(lib),))
         handles[:] = lib._block_keys
 
-        data = f.create_dataset("descriptor", dtype="f4", shape=(len(lib), grid.shape[0]))       
-
+        data = f.create_dataset("descriptor", dtype="f4", shape=(len(lib), grid.shape[0]))
+        data[:] = -1.0       
 
     for bn, batch in enumerate(tqdm(lib.yield_in_batches(parsed.batchsize), total=nb)):
         # with ml.aux.timeit(f"Processing batch {bn + 1} / {nb}"):
 
         scattered_chunk = client.scatter(batch)
 
+
         futures = client.map(
             lambda x: ml.descriptor.chunky_aso(x, grid, chunksize=parsed.chunksize),
             scattered_chunk,
         )
+
+
         # distributed.progress(futures)
         asos = client.gather(futures)
+
 
         _start = bn * parsed.batchsize
         _end = _start + len(batch)
 
+
         with h5py.File("test_descriptor.h5", "r+") as f:
             f["descriptor"][_start:_end] = asos
+            
     
         

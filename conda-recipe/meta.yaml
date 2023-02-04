@@ -9,7 +9,7 @@
 
 package:
   name: molli
-  version: 1.0.0a4
+  version: 1.0.0a6
   
 about:
   summary: "Molecular Library Toolkit"

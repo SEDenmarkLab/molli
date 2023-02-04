@@ -27,11 +27,14 @@ class mol2(_FileEnum):
     pdb_4a05 = auto()
     pentane_confs = auto()
     zincdb_fda = auto()
+    dummy = auto()
+    fxyl = auto()
 
 
 class xyz(_FileEnum):
     dendrobine = auto()
     pentane_confs = auto()
+    dummy = auto()
     # nanotube = auto()
 
 

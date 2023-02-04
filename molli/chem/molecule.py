@@ -23,7 +23,7 @@ from . import (
 class Molecule(Structure):
     """Fundamental class of the MOLLI Package."""
 
-    __slots__ = ("_charge", "multiplicity", "_partial_charges") + Structure.__slots__
+    __slots__ = Structure.__slots__ + ("_atomic_charges",)
 
     def __init__(
         self,
@@ -31,8 +31,8 @@ class Molecule(Structure):
         /,
         n_atoms: int = 0,
         *,
-        charge: int = 0,
-        multiplicity: int = 1,
+        charge: int = None,
+        mult: int = None,
         name: str = None,
         atomic_charges: ArrayLike = ...,
         **kwds,
@@ -42,18 +42,18 @@ class Molecule(Structure):
         """
         # if isinstance(other, Molecule | Structure):
         #     ...
-        super().__init__(other, n_atoms=n_atoms, name=name)
-        self.charge = charge
-        self.multiplicity = multiplicity
+        super().__init__(
+            other, n_atoms=n_atoms, name=name, charge=charge, mult=mult, **kwds
+        )
         self.atomic_charges = atomic_charges
 
-    @property
-    def charge(self):
-        return self._charge
+    # @property
+    # def charge(self):
+    #     return self._charge
 
-    @charge.setter
-    def charge(self, other: int):
-        self._charge = other
+    # @charge.setter
+    # def charge(self, other: int):
+    #     self._charge = other
 
     @property
     def atomic_charges(self):

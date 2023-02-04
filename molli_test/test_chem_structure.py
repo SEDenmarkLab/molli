@@ -79,12 +79,18 @@ class StructureTC(ut.TestCase):
         with ml.files.mol2.zincdb_fda.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
 
-            names = []
-
             for s in structs:
-                names.append(s.name)
+                self.assertIsNotNone(s.name)
+                self.assertIsNot(s.name, "unnamed")
+                self.assertTrue(all(a.label is not None for a in s.atoms))
 
-            self.assertFalse(any(n == "unnamed" for n in names))
+    def test_load_mol2_dummy(self):
+        m = ml.Structure.load_mol2(ml.files.mol2.dummy.path)
+        a1, a2 = m.atoms
+        self.assertEqual(a1.atype, ml.AtomType.Dummy)
+        self.assertEqual(a2.atype, ml.AtomType.Dummy)
+        names.append(s.name)
+        self.assertFalse(any(n == "unnamed" for n in names))
             
     def test_substruct(self):
         s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
@@ -94,5 +100,3 @@ class StructureTC(ut.TestCase):
         s1_coord = s1.coord_subset(a_test)
 
         np.testing.assert_allclose(s1_coord, sub_coord)
-
-        

@@ -193,7 +193,7 @@ class _Library(Generic[T]):
 
     def yield_in_batches(self, batchsize: int = 256):
         """Read file in chunks"""
-        for i in range(len(self) // batchsize):
+        for i in range(len(self) // batchsize + 1):
             # i = chunk index
             batch: list[T] = []
             with self:

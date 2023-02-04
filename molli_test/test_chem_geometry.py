@@ -37,7 +37,9 @@ class GeometryTC(ut.TestCase):
         m = ml.CartesianGeometry.loads_xyz(H2O_XYZ)
         self.assertEqual(m.n_atoms, 3)
         self.assertTupleEqual(m.coords.shape, (3, 3))
-        self.assertAlmostEqual(np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0)
+        self.assertAlmostEqual(
+            np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0
+        )
         self.assertAlmostEqual(m.distance(0, 1), 0.96900, places=5)
         self.assertAlmostEqual(m.distance(2, 1), 1.52694, places=5)
         self.assertEqual(m.formula, "H2 O1")
@@ -46,7 +48,12 @@ class GeometryTC(ut.TestCase):
         m1 = ml.CartesianGeometry.load_xyz(ml.files.xyz.pentane_confs.path)
         lm2 = ml.CartesianGeometry.load_all_xyz(ml.files.xyz.pentane_confs.path)
 
-    
+    def test_load_xyz_dummy(self):
+        m = ml.CartesianGeometry.load_xyz(ml.files.xyz.dummy.path)
+        a1, a2 = m.atoms
+        self.assertEqual(a1.atype, ml.AtomType.Dummy)
+        self.assertEqual(a2.atype, ml.AtomType.Dummy)
+
     @ut.skip("Not implemented yet")
     def test_dump_xyz(self):
         raise NotImplementedError
@@ -60,16 +67,18 @@ class GeometryTC(ut.TestCase):
         d2 = WATER.distance(0, 2)
 
         self.assertAlmostEqual(d1, d2, 6)
-        self.assertAlmostEqual(d1, math.dist(H2O_XYZ_LIST[0], H2O_XYZ_LIST[1]), 6)
+        self.assertAlmostEqual(
+            d1, math.dist(H2O_XYZ_LIST[0], H2O_XYZ_LIST[1]), 6
+        )
 
     def test_distance_to_point(self):
-        d = WATER.distance_to_point(0, [50,0,0])
+        d = WATER.distance_to_point(0, [50, 0, 0])
         self.assertAlmostEqual(d, 50, 6)
-    
+
     @ut.skip("Not implemented yet")
     def test_angle(self):
         raise NotImplementedError
-    
+
     @ut.skip("Not implemented yet")
     def test_dihedral(self):
         raise NotImplementedError
