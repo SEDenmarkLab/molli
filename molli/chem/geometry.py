@@ -193,9 +193,7 @@ class CartesianGeometry(Promolecule):
             stream = input
 
         with stream:
-            res = next(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -224,9 +222,7 @@ class CartesianGeometry(Promolecule):
         """
         stream = StringIO(input)
         with stream:
-            res = next(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -244,9 +240,7 @@ class CartesianGeometry(Promolecule):
             stream = input
 
         with stream:
-            res = list(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -260,9 +254,7 @@ class CartesianGeometry(Promolecule):
     ) -> List[CartesianGeometry]:
         stream = StringIO(input)
         with stream:
-            res = list(
-                cls.yield_from_xyz(stream, name=name, source_units=source_units)
-            )
+            res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
 
         return res
 
@@ -315,9 +307,18 @@ class CartesianGeometry(Promolecule):
         i1, i2 = map(self.get_atom_index, (a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
+    def get_atom_coord(self, _a: AtomLike):
+        return self.coords[self.get_atom_index(_a)]
+
+    def vector(self, a1: AtomLike, a2: AtomLike | np.ndarray) -> np.ndarray:
+        """Get a vector [a1 --> a2], where a2 can be a numpy array or another atom"""
+        v1 = self.get_atom_coord(a1)
+        v2 = self.get_atom_coord(a2) if isinstance(a2, AtomLike) else np.array(a2)
+
+        return v2 - v1
+
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
-        i = self.index_atom(self.get_atom(a))
-        return np.linalg.norm(self.coords[i] - p)
+        return np.linalg.norm(self.vector(a, p))
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
         """
@@ -367,9 +368,7 @@ class CartesianGeometry(Promolecule):
 
     def rmsd(self, other: CartesianGeometry, validate_elements=True):
         if other.n_atoms != self.n_atoms:
-            raise ValueError(
-                "Cannot compare geometries with different number of atoms"
-            )
+            raise ValueError("Cannot compare geometries with different number of atoms")
 
         if validate_elements == True and self.elements != other.elements:
             raise ValueError(
@@ -377,3 +376,7 @@ class CartesianGeometry(Promolecule):
             )
 
         raise NotImplementedError
+
+    def transform(self, _t_matrix: ArrayLike, /, validate=False):
+        t_matrix = np.array(_t_matrix)
+        self.coords = t_matrix @ self.coords

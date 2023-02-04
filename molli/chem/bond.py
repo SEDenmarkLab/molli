@@ -282,6 +282,7 @@ class Connectivity(Promolecule):
             yield b % _a
 
     def bonded_valence(self, a: AtomLike):
+        # TODO: rewrite using sum()
         _a_bonds = self.bonds_with_atom(a)
 
         val = 0.0
@@ -289,6 +290,10 @@ class Connectivity(Promolecule):
             val += b.order
 
         return val
+    
+    def n_bonds_with_atom(self, a: AtomLike):
+        return sum(1 for _ in self.connected_atoms(a))
+    
 
     def _bfs_single(self, q: deque, visited: set):
         start, dist = q.pop()

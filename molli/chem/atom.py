@@ -646,6 +646,9 @@ class Promolecule:
                 raise ValueError(
                     f"Unable to fetch an atom with {type(_a)}: {_a}"
                 )
+    
+    def get_atoms(self, *_atoms: AtomLike) -> tuple[Atom]:
+        return tuple(map(self.get_atom, _atoms))
 
     def get_atom_index(self, _a: AtomLike):
         match _a:
@@ -665,6 +668,9 @@ class Promolecule:
                 raise ValueError(
                     f"Unable to fetch an atom with {type(_a)}: {_a}"
                 )
+            
+    def get_atom_indices(self, *_atoms: AtomLike) -> tuple[int]:
+        return tuple(map(self.get_atom_index, _atoms))
 
     def del_atom(self, _a: AtomLike):
         a = self.get_atom_index(_a)
@@ -693,6 +699,13 @@ class Promolecule:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
+    
+    def yield_attachment_points(self):
+        for a in self.atoms:
+            if a.atype == AtomType.AttachmentPoint:
+                yield a
+    def get_attachment_points(self):
+        return tuple(self.yield_attachment_points(self))
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
         for a in self.atoms:

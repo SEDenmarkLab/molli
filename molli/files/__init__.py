@@ -28,6 +28,7 @@ class mol2(_FileEnum):
     pentane_confs = auto()
     zincdb_fda = auto()
     dummy = auto()
+    fxyl = auto()
 
 
 class xyz(_FileEnum):
