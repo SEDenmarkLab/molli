@@ -55,8 +55,6 @@ setup(
         "tqdm~=4.64.0",
         "h5py~=3.7.0",
         "pyvista~=0.37",
-        "openbabel~=3.1.1",
-        "rdkit~=2022.09.4",
     ],
     python_requires=">=3.10,<3.11",
     entry_points={"console_scripts": ["molli = molli.__main__:main"]},
