@@ -1,4 +1,5 @@
 from __future__ import annotations
+from ..chem import Molecule, Element
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, Dict
 from enum import Enum
 import numpy as np
@@ -72,3 +73,51 @@ def obabel_load(fname: str, input_ext: str = "mol2"):
         mlmol.new_bond(i1 - 1, i2 - 1, order)
 
     return mlmol
+
+def to_mol2_w_ob(molli_mol: Molecule):
+    '''
+    This returns basic mol2 data when writing the mol2 file that would be expected using Avogadro/Openbabel
+    '''
+    obm = ob.OBMol()
+
+    for i, a in enumerate(molli_mol.atoms):
+        oba: ob.OBAtom = obm.NewAtom()
+        oba.SetAtomicNum(a.Z)
+        x, y, z = map(float, molli_mol.coords[i])
+        oba.SetVector(x, y, z)
+
+    for j, b in enumerate(molli_mol.bonds):
+        a1_idx = molli_mol.get_atom_index(b.a1)
+        a2_idx = molli_mol.get_atom_index(b.a2)
+        obb: ob.OBBond = obm.AddBond(a1_idx + 1, a2_idx + 1, int(b.order))
+    
+    obm.PerceiveBondOrders()
+    obm.SetTitle(molli_mol.name)
+    conv = ob.OBConversion()
+    conv.SetOutFormat('mol2')
+
+    return conv.WriteString(obm)
+
+def to_file_w_ob(molli_mol: Molecule,ftype:str):
+    '''
+    This returns basic file data when writing the file that would be expected using Avogadro/Openbabel
+    '''
+    obm = ob.OBMol()
+
+    for i, a in enumerate(molli_mol.atoms):
+        oba: ob.OBAtom = obm.NewAtom()
+        oba.SetAtomicNum(a.Z)
+        x, y, z = map(float, molli_mol.coords[i])
+        oba.SetVector(x, y, z)
+
+    for j, b in enumerate(molli_mol.bonds):
+        a1_idx = molli_mol.get_atom_index(b.a1)
+        a2_idx = molli_mol.get_atom_index(b.a2)
+        obb: ob.OBBond = obm.AddBond(a1_idx + 1, a2_idx + 1, int(b.order))
+    
+    obm.PerceiveBondOrders()
+    obm.SetTitle(molli_mol.name)
+    conv = ob.OBConversion()
+    conv.SetOutFormat(ftype)
+
+    return conv.WriteString(obm)

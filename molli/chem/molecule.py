@@ -70,7 +70,10 @@ class Molecule(Structure):
             else:
                 raise ValueError("Inappropriate shape of atomic charge array")
 
-    def dump_mol2(self, stream: StringIO):
+    def dump_mol2(self, stream: StringIO = None):
+        if stream is None:
+            stream = StringIO()
+            
         stream.write(f"# Produced with molli package\n")
         stream.write(
             f"@<TRIPOS>MOLECULE\n{self.name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
@@ -79,16 +82,26 @@ class Molecule(Structure):
         stream.write("@<TRIPOS>ATOM\n")
         for i, a in enumerate(self.atoms):
             x, y, z = self.coords[i]
-            c = self.atomic_charges[i]
+            c = 0.0 #Currently needs to be updated to be inherited within the structure or even individual atoms
+            label = a.label or a.element.symbol
+            atype = a.get_mol2_type() or a.element.symbol
             stream.write(
-                f"{i+1:>6} {a.label:<3} {x:>12.6f} {y:>12.6f} {z:>12.6f} {a.element.symbol:<10} 1 UNL1 {c}\n"
+                f"{i+1:>6} {label:<3} {x:>12.6f} {y:>12.6f} {z:>12.6f} {atype:<10} 1 UNL1 {c}\n"
             )
 
         stream.write("@<TRIPOS>BOND\n")
         for i, b in enumerate(self.bonds):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
-            bond_type = "ar" if b.aromatic else f"{b.order:1.0f}"
-            stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {bond_type:>10}\n")
-
+            btype = b.get_mol2_type()            
+            stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {btype:>10}\n")
+        
+    def dumps_mol2(self) -> str:
+        """
+        This returns a mol2 file as a string
+        """
+        stream = StringIO()
+        self.dump_mol2(stream)        
+        return stream.getvalue()
 
 StructureLike = Molecule | Structure | Substructure
+

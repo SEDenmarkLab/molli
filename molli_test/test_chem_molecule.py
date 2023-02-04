@@ -1,6 +1,6 @@
 import unittest as ut
 
-from molli import chem, files
+from molli import chem, files, Molecule
 import numpy as np
 from pathlib import Path
 
@@ -39,3 +39,17 @@ class MoleculeTC(ut.TestCase):
         self.assertNotEqual(id(m1._coords), id(m2._coords))
 
         self.assertEqual(np.linalg.norm(m1.coords - m2.coords), 0)
+
+    def test_dump_mol2(self):
+        for file in files.mol2:
+
+            with file.open("t") as f:
+                m1 = chem.Molecule.load_mol2(f, name="pentane")
+            
+            new_m1 = next(Molecule.yield_from_mol2(Molecule.dumps_mol2(m1)))
+
+            np.testing.assert_array_equal(m1._coords,new_m1._coords)
+
+            self.assertListEqual([a1.element.symbol for a1 in m1.atoms],[new_a1.element.symbol for new_a1 in new_m1.atoms])
+
+            self.assertListEqual([b1.btype for b1 in m1.bonds],[new_b1.btype for new_b1 in new_m1.bonds])
