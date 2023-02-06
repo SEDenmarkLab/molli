@@ -79,7 +79,7 @@ class Element(IntEnum):
     @property
     def cov_radius_grimme(self) -> float:
         return self.get_property_value("covalent_radius_grimme")
-        
+
     @property
     def vdw_radius(self) -> float:
         return self.get_property_value("vdw_radius")
@@ -307,6 +307,7 @@ class AtomType(IntEnum):
     O_Sulfone = 206
     O_Carboxylate = 207
 
+
 class AtomStereo(IntEnum):
     Unknown = 0
     NotStereogenic = 1
@@ -427,7 +428,6 @@ class Atom:
     @property
     def vdw_radius(self) -> float:
         return self.element.vdw_radius
-    
 
     @property
     def cov_radius_1(self) -> float:
@@ -443,10 +443,10 @@ class Atom:
 
     @property
     def cov_radius_grimme(self) -> float:
-        '''
-        This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use 
+        """
+        This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
-        '''
+        """
         return self.element.cov_radius_grimme
 
     @property
@@ -467,11 +467,13 @@ class Atom:
 
             case "4":
                 if self.element != Element.N:
-                    raise NotImplementedError(f"{mol2_type} not implemented for {mol2_elt}, only N")
+                    raise NotImplementedError(
+                        f"{mol2_type} not implemented for {mol2_elt}, only N"
+                    )
                 else:
                     self.atype = AtomType.N_Ammonium
                     self.geom = AtomGeom.R4_Tetrahedral
-                    
+
             case "3":
                 self.atype = AtomType.MainGroup_sp3
 
@@ -535,30 +537,36 @@ class Atom:
             case _, AtomType.Regular, _:
                 return f"{self.element.symbol}"
 
-            case _, AtomType.Dummy,_:
+            case _, AtomType.Dummy, _:
                 return f"Du.{self.element.symbol}"
-            
+
             case _, AtomType.MainGroup_sp, _:
-                    return f"{self.element.symbol}.1"
-            
+                return f"{self.element.symbol}.1"
+
             case _, AtomType.MainGroup_sp2, _:
                 return f"{self.element.symbol}.2"
 
             case _, AtomType.MainGroup_sp3, _:
                 return f"{self.element.symbol}.3"
-                
+
             case Element.C, _, _:
                 if self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
-                elif (self.atype == AtomType.C_Guanidinium) & (self.geom == AtomGeom.R3_Planar):
+                elif (self.atype == AtomType.C_Guanidinium) & (
+                    self.geom == AtomGeom.R3_Planar
+                ):
                     return f"{self.element.symbol}.cat"
                 else:
                     return f"{self.element.symbol}"
-                    
+
             case Element.N, _, _:
-                if (self.atype == AtomType.N_Ammonium) & (self.geom == AtomGeom.R4_Tetrahedral):
+                if (self.atype == AtomType.N_Ammonium) & (
+                    self.geom == AtomGeom.R4_Tetrahedral
+                ):
                     return f"{self.element.symbol}.4"
-                elif (self.atype == AtomType.N_Amide) & (self.geom == AtomGeom.R3_Planar):
+                elif (self.atype == AtomType.N_Amide) & (
+                    self.geom == AtomGeom.R3_Planar
+                ):
                     return f"{self.element.symbol}.am"
                 elif self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
@@ -566,29 +574,34 @@ class Atom:
                     return f"{self.element.symbol}.pl3"
                 else:
                     return f"{self.element.symbol}"
-            
+
             case Element.O, _, _:
                 if (self.atype == AtomType.O_Carboxylate) & (self.geom == AtomGeom.R1):
                     return f"{self.element.symbol}.co2"
                 else:
                     return f"{self.element.symbol}"
-            
+
             case Element.S, _, _:
-                if (self.atype == AtomType.O_Sulfoxide) & (self.geom == AtomGeom.R3_Pyramidal):
+                if (self.atype == AtomType.O_Sulfoxide) & (
+                    self.geom == AtomGeom.R3_Pyramidal
+                ):
                     return f"{self.element.symbol}.O"
-                elif (self.atype == AtomType.O_Sulfone) & (self.geom == AtomGeom.R4_Tetrahedral):
+                elif (self.atype == AtomType.O_Sulfone) & (
+                    self.geom == AtomGeom.R4_Tetrahedral
+                ):
                     return f"{self.element.symbol}.O2"
                 else:
                     return f"{self.element.symbol}"
-            
+
             case _, _, AtomGeom.R3_Planar:
                 return f"{self.element.symbol}.pl3"
 
-            case _,_,AtomGeom.R6_Octahedral:
+            case _, _, AtomGeom.R6_Octahedral:
                 return f"{self.element.symbol}.oh"
-            
-            case _,_,AtomGeom.R4_Tetrahedral:
-                return f"{self.element.symbol}.th"  
+
+            case _, _, AtomGeom.R4_Tetrahedral:
+                return f"{self.element.symbol}.th"
+
 
 AtomLike = Atom | int
 
@@ -632,9 +645,7 @@ class Promolecule:
         match other:
             case None:
                 if n_atoms < 0:
-                    raise ValueError(
-                        "Cannot instantiate with negative number of atoms"
-                    )
+                    raise ValueError("Cannot instantiate with negative number of atoms")
 
                 self._atoms = list(Atom() for _ in range(n_atoms))
                 self.name = name
@@ -663,8 +674,7 @@ class Promolecule:
 
     def __repr__(self) -> str:
         return (
-            f"{type(self).__name__}(name={self.name!r},"
-            f" formula={self.formula!r})"
+            f"{type(self).__name__}(name={self.name!r}," f" formula={self.formula!r})"
         )
 
     @property
@@ -689,10 +699,7 @@ class Promolecule:
         else:
             sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(
-                f"Replaced illegal characters in molecule name: {value} -->"
-                f" {sub}"
-            )
+            warn(f"Replaced illegal characters in molecule name: {value} -->" f" {sub}")
 
     @property
     def atoms(self) -> List[Atom]:
@@ -715,18 +722,14 @@ class Promolecule:
                 if _a in self.atoms:
                     return _a
                 else:
-                    raise ValueError(
-                        f"Atom {_a} does not belong to this molecule."
-                    )
+                    raise ValueError(f"Atom {_a} does not belong to this molecule.")
 
             case int():
                 return self._atoms[_a]
 
             case _:
-                raise ValueError(
-                    f"Unable to fetch an atom with {type(_a)}: {_a}"
-                )
-    
+                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
+
     def get_atoms(self, *_atoms: AtomLike) -> tuple[Atom]:
         return tuple(map(self.get_atom, _atoms))
 
@@ -745,16 +748,13 @@ class Promolecule:
                     )
 
             case _:
-                raise ValueError(
-                    f"Unable to fetch an atom with {type(_a)}: {_a}"
-                )
-            
+                raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
+
     def get_atom_indices(self, *_atoms: AtomLike) -> tuple[int]:
         return tuple(map(self.get_atom_index, _atoms))
 
     def del_atom(self, _a: AtomLike):
-        a = self.get_atom_index(_a)
-        del self.atoms[a]
+        self._atoms.remove(_a)
 
     def append_atom(self, a: Atom):
         self._atoms.append(a)
@@ -779,11 +779,12 @@ class Promolecule:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
-    
+
     def yield_attachment_points(self):
         for a in self.atoms:
             if a.atype == AtomType.AttachmentPoint:
                 yield a
+
     def get_attachment_points(self):
         return tuple(self.yield_attachment_points(self))
 
