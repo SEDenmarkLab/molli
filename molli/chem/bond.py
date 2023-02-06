@@ -177,7 +177,7 @@ class Bond:
     @cache
     def set_mol2_type(self, m2t: str):
         self.btype = MOL2_BOND_TYPE_MAP[m2t]
-            
+
     def get_mol2_type(self):
         match self.btype:
             case BondType.Single:
@@ -201,6 +201,7 @@ class Bond:
 
             case BondType.NotConnected:
                 return MOL2_BOND_TYPE_MAP.inverse[BondType.NotConnected]
+
 
 class Connectivity(Promolecule):
     # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
@@ -283,15 +284,13 @@ class Connectivity(Promolecule):
         self._bonds.extend(bonds)
 
     def del_bond(self, b: Bond):
-        match b:
-            case Bond():
-                idx = self.index_atom(b)
-            case int():
-                idx = b
-            case _:
-                raise ValueError("Cannot delete a bond with this argument")
+        self._bonds.remove(b)
 
-        del self._bonds[idx]
+    def del_atom(self, _a: AtomLike):
+        tbd = list(self.bonds_with_atom(_a))
+        for b in tbd:
+            self.del_bond(b)
+        super().del_atom(_a)
 
     def bonds_with_atom(self, a: AtomLike) -> Generator[Bond, None, None]:
         _a = self.get_atom(a)
@@ -313,10 +312,9 @@ class Connectivity(Promolecule):
             val += b.order
 
         return val
-    
+
     def n_bonds_with_atom(self, a: AtomLike):
         return sum(1 for _ in self.connected_atoms(a))
-    
 
     def _bfs_single(self, q: deque, visited: set):
         start, dist = q.pop()

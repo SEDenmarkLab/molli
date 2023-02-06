@@ -102,7 +102,7 @@ class Structure(CartesianGeometry, Connectivity):
     def dump_mol2(self, stream: StringIO = None):
         if stream is None:
             stream = StringIO()
-            
+
         stream.write(f"# Produced with molli package\n")
         stream.write(
             f"@<TRIPOS>MOLECULE\n{self.name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
@@ -111,7 +111,7 @@ class Structure(CartesianGeometry, Connectivity):
         stream.write("@<TRIPOS>ATOM\n")
         for i, a in enumerate(self.atoms):
             x, y, z = self.coords[i]
-            c = 0.0 #Currently needs to be updated to be inherited within the structure or even individual atoms
+            c = 0.0  # Currently needs to be updated to be inherited within the structure or even individual atoms
             label = a.label or a.element.symbol
             stream.write(
                 f"{i+1:>6} {label:<3} {x:>12.6f} {y:>12.6f} {z:>12.6f} {a.element.symbol:<10} 1 UNL1 {c}\n"
@@ -370,9 +370,8 @@ class Structure(CartesianGeometry, Connectivity):
         raise NotImplementedError
 
     def del_atom(self, _a: AtomLike):
-        idx = self.get_atom_index(_a)
-        self._coords = self._coords[np.arange(self.n_atoms) != idx]
-        super().del_atom(_a)
+        a = self.get_atom(_a)
+        super().del_atom(a)
 
 
 class Substructure(Structure):

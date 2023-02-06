@@ -24,14 +24,10 @@ class StructureTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
     def test_structure_3d(self):
-        m = chem.Structure.loads_xyz(
-            H2O_XYZ, name="water", source_units="Angstrom"
-        )
+        m = chem.Structure.loads_xyz(H2O_XYZ, name="water", source_units="Angstrom")
         self.assertEqual(m.n_atoms, 3)
         self.assertTupleEqual(m.coords.shape, (3, 3))
-        self.assertAlmostEqual(
-            np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0
-        )
+        self.assertAlmostEqual(np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0)
         self.assertAlmostEqual(m.distance(0, 1), 0.96900, places=5)
         self.assertAlmostEqual(m.distance(2, 1), 1.52694, places=5)
         self.assertEqual(m.formula, "H2 O1")
@@ -40,9 +36,7 @@ class StructureTC(ut.TestCase):
     def test_structure_from_xyz_file(self):
         # This opens in text mode
         with ml.files.xyz.dendrobine.open() as f:
-            m1 = chem.Structure.load_xyz(
-                f, name="dendrobine", source_units="Angstrom"
-            )
+            m1 = chem.Structure.load_xyz(f, name="dendrobine", source_units="Angstrom")
 
         m2 = chem.Structure(m1)
         # This just makes sure that
@@ -93,12 +87,19 @@ class StructureTC(ut.TestCase):
         names = [n for n in m.name]
 
         self.assertFalse(any(n == "unnamed" for n in names))
-            
+
     def test_substruct(self):
         s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
-        a_test = (1,3,5)
-        sub = ml.Substructure(s1,a_test)
+        a_test = (1, 3, 5)
+        sub = ml.Substructure(s1, a_test)
         sub_coord = sub.coords
         s1_coord = s1.coord_subset(a_test)
 
         np.testing.assert_allclose(s1_coord, sub_coord)
+
+    def test_del_atom(self):
+        s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
+        s1.del_atom(0)
+
+        self.assertEqual(s1.n_atoms, 43)
+        self.assertEqual(s1.n_bonds, 44)
