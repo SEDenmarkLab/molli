@@ -466,7 +466,7 @@ class Atom:
         match mol2_type:
 
             case "4":
-                if self.element != "N":
+                if self.element != Element.N:
                     raise NotImplementedError(f"{mol2_type} not implemented for {mol2_elt}, only N")
                 else:
                     self.atype = AtomType.N_Ammonium
