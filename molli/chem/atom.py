@@ -31,6 +31,8 @@ import attrs
 class Element(IntEnum):
 
     """
+    # `Element`
+    
     Enumerates through elements
 
     Args:
@@ -46,11 +48,11 @@ class Element(IntEnum):
 
     @classmethod
     @cache
-    def get(cls, elt: ElementLike) -> ElementLike: 
+    def get(cls, elt: ElementLike) -> Element: 
 
         """
         # `get`
-        More universial way of retrieving element instances
+        Class method that provides more universial way of retrieving element instances.
         
         ## Parameters
         
@@ -74,16 +76,43 @@ class Element(IntEnum):
                 return cls(elt)
 
     @property
-    def symbol(self):
-        "Element symbol"
+    def symbol(self) -> str:
+        """# `symbol`
+         The symbol of the element
+        
+        ## Returns
+        
+        `str` of the element's elemental symbol 
+            
+        """        
         return self.name
 
     @property
-    def z(self):
+    def z(self) -> int:
+        """# `z`
+        Atomic number of the element
+        
+        ## Returns
+        
+        `int` of the element's atomic number
+        """        
         "Atomic number"
         return self.value
 
-    def get_property_value(self, property_name: str):
+    def get_property_value(self, property_name: str) -> int | str | float:
+
+        """# `get_property_value`
+        Retrieves desired value from dictionary key
+        
+        ## Parameters
+        `property_name` value desired written as a `str`
+        
+        ## Returns
+        
+        `float` when asked for atomic weight, covalent radius, or Van der Waals radius \n
+        `str` when asked for CPK coloring\n
+        `int` when group value is requested
+        """        
         prop_val = data.get("element", property_name, self.name, noexcept=True)
 
         return prop_val
@@ -256,10 +285,12 @@ class Element(IntEnum):
 
 
 ElementLike = Element | str | int
+
 """
-This is a type alias for anything that can be resolved as an element
-String is interpreted as element symbol
-Integer is interpreted as atomic number
+# `ElementLike`
+A type alias for anything that can be resolved as an element \n
+`str`is interpreted as element symbol \n
+`int` is interpreted as atomic number
 """
 
 
@@ -565,6 +596,7 @@ class Atom:
 
     def get_mol2_type(self):
 
+
         match self.element, self.atype, self.geom:
             case _, AtomType.Regular, _:
                 return f"{self.element.symbol}"
@@ -643,10 +675,10 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 class Promolecule:
     """
-    This is a parent class that only employs methods that work on a
-    **list of disconnected atoms with no structure or geometry assigned to them.**
-
-    Any class that adds functionality on top of atom list should inherit this class
+    # `Promolecule` 
+    This is a parent class that only employs methods that work on a \n
+    **list of disconnected atoms with no structure or geometry assigned to them.** \n
+    Any class that adds functionality on top of atom list should inherit this class \n
     for API compatibility reasons.
     """
 
