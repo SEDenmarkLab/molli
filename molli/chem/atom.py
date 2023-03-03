@@ -26,13 +26,45 @@ from bidict import bidict
 import attrs
 
 
+
+
 class Element(IntEnum):
-    """Element enumerator"""
+
+    """
+    Enumerates through elements
+
+    Args:
+        IntEnum (cls): inherited class for enumeration of integers
+
+    Potential Uses:
+    ```Python
+        o = Element(8) # oxygen
+        f = Element["F"] # fluorine
+        f == Element.F # True
+    ```
+    """
 
     @classmethod
     @cache
-    def get(cls, elt: ElementLike):
-        """More universal way of retrieving element instances"""
+    def get(cls, elt: ElementLike) -> ElementLike: 
+
+        """
+        # `get`
+        More universial way of retrieving element instances
+        
+        ## Parameters
+        
+        `elt: ElementLike`
+            
+            'int' will be interpreted as atomic number \n
+            'str' will be interpreted as element name
+        
+        ## Returns
+        
+        `ElementLike`
+
+        """        
+
         match elt:
             case Element() | int():
                 return cls(elt)
