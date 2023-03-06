@@ -526,7 +526,7 @@ class Atom:
     # def __repr__(self):
     #     return f"Atom([{self.isotope or ''}{self.element!r}], label={self.label!r}, atype={self.atype!r})"
 
-    def __eq__(self, other: AtomLike):
+    def __eq__(self, other: AtomLike) -> bool:
         return self is other
 
     # This is a default version of hash function for objects
@@ -847,7 +847,7 @@ class Promolecule:
     def get_atoms(self, *_atoms: AtomLike) -> tuple[Atom]:
         return tuple(map(self.get_atom, _atoms))
 
-    def get_atom_index(self, _a: AtomLike):
+    def get_atom_index(self, _a: AtomLike) -> int:
         match _a:
             case Atom():
                 return self._atoms.index(_a)
@@ -894,12 +894,12 @@ class Promolecule:
             if a.element == Element.get(elt):
                 yield a
 
-    def yield_attachment_points(self):
+    def yield_attachment_points(self) -> Generator[Atom, None, None]:
         for a in self.atoms:
             if a.atype == AtomType.AttachmentPoint:
                 yield a
 
-    def get_attachment_points(self):
+    def get_attachment_points(self) -> tuple[Atom]:
         return tuple(self.yield_attachment_points(self))
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
