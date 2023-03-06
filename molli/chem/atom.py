@@ -36,6 +36,7 @@ class Element(IntEnum):
     Enumerates through elements
 
     Args:
+
         IntEnum (cls): inherited class for enumeration of integers
 
     Potential Uses:
@@ -343,6 +344,23 @@ A type alias for anything that can be resolved as an element \n
 
 
 class AtomType(IntEnum):
+
+    """
+    # `AtomType`
+    
+    Enumerates through atom groups, hybridizations, and classifications. 
+
+    Args:
+        
+        IntEnum (cls): inherited class for enumeration of integers
+
+    Potential Uses:
+    ```Python
+        ring = AtomType(2)  # Aromatic
+        ring == AtomType.Aromatic # True 
+    ```
+    """
+
     Unknown = 0
     Regular = 1
     Aromatic = 2
@@ -372,6 +390,22 @@ class AtomType(IntEnum):
 
 
 class AtomStereo(IntEnum):
+
+    """
+    # `AtomStereo`
+    
+    Enumerates through stereogenic categories
+
+    Args:
+
+        IntEnum (cls): inherited class for enumeration of integers
+
+    Potential Uses:
+    ```Python
+        r = AtomStereo(10) # R
+        r == AtomStereo.R # True
+    ```
+    """
     Unknown = 0
     NotStereogenic = 1
 
@@ -383,6 +417,22 @@ class AtomStereo(IntEnum):
 
 
 class AtomGeom(IntEnum):
+
+    """
+    # `AtomGeom`
+    
+    Enumerates through atom geometries
+
+    Args:
+
+        IntEnum (cls): inherited class for enumeration of integers
+
+    Potential Uses:
+    ```Python
+        planar = AtomGeom(31) # Planar
+        planar == AtomGeom.R3_Planar # True 
+    ```
+    """
     Unknown = 0
     R1 = 10
 

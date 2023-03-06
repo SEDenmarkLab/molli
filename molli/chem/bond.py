@@ -13,6 +13,23 @@ from functools import cache
 
 
 class BondType(IntEnum):
+
+    """
+    # `BondType`
+    
+    Enumerates through different kinds of bonds and assignes Brønsted-Lowry acid/base classifications
+
+    Args:
+
+        IntEnum (cls): inherited class for enumeration of integers
+
+    Potential Uses:
+    ```Python
+        double_bond = BondType(2) # Double
+        acid = BondType(100) # Brønsted-Lowry acid
+        acid == BondType.H_Donor # True 
+    ```
+    """
     Unknown = 0
     Single = 1
     Double = 2
@@ -34,6 +51,23 @@ class BondType(IntEnum):
 
 
 class BondStereo(IntEnum):
+
+    """
+    # `BondStereo`
+    
+    Enumerates through different classifications for bond stereochemistry 
+
+    Args:
+
+        IntEnum (cls): inherited class for enumeration of integers
+
+    Potential Uses:
+    ```Python
+        trans = BondStereo(10) # E
+        trans == BondStereo.E # True 
+        trans == BondStereo.Trans # True 
+    ```
+    """
     Unknown = 0
     NotStereogenic = 1
 
