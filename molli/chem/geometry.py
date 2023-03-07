@@ -33,7 +33,19 @@ import math
 
 class DistanceUnit(Enum):
     """
-    This small enumeration lists commonly used distance units
+    # `DistanceUnit`
+    
+    Enumerates through commonly used distance units
+
+    Args:
+
+        DistanceUnit(Enum): inherited class for enumeration 
+
+    Potential Uses:
+    ```Python
+        nano_meter = DistanceUnit(0.100) # nanometer 
+        nano_meter == DistanceUnit.nm  # True 
+    ```
     """
 
     A = 1.0
@@ -45,8 +57,25 @@ class DistanceUnit(Enum):
     nm = 0.100
 
 
-def _angle(v1, v2):
-    """computes the angle formed by two vectors"""
+def _angle(v1: ArrayLike, v2: ArrayLike) -> float:
+    """# `_angle`
+    Computes the angle between two vectors \n
+    This parameter is communtative 
+    
+    
+    
+    ## Parameters
+    
+    `v1: ArrayLike`
+        First vector of interest
+    `v2: ArrayLike`
+        Second vector of interest
+    
+    ## Returns
+    
+    `float`
+        the angle between the vectors in degrees 
+    """    
     dt = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
     return np.arccos(dt)
 
@@ -307,7 +336,7 @@ class CartesianGeometry(Promolecule):
         i1, i2 = map(self.get_atom_index, (a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
-    def get_atom_coord(self, _a: AtomLike):
+    def get_atom_coord(self, _a: AtomLike) ->np.ndarray:
         return self.coords[self.get_atom_index(_a)]
 
     def vector(self, a1: AtomLike, a2: AtomLike | np.ndarray) -> np.ndarray:

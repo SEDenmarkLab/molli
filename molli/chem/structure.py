@@ -31,7 +31,17 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 
 class Structure(CartesianGeometry, Connectivity):
-    """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
+    
+    """
+    # `Structure`
+    
+    Combines the functionality of `CartesianGeometry` andd `Connectivity`
+
+    Args:
+
+        `CartesianGeometry` (cls) : inherited class for performing geometric operations
+        `Connectivity` (cls) : inherited class for establishing bonds between individual atoms
+    """
 
     # Improve efficiency of attribute access
     __slots__ = ("_name", "_atoms", "_bonds", "_coords", "charge", "mult")

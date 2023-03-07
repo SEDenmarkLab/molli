@@ -238,6 +238,16 @@ class Bond:
 
 
 class Connectivity(Promolecule):
+
+    """
+    # `Connectivity`
+    
+    Assigns bonds to atoms that do not have structure or geometry already assigned to them
+
+    Args:
+
+        `Promolecule` (cls): inherited class that contains parameters useful for working with promolecules
+    """
     # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
 
     def __init__(
@@ -275,7 +285,7 @@ class Connectivity(Promolecule):
         return self._bonds
 
     @property
-    def n_bonds(self):
+    def n_bonds(self) -> int:
         return len(self._bonds)
 
     def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> List[Bond] | None:

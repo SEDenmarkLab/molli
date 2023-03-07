@@ -15,13 +15,13 @@ from . import ConformerEnsemble, Molecule, Atom, Bond, Element
 
 
 def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
-    # This auxiliary function parses an old molli collection
+    
     """
 
-    # `read_molli_old_xml`
-    parse an old version of the collection
+    # `ensemble_from_molli_old_xml`
+    Parse an old version of the collection
 
-    This function is primarily intented for backwards compatibility reasons with the old molli version
+    This function is intended for backwards compatibility reasons with the old molli version
 
     ## Parameters
 

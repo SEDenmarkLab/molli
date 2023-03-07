@@ -9,12 +9,12 @@ from warnings import warn
 from io import StringIO, BytesIO
 
 
-def parse_pos(p: str):
+def parse_pos(p: str) -> float:
     return map(float, p.split())
     # return list(map(float, p.split()))
 
 
-def dist(a, b):
+def dist(a, b) -> float:
     return np.sqrt(np.sum((np.array(a) - np.array(b)) ** 2))
 
 
