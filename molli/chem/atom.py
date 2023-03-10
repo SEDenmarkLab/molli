@@ -91,6 +91,9 @@ class Element(IntEnum):
           Elemental Symbol 
         
         ## Examples
+            ``` Python
+            _description_
+            ```
 
         """        
 
@@ -108,6 +111,9 @@ class Element(IntEnum):
             Atomic Number
         
         ## Examples
+            ``` Python
+            _description_
+            ```
 
         """        
 
@@ -128,6 +134,9 @@ class Element(IntEnum):
         `int` when group value is requested
 
         ## Examples
+            ``` Python
+            _description_
+            ```
 
         """        
 
@@ -148,6 +157,9 @@ class Element(IntEnum):
             Name of Element  
 
         ## Examples
+            ``` Python
+            _description_
+            ```
         
         """
 
@@ -167,6 +179,9 @@ class Element(IntEnum):
             Atomic Weight 
 
         ## Examples
+            ``` Python
+            _description_
+            ```
             
         """ 
 
@@ -186,6 +201,9 @@ class Element(IntEnum):
             Covalent Radius of Single Bond
 
         ## Examples
+            ``` Python
+            _description_
+            ```
         
         """
 
@@ -203,6 +221,11 @@ class Element(IntEnum):
         
         `float`
             Covalent Radius of Double Bond
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
 
         """        
 
@@ -222,6 +245,9 @@ class Element(IntEnum):
             Covalent Radius of Triple Bond
         
         ## Examples
+            ``` Python
+            _description_
+            ```
             
         """        
 
@@ -241,6 +267,9 @@ class Element(IntEnum):
             Covalent Radius of Single Bond
         
         ## Examples
+            ``` Python
+            _description_
+            ```
         
         """
 
@@ -260,6 +289,9 @@ class Element(IntEnum):
             Van der Waals Radius 
         
         ## Examples
+            ``` Python
+            _description_
+            ```
         """ 
 
         return self.get_property_value("vdw_radius")
@@ -278,6 +310,9 @@ class Element(IntEnum):
             Pauling Electronegativity 
         
         ## Examples
+            ``` Python
+            _description_
+            ```
             
         """ 
 
@@ -297,6 +332,9 @@ class Element(IntEnum):
             Name of Color 
         
         ## Examples
+            ``` Python
+            _description_
+            ```
             
         """ 
 
@@ -318,6 +356,9 @@ class Element(IntEnum):
             Group Name
         
         ## Examples
+            ``` Python
+            _description_
+            ```
 
             
         """        
@@ -687,6 +728,9 @@ class Atom:
             TRUE or FALSE 
         
         ## Examples
+            ``` Python
+            _description_
+            ```
         """        
         return self.atype == AtomType.Dummy
 
@@ -704,6 +748,9 @@ class Atom:
             TRUE or FALSE 
 
         ## Examples
+            ``` Python
+            _description_
+            ```
         """        
         return self.atype == AtomType.AttachmentPoint
 
@@ -723,6 +770,9 @@ class Atom:
             Null
 
         ## Examples
+            ``` Python
+            _description_
+            ```
 
         """
 
@@ -755,6 +805,9 @@ class Atom:
             Atomic Number
 
         ## Examples
+            ``` Python
+            _description_
+            ```
             
         """        
         return self.element.z
