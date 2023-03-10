@@ -51,6 +51,8 @@ class Element(IntEnum):
     @cache
     def get(cls, elt: ElementLike) -> Element: 
 
+        
+
         """
         # `get`
         Class method that provides more universial way of retrieving element instances.
@@ -64,7 +66,8 @@ class Element(IntEnum):
         
         ## Returns
         
-        `ElementLike`
+        `Element`
+            class instance 
 
         """        
 
@@ -78,26 +81,36 @@ class Element(IntEnum):
 
     @property
     def symbol(self) -> str:
+
         """# `symbol`
-         The symbol of the element
+        The symbol of the element
         
         ## Returns
         
-        `str` of the element's elemental symbol 
-            
+        `str`
+          Elemental Symbol 
+        
+        ## Examples
+
         """        
+
         return self.name
 
     @property
     def z(self) -> int:
+
         """# `z`
         Atomic number of the element
         
         ## Returns
         
-        `int` of the element's atomic number
+        `int` 
+            Atomic Number
+        
+        ## Examples
+
         """        
-        "Atomic number"
+
         return self.value
 
     def get_property_value(self, property_name: str) -> int | str | float:
@@ -113,50 +126,202 @@ class Element(IntEnum):
         `float` when asked for atomic weight, covalent radius, or Van der Waals radius \n
         `str` when asked for CPK coloring\n
         `int` when group value is requested
+
+        ## Examples
+
         """        
+
         prop_val = data.get("element", property_name, self.name, noexcept=True)
 
         return prop_val
 
     def __repr__(self) -> str:
+
+        """# `__repr__`
+        Prints the name of the element
+        
+        
+        
+        ## Returns
+        
+        `str`
+            Name of Element  
+
+        ## Examples
+        
+        """
+
         return self.name
 
     @property
     def atomic_weight(self) -> float:
+
+        """# `atomic_weight`
+        The atomic weight of the element
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Atomic Weight 
+
+        ## Examples
+            
+        """ 
+
         return self.get_property_value("atomic_weight")
 
     @property
     def cov_radius_1(self) -> float:
+        
+        """# `cov_radius_1`
+        The covalent radius of a single bond
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Single Bond
+
+        ## Examples
+        
+        """
+
         return self.get_property_value("covalent_radius_1")
 
     @property
     def cov_radius_2(self) -> float:
-        """Double bonded covalent radius"""
+
+        """# `cov_radius_2`
+        The covalent radius of a double bond
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Double Bond
+
+        """        
+
         return self.get_property_value("covalent_radius_2")
 
     @property
     def cov_radius_3(self) -> float:
+
+        """# `cov_radius_3`
+        The covalent radius of a triple bond
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Triple Bond
+        
+        ## Examples
+            
+        """        
+
         return self.get_property_value("covalent_radius_3")
 
     @property
     def cov_radius_grimme(self) -> float:
+
+        """# `cov_radius_grimme`
+        This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
+        with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Single Bond
+        
+        ## Examples
+        
+        """
+
         return self.get_property_value("covalent_radius_grimme")
 
     @property
     def vdw_radius(self) -> float:
+
+        """# `vdw_radius`
+        The Van der Waals radius
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Van der Waals Radius 
+        
+        ## Examples
+        """ 
+
         return self.get_property_value("vdw_radius")
 
     @property
     def en_pauling(self) -> float:
+
+        """# `en_pauling`
+        The element's Pauling electronegativity 
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Pauling Electronegativity 
+        
+        ## Examples
+            
+        """ 
+
         return self.get_property_value("en_pauling")
 
     @property
     def color_cpk(self) -> str:
+
+        """# `color_cpk`
+        The color of the element based on its classification according to the CPK color scheme 
+        
+        
+        
+        ## Returns
+        
+        `str`
+            Name of Color 
+        
+        ## Examples
+            
+        """ 
+
         return self.get_property_value("color_cpk")
 
     @property
     def group(self) -> int | str:
-        """element group identifier"""
+        
+        """# `group`
+        The element's group
+        
+        
+        
+        ## Returns
+        
+        `int`
+            Group Number
+        `str`
+            Group Name
+        
+        ## Examples
+
+            
+        """        
+
         return self.get_property_value("group")
 
     def _serialize(self) -> int:
@@ -510,14 +675,57 @@ class Atom:
 
     @property
     def is_dummy(self) -> bool:
+
+        """# `is_dummy`
+        Checks if the atom type is a dummy 
+        
+        
+        
+        ## Returns
+        
+        `bool`
+            TRUE or FALSE 
+        
+        ## Examples
+        """        
         return self.atype == AtomType.Dummy
 
     @property
     def is_attachment_point(self) -> bool:
+
+        """# `is_attachment_point`
+        Checks if the atom is an attachment point
+        
+        
+        
+        ## Returns
+        
+        `bool`
+            TRUE or FALSE 
+
+        ## Examples
+        """        
         return self.atype == AtomType.AttachmentPoint
 
     @property
     def idx(self) -> int | None:
+
+        """# `idx`
+        Returns the index of the current atom, if possible
+        
+        
+        
+        ## Returns
+        
+        `int`
+            Index
+        `None`
+            Null
+
+        ## Examples
+
+        """
+
         if self._parent is None:
             return None
         else:
@@ -535,11 +743,41 @@ class Atom:
 
     @property
     def Z(self) -> int:
-        """Returns the atomic number (nuclear charge) of the element"""
+
+        """# `Z`
+        Atomic number (nuclear charge) of the element
+        
+        
+        
+        ## Returns
+        
+        `int`
+            Atomic Number
+
+        ## Examples
+            
+        """        
         return self.element.z
 
     @property
     def vdw_radius(self) -> float:
+
+        """# ``
+        _summary_
+        
+        
+        
+        ## Returns
+        
+        `_type_`
+            _description_
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """    
+
         return self.element.vdw_radius
 
     @property
