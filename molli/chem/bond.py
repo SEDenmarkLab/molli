@@ -206,6 +206,23 @@ class Bond:
 
     @property
     def expected_length(self) -> float:
+
+        """# `expected_length`
+            Calculates bond length 
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Bond Length
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
+
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
 
     @cache
@@ -248,6 +265,7 @@ class Connectivity(Promolecule):
 
         `Promolecule` (cls): inherited class that contains parameters useful for working with promolecules
     """
+
     # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
 
     def __init__(
@@ -282,17 +300,73 @@ class Connectivity(Promolecule):
 
     @property
     def bonds(self) -> List[Bond]:
+
+        """# `bonds`
+        All bonds 
+
+        
+        
+        
+        ## Returns
+        
+        `List[Bond]`
+            List of Bonds
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """
+
         return self._bonds
 
     @property
     def n_bonds(self) -> int:
+
+        """# `n_bonds`
+        The number of bonds
+        
+        
+        
+        ## Returns
+        
+        `int`
+            Total Bonds
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
+
         return len(self._bonds)
 
     def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> List[Bond] | None:
-        """
-        Returns a bond that connects the two atoms. O(N).
-        NOTE: `a1` and `a2` are always assumed to be interchangeable in this context.
-        """
+
+        """# `lookup_bond`
+        Retrieves the bond that connects two atoms 
+        
+        ## Parameters
+        `a1: AtomLike`
+            First Atom of Interest
+        `a2: AtomLike`
+            Second Atom of Interest
+
+        These atoms are assumed to be interchangeable
+        
+        ## Returns
+        
+        `List[Bond]`
+            Bond Connecting Atoms of Interest
+        `None`
+            NULL When Atoms Do Not Share a Bond
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
+
         _a1 = self.get_atom(a1)
         _a2 = self.get_atom(a2)
 
@@ -302,6 +376,25 @@ class Connectivity(Promolecule):
             return None
 
     def index_bond(self, b: Bond) -> int:
+
+        """# `index_bond`
+        Index of Desired Bond 
+
+        ## Arguments
+        
+        `b: Bond`
+        Desired Bond 
+        
+        ## Returns
+        
+        `int`
+            Index of the Bond 
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
         return self._bonds.index(b)
 
     def get_bond(self, b: Bond | int) -> Bond:
