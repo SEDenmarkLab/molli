@@ -30,6 +30,7 @@ class BondType(IntEnum):
         acid == BondType.H_Donor # True 
     ```
     """
+
     Unknown = 0
     Single = 1
     Double = 2
@@ -395,6 +396,7 @@ class Connectivity(Promolecule):
             _description_
             ```
         """        
+        
         return self._bonds.index(b)
 
     def get_bond(self, b: Bond | int) -> Bond:
@@ -430,6 +432,17 @@ class Connectivity(Promolecule):
         super().del_atom(_a)
 
     def bonds_with_atom(self, a: AtomLike) -> Generator[Bond, None, None]:
+
+        """# `bonds_with_atom`
+        Each bond on an atom
+        
+        
+        
+        ## Yields
+        
+        `Generator[Bond, None, None]`
+            Bonds Attached to Atom 
+        """        
         _a = self.get_atom(a)
         for b in self._bonds:
             if _a in b:
@@ -451,6 +464,22 @@ class Connectivity(Promolecule):
         return val
 
     def n_bonds_with_atom(self, a: AtomLike) -> int:
+
+        """# `n_bonds_with_atom`
+        Total number of bonds on an atom
+        
+        
+        
+        ## Returns
+        
+        `int`
+            Number of Bonds
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
         return sum(1 for _ in self.connected_atoms(a))
 
     def _bfs_single(self, q: deque, visited: set):
@@ -462,14 +491,22 @@ class Connectivity(Promolecule):
                 q.appendleft((a, dist + 1))
 
     def yield_bfsd(self, start: AtomLike) -> Generator[Tuple[Atom, int], None, None]:
-        """
+
+        """# `yield_bfsd`
         Yields atoms and their distances from start
 
-        ```python
+        ## Yields
+        `Generator[Tuple[Atom, int], None, None]`
+            Tuples of Atoms with Their Distances 
+
+        ## Examples 
+
+        ```Python
         for atom, distance in connectivity.yield_bfsd(a):
             ...
         ```
         """
+
         _sa = self.get_atom(start)
         visited = set((_sa,))
         q = deque([(_sa, 0)])
