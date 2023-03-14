@@ -51,8 +51,6 @@ class Element(IntEnum):
     @cache
     def get(cls, elt: ElementLike) -> Element: 
 
-        
-
         """
         # `get`
         Class method that provides more universial way of retrieving element instances.
@@ -815,15 +813,15 @@ class Atom:
     @property
     def vdw_radius(self) -> float:
 
-        """# ``
-        _summary_
+        """# `vdw_radius`
+        The Van Der Waals radius
         
         
         
         ## Returns
         
-        `_type_`
-            _description_
+        `float`
+            Atom's Van Der Waals Radius
         
         ## Examples
             ``` Python
@@ -835,26 +833,110 @@ class Atom:
 
     @property
     def cov_radius_1(self) -> float:
+
+        """# `cov_radius_1`
+        The covalent radius of a single bond
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Single Bond
+
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        
+        """
+
         return self.element.cov_radius_1
 
     @property
     def cov_radius_2(self) -> float:
+
+        """# `cov_radius_2`
+        The covalent radius of a double bond
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Double Bond
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+
+        """        
         return self.element.cov_radius_2
 
     @property
     def cov_radius_3(self) -> float:
+
+        """# `cov_radius_3`
+        The covalent radius of a double bond
+        
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Double Bond
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+
+        """        
         return self.element.cov_radius_3
 
     @property
     def cov_radius_grimme(self) -> float:
-        """
+
+        """# `cov_radius_grimme`
         This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
+        
+        
+        ## Returns
+        
+        `float`
+            Covalent Radius of Single Bond
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        
         """
+        
         return self.element.cov_radius_grimme
 
     @property
     def color_cpk(self) -> str:
+
+        """# `color_cpk`
+        The color of the element based on its classification according to the CPK color scheme 
+        
+        
+        
+        ## Returns
+        
+        `str`
+            Name of Color 
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+            
+        """ 
+         
         return self.element.color_cpk
 
     def set_mol2_type(self, m2t: str):
@@ -1015,6 +1097,7 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 
 class Promolecule:
+
     """
     # `Promolecule` 
     This is a parent class that only employs methods that work on a \n
@@ -1084,14 +1167,65 @@ class Promolecule:
 
     @property
     def attachment_points(self) -> List[Atom]:
+
+        """# `attachment_points`
+        List of atoms with attachment points
+        
+        
+        
+        ## Returns
+        
+        `List[Atom]`
+            List of Atoms 
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
+
         return [a for a in self.atoms if a.atype == AtomType.AttachmentPoint]
 
     @property
     def n_attachment_points(self) -> int:
+
+        """# `n_attachment_points`
+        Total number of attachment points
+        
+        
+        
+        
+        ## Returns
+        
+        `int`
+            Total Attachment Points
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """      
+
         return len(self.attachment_points)
 
     @property
     def name(self) -> str:
+
+        """# `name`
+        Atom's name
+        
+        
+        
+        ## Returns
+        
+        `str`
+            Atom's name 
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
         return self._name
 
     @name.setter
@@ -1108,17 +1242,65 @@ class Promolecule:
 
     @property
     def atoms(self) -> List[Atom]:
-        """List of atoms in the promolecule"""
+
+        """# `atoms`
+        Atoms in the Promolecule
+        
+        
+        
+        ## Returns
+        
+        `List[Atom]`
+            List of Atoms
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
+        
         return self._atoms
 
     @property
     def elements(self) -> List[Element]:
-        """List of elements in the protomolecule"""
+
+        """# `elements`
+        Elements in the promolecule
+        
+        
+        
+        ## Returns
+        
+        `List[Element]`
+            List of Elements
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
+        
         return [a.element for a in self.atoms]
 
     @property
     def n_atoms(self) -> int:
-        """Number of atoms in the promolecule"""
+
+        """# `n_atoms`
+        Total number of atoms in the promolecule
+        
+        
+        
+        ## Returns
+        
+        `int`
+            Total Number of Atoms
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
+
         return len(self.atoms)
 
     def get_atom(self, _a: AtomLike) -> Atom:
@@ -1181,11 +1363,40 @@ class Promolecule:
     def yield_atoms_by_element(
         self, elt: Element | str | int
     ) -> Generator[Atom, None, None]:
+        
+        """# `yield_atoms_by_element`
+        Yields atoms that are within element of interest 
+        
+        
+        ## Arguments
+
+        `Element` Instance of element class \n
+        `str` Name of element \n
+        `int` Atomic number
+
+        ## Yields
+        
+        `Generator[Atom, None, None]`
+            Atoms Inside Input Element
+        """      
+
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
 
     def yield_attachment_points(self) -> Generator[Atom, None, None]:
+
+        """# `yield_attachment_points`
+        Yields atoms that contain attachment points
+        
+        
+        
+        ## Yields
+        
+        `Generator[Atom, None, None]`
+            Atoms with Attachment Points
+        """        
+        
         for a in self.atoms:
             if a.atype == AtomType.AttachmentPoint:
                 yield a
@@ -1194,6 +1405,22 @@ class Promolecule:
         return tuple(self.yield_attachment_points(self))
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
+
+        """# `yield_atoms_by_label`
+        Yields atoms that have a desired label 
+        
+        
+        ## Arguments
+
+        `lbl: str`
+            Label to sort by 
+
+        ## Yields
+        
+        `Generator[Atom, None, None]`
+            Atoms with Desired Label
+        """      
+
         for a in self.atoms:
             if a.label == lbl:
                 yield a
@@ -1207,6 +1434,23 @@ class Promolecule:
 
     @property
     def formula(self) -> str:
+
+        """# `formula`
+        Molecular formula of promolecule 
+        
+        
+        
+        ## Returns
+        
+        `str`
+            Promolecule's Molecular Formula
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """ 
+
         if self.n_atoms > 0:
             ctr = Counter(x.element.symbol for x in self.atoms)
             f = []
@@ -1224,6 +1468,7 @@ class Promolecule:
 
     @property
     def molecular_weight(self) -> float:
+
         """
         # `molecular_weight`
         Molecular weight of the molecule
@@ -1234,13 +1479,19 @@ class Promolecule:
 
         `float`
             molecular weight in Da
+
+        ## Examples
+            ```Python
+            ```
         """
+        
         _mw = 0.0
         for a in self.atoms:
             _mw += a.element.atomic_weight
         return _mw
 
     def label_atoms(self, template: str = "{e}{n0}"):
+
         """# `label_atoms`
 
         Format code:
@@ -1253,6 +1504,7 @@ class Promolecule:
         `template: str`, optional, default: `"{e}{n}"`
             Template for atom name
         """
+        
         for i, a in enumerate(self.atoms):
             a.label = template.format(
                 e=a.element.symbol,
