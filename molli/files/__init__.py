@@ -1,46 +1,26 @@
 # This module provides easier access to miscellaneous files
 
 from pathlib import Path
-from enum import Enum, auto
 
 ROOT = Path(__file__).parent.absolute()
 
 
-class _FileEnum(Enum):
-    @property
-    def path(self) -> Path:
-        return ROOT / f"""{self.name}.{self.__class__.__name__}"""
-
-    def open(self, mode: str = "t"):
-        match mode:
-            case "t":
-                return open(self.path, "rt")
-            case "b":
-                return open(self.path, "rb")
-            case _:
-                raise ValueError("mode must be 't' or 'b'")
+dendrobine_mol2 = ROOT / "dendrobine.mol2"
+nanotube_mol2 = ROOT / "nanotube.mol2"
+hadd_test_mol2 = ROOT / "hadd_test.mol2"
+pdb_4a05_mol2 = ROOT / "pdb_4a05.mol2"
+pentane_confs_mol2 = ROOT / "pentane_confs.mol2"
+zincdb_fda_mol2 = ROOT / "zincdb_fda.mol2"
+dummy_mol2 = ROOT / "dummy.mol2"
+fxyl_mol2 = ROOT / "fxyl.mol2"
 
 
-class mol2(_FileEnum):
-    dendrobine = auto()
-    nanotube = auto()
-    pdb_4a05 = auto()
-    pentane_confs = auto()
-    zincdb_fda = auto()
-    dummy = auto()
-    fxyl = auto()
+dendrobine_xyz = ROOT / "dendrobine.xyz"
+pentane_confs_xyz = ROOT / "pentane_confs.xyz"
+dummy_xyz = ROOT / "dummy.xyz"
 
 
-class xyz(_FileEnum):
-    dendrobine = auto()
-    pentane_confs = auto()
-    dummy = auto()
-    # nanotube = auto()
+substituents_cdxml = ROOT / "substituents.cdxml"
+parser_demo_cdxml = ROOT / "parser_demo.cdxml"
 
-
-class cdxml(_FileEnum):
-    substituents = auto()
-
-
-class xml(_FileEnum):
-    oldstyle = auto()
+oldstyle_xml = ROOT / "oldstyle.xml"
