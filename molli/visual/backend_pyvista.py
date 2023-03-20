@@ -17,7 +17,6 @@ def plot_structure_as_wireframe(plt: pv.Plotter, s: Structure, opacity=1.0):
         colors[i] = ImageColor.getrgb(a.color_cpk)
 
     colors /= 255
-
     data = pv.PolyData(s.coords, n_lines=s.n_bonds, lines=lines)
     mesh_actor: pv.Actor = plt.add_mesh(
         data,
