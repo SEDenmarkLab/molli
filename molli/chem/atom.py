@@ -603,7 +603,10 @@ class Atom:
                 return f"{self.element.symbol}.th"
 
 
-AtomLike = Atom | int
+AtomLike = Atom | int | str
+"""
+AtomLike can be an atom, its index, or a unique identifier
+"""
 
 RE_MOL_NAME = re.compile(r"[_a-zA-Z0-9]+")
 RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
@@ -726,6 +729,9 @@ class Promolecule:
 
             case int():
                 return self._atoms[_a]
+
+            case str():
+                return next(self.yield_atoms_by_label(_a))
 
             case _:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
