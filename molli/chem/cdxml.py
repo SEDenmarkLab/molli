@@ -26,7 +26,6 @@ def load_cdxml(
     """
     Split a single cdxml file into a collection of molecules
     """
-
     xml = et.parse(f)
 
     rt = xml.getroot()

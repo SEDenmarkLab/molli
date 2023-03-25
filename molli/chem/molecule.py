@@ -22,7 +22,6 @@ from . import (
 
 class Molecule(Structure):
     """Fundamental class of the MOLLI Package."""
-
     __slots__ = Structure.__slots__ + ("_atomic_charges",)
 
     def __init__(

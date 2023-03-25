@@ -32,7 +32,6 @@ import math
 
 
 class DistanceUnit(Enum):
-
     """
     # `DistanceUnit`
     
@@ -48,7 +47,6 @@ class DistanceUnit(Enum):
         nano_meter == DistanceUnit.nm  # True 
     ```
     """
-
     A = 1.0
     Angstrom = A
     Bohr = 1.88973
@@ -59,7 +57,6 @@ class DistanceUnit(Enum):
 
 
 def _angle(v1: ArrayLike, v2: ArrayLike) -> float:
-
     """# `_angle`
     Computes the angle between two vectors \n
     This parameter is communtative 
@@ -78,19 +75,16 @@ def _angle(v1: ArrayLike, v2: ArrayLike) -> float:
     `float`
         the angle between the vectors in degrees 
     """    
-
     dt = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
     return np.arccos(dt)
 
 
 class CartesianGeometry(Promolecule):
-
     """
     Cartesian Geometry Class
     Stores molecular geometry in ANGSTROM floating points.
     This version is generalizable to arbitrary coordinates and data types
     """
-
     _coords_dtype = np.float64
     __slots__ = "_atoms", "_coords", "_name", "charge", "mult"
 
@@ -152,9 +146,7 @@ class CartesianGeometry(Promolecule):
 
     @property
     def coords(self):
-        
         """Set of atomic positions in shape (n_atoms, 3)"""
-        
         return self._coords
 
     @coords.setter
@@ -166,17 +158,13 @@ class CartesianGeometry(Promolecule):
         return self._coords.flatten().tolist()
 
     def extend(self, other: CartesianGeometry):
-
         """This extends current geometry with another one"""
-        
         raise NotImplementedError
 
     def dump_xyz(self, output: StringIO, write_header: bool = True) -> None:
-        
         """
         This dumps an xyz file into the output stream.
         """
-        
         # Header need not be written in certain files
         # Like ORCA inputs
         if write_header:
@@ -192,11 +180,9 @@ class CartesianGeometry(Promolecule):
             output.write(f"{s:<5} {x:12.6f} {y:12.6f} {z:12.6f}\n")
 
     def dumps_xyz(self, write_header: bool = True) -> str:
-
         """
         This returns an xyz file as a string
         """
-        
         # Header need not be written in certain files
         # Like ORCA inputs
         res = StringIO()
@@ -212,7 +198,6 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> CartesianGeometry:
-        
         """# `load_xyz`
         This function loads a *single* xyz file into the current instance
         The input should be a stream or file name/path
@@ -228,7 +213,6 @@ class CartesianGeometry(Promolecule):
         `source_units: str`, optional, default: `"Angstrom"`
             Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
         """
-
         if isinstance(input, str | Path):
             stream = open(input, "rt")
         else:
@@ -247,7 +231,6 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> CartesianGeometry:
-        
         """# `load_xyz`
 
         This function loads a *single* xyz file into the current instance
@@ -264,7 +247,6 @@ class CartesianGeometry(Promolecule):
         `source_units: str`, optional, default: `"Angstrom"`
             Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm
         """
-
         stream = StringIO(input)
         with stream:
             res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
@@ -327,12 +309,10 @@ class CartesianGeometry(Promolecule):
             yield geom
 
     def scale(self, factor: float, allow_inversion=False):
-
         """
         Simple multiplication of all coordinates by a factor.
         Useful for unit conversion.
         """
-
         if factor < 0 and not allow_inversion:
             raise ValueError(
                 "Scaling with a negative factor can only be performed with"
@@ -345,11 +325,9 @@ class CartesianGeometry(Promolecule):
         self.coords *= factor
 
     def invert(self):
-
         """
         Coordinates are inverted wrt the origin. This also inverts the absolute stereochemistry
         """
-
         self.scale(-1, allow_inversion=True)
 
     def distance(self, a1: AtomLike, a2: AtomLike) -> float:
@@ -360,9 +338,7 @@ class CartesianGeometry(Promolecule):
         return self.coords[self.get_atom_index(_a)]
 
     def vector(self, a1: AtomLike, a2: AtomLike | np.ndarray) -> np.ndarray:
-
         """Get a vector [a1 --> a2], where a2 can be a numpy array or another atom"""
-
         v1 = self.get_atom_coord(a1)
         v2 = self.get_atom_coord(a2) if isinstance(a2, AtomLike) else np.array(a2)
 
@@ -372,11 +348,9 @@ class CartesianGeometry(Promolecule):
         return np.linalg.norm(self.vector(a, p))
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
-
         """
         Compute an angle
         """
-
         i1, i2, i3 = map(self.get_atom_index, (a1, a2, a3))
 
         v1 = self.coords[i1] - self.coords[i2]
@@ -416,9 +390,7 @@ class CartesianGeometry(Promolecule):
         self.coords += v[np.newaxis, :]
 
     def centroid(self) -> np.ndarray:
-
         """Return the centroid of the molecule"""
-
         return np.average(self.coords, axis=0)
     
 

@@ -309,7 +309,6 @@ class Conformer(Molecule):
     Conformer class is a virtual instance that behaves like a molecule,
     yet is completely virtual.
     """
-
     def __init__(self, parent: ConformerEnsemble, conf_id: int):
         self._parent = parent
         self._conf_id = conf_id

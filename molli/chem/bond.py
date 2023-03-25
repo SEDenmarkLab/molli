@@ -13,7 +13,6 @@ from functools import cache
 
 
 class BondType(IntEnum):
-
     """
     # `BondType`
     
@@ -30,7 +29,6 @@ class BondType(IntEnum):
         acid == BondType.H_Donor # True 
     ```
     """
-
     Unknown = 0
     Single = 1
     Double = 2
@@ -52,7 +50,6 @@ class BondType(IntEnum):
 
 
 class BondStereo(IntEnum):
-
     """
     # `BondStereo`
     
@@ -207,7 +204,6 @@ class Bond:
 
     @property
     def expected_length(self) -> float:
-
         """# `expected_length`
             Calculates bond length 
         
@@ -223,7 +219,6 @@ class Bond:
             _description_
             ```
         """        
-
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
 
     @cache
@@ -256,7 +251,6 @@ class Bond:
 
 
 class Connectivity(Promolecule):
-
     """
     # `Connectivity`
     
@@ -266,7 +260,6 @@ class Connectivity(Promolecule):
 
         `Promolecule` (cls): inherited class that contains parameters useful for working with promolecules
     """
-
     # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
 
     def __init__(
@@ -301,7 +294,6 @@ class Connectivity(Promolecule):
 
     @property
     def bonds(self) -> List[Bond]:
-
         """# `bonds`
         All bonds 
 
@@ -318,12 +310,10 @@ class Connectivity(Promolecule):
             _description_
             ```
         """
-
         return self._bonds
 
     @property
     def n_bonds(self) -> int:
-
         """# `n_bonds`
         The number of bonds
         
@@ -339,11 +329,9 @@ class Connectivity(Promolecule):
             _description_
             ```
         """        
-
         return len(self._bonds)
 
     def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> List[Bond] | None:
-
         """# `lookup_bond`
         Retrieves the bond that connects two atoms 
         
@@ -367,7 +355,6 @@ class Connectivity(Promolecule):
             _description_
             ```
         """        
-
         _a1 = self.get_atom(a1)
         _a2 = self.get_atom(a2)
 
@@ -377,7 +364,6 @@ class Connectivity(Promolecule):
             return None
 
     def index_bond(self, b: Bond) -> int:
-
         """# `index_bond`
         Index of Desired Bond 
 
@@ -396,7 +382,6 @@ class Connectivity(Promolecule):
             _description_
             ```
         """        
-        
         return self._bonds.index(b)
 
     def get_bond(self, b: Bond | int) -> Bond:
@@ -432,7 +417,6 @@ class Connectivity(Promolecule):
         super().del_atom(_a)
 
     def bonds_with_atom(self, a: AtomLike) -> Generator[Bond, None, None]:
-
         """# `bonds_with_atom`
         Each bond on an atom
         
@@ -464,7 +448,6 @@ class Connectivity(Promolecule):
         return val
 
     def n_bonds_with_atom(self, a: AtomLike) -> int:
-
         """# `n_bonds_with_atom`
         Total number of bonds on an atom
         
@@ -491,7 +474,6 @@ class Connectivity(Promolecule):
                 q.appendleft((a, dist + 1))
 
     def yield_bfsd(self, start: AtomLike) -> Generator[Tuple[Atom, int], None, None]:
-
         """# `yield_bfsd`
         Yields atoms and their distances from start
 
@@ -506,7 +488,6 @@ class Connectivity(Promolecule):
             ...
         ```
         """
-
         _sa = self.get_atom(start)
         visited = set((_sa,))
         q = deque([(_sa, 0)])

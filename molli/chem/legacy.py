@@ -15,7 +15,6 @@ from . import ConformerEnsemble, Molecule, Atom, Bond, Element
 
 
 def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
-    
     """
 
     # `ensemble_from_molli_old_xml`

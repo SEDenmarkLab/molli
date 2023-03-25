@@ -6,7 +6,6 @@ class Substituent(Structure):
     """
     Substituent is a structure with only one(!) predefined attachment point
     """
-
     def __init__(
         self,
         other: Structure = None,
