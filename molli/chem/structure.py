@@ -330,54 +330,167 @@ class Structure(CartesianGeometry, Connectivity):
 
     @property
     def heavy(self) -> Substructure:
+        """# `heavy`
+        Returns a substructure containing only heavy atoms.
+        
+        
+        
+        ## Returns
+        
+        `Substructure`
+            A substructure containing only heavy atoms.
+        
+        ## Examples
+            ``` Python
+            mol = Molecule.from_smiles("C1=CC=CC=C1")
+            mol.heavy
+            Substructure(6 atoms, 5 bonds)
+            ```
+        """        
         return Substructure(self, [a for a in self.atoms if a.element != Element.H])
 
     def bond_length(self, b: Bond) -> float:
+        """# `bond_length`
+        Returns the length of a bond.
+        
+        
+        
+        ## Parameters
+        
+        `b: Bond`
+            The bond to measure.
+        
+        ## Returns
+        
+        `float`
+            The length of the bond.
+        
+        ## Examples
+            ``` Python
+            mol = Molecule.from_smiles("C1=CC=CC=C1")
+            mol.bond_length(mol.bonds[0])
+            1.54
+            ```
+        """        
         return self.distance(b.a1, b.a2)
 
     def bond_vector(self, b: Bond) -> np.ndarray:
+        """# `bond_vector`
+        Returns the vector between the two atoms in a bond.
+        
+        
+        
+        ## Parameters
+        
+        `b: Bond`
+            The bond to measure.
+        
+        ## Returns
+        
+        `np.ndarray`
+            The vector between the two atoms in the bond.
+        
+        ## Examples
+            ``` Python
+            mol = Molecule.from_smiles("C1=CC=CC=C1")
+            mol.bond_vector(mol.bonds[0])
+            array([1.54, 0.  , 0.  ])
+            ```
+        """        
         i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
         return self.coords[i2] - self.coords[i1]
 
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
+        """# `bond_coords`
+        Returns the coordinates of the two atoms in a bond.
+        
+        
+        
+        ## Parameters
+        
+        `b: Bond`
+            The bond to measure.
+        
+        ## Returns
+        
+        `tuple[np.ndarray]`
+            The coordinates of the two atoms in the bond.
+        
+        ## Examples
+            ``` Python
+            mol = Molecule.from_smiles("C1=CC=CC=C1")
+            mol.bond_coords(mol.bonds[0])
+            (array([0., 0., 0.]), array([1.54, 0.  , 0.  ]))
+            ```
+        """        
         return self.coord_subset((b.a1, b.a2))
 
     def __or__(self, other: Structure) -> Structure:
+        """# `__or__`
+        This function concatenates two structures.
+        
+        
+        
+        ## Parameters
+        
+        `other: Structure`
+            The other structure to concatenate.
+        
+        ## Returns
+        
+        `Structure`
+            A new structure containing the atoms and bonds of both structures.
+        
+        ## Examples
+            ``` Python
+            mol1 = Molecule.from_smiles("C1=CC=CC=C1")
+            mol2 = Molecule.from_smiles("C1=CC=CC=C1")
+            mol1 | mol2
+            Structure(12 atoms, 10 bonds)
+            ```
+        """        
         return Structure.concatenate(self, other)
 
     def perceive_atom_properties(self) -> None:
         """# `perceive_atom_properties`
-        This function analyzes atomic types
-
-        ## Returns
-
-        `_type_`
-            _description_
-
-        ## Yields
-
-        `_type_`
-            _description_
-        """
+        This function analyzes atom types
+        
+        
+        
+        ## Raises
+        
+        `NotImplementedError`
+            This function is not implemented.
+        """        
         raise NotImplementedError
 
     def perceive_bond_properties(self) -> None:
         """# `perceive_bond_properties`
-        This function analyzes bond properties
+        This function analyzes bond types
 
-        ## Returns
-
-        `_type_`
-            _description_
-
-        ## Yields
-
-        `_type_`
-            _description_
+        ## Raises
+        `NotImplementedError`
+            This function is not implemented.
         """
         raise NotImplementedError
 
     def del_atom(self, _a: AtomLike):
+        """# `del_atom`
+        This function deletes an atom from the structure.
+        
+        
+        
+        ## Parameters
+        
+        `_a: AtomLike`
+            The atom to delete.
+        
+        ## Examples
+            ``` Python
+            mol = Molecule.from_smiles("C1=CC=CC=C1")
+            mol.del_atom(mol.atoms[0])
+            ```
+        """         
         a = self.get_atom(_a)
         super().del_atom(a)
 
@@ -401,18 +514,85 @@ class Substructure(Structure):
         return f"""{type(self).__name__}(parent={self._parent!r}, atoms={self.parent_atom_indices!r})"""
 
     @property
-    def parent_atom_indices(self):
+    def parent_atom_indices(self) -> list[int]:
+        """# `parent_atom_indices`
+        Returns the indices of the atoms in the parent structure.
+        
+        
+        
+        ## Returns
+        
+        `list[int]`
+            The indices of the atoms in the parent structure.
+        
+        ## Examples
+            ``` Python
+            mol = Molecule.from_smiles("C1=CC=CC=C1")
+            mol.heavy.parent_atom_indices
+            [1, 2, 3, 4, 5]
+            ```
+        """        
         return list(self.yield_parent_atom_indices(self._atoms))
 
     @property
-    def coords(self):
+    def coords(self) -> np.ndarray:
+        """# `coords`
+        Returns the coordinates of the atoms in the substructure.
+        
+        
+        
+        ## Returns
+        
+        `np.ndarray`
+            The coordinates of the atoms in the substructure.
+        
+        ## Examples
+            ``` Python
+            mol = Molecule.from_smiles("C1=CC=CC=C1")
+            mol.heavy.coords
+            array([[ 0.  ,  0.  ,  0.  ],
+            ```
+        """        
         return self._parent.coords[self.parent_atom_indices]
 
     @coords.setter
-    def coords(self, other):
+    def coords(self, other: np.ndarray):
+        """# `coords`
+        Sets the coordinates of the atoms in the substructure.
+        
+        
+        
+        ## Parameters
+        
+        `other: np.ndarray`
+            Coordinates to set.
+        """        
         self._parent.coords[self.parent_atom_indices] = other
 
-    def __or__(self, other: Substructure | Structure):
+    def __or__(self, other: Substructure | Structure) -> Substructure | Structure:
+        """# `__or__`
+        This function concatenates two structures.
+        
+        
+        
+        ## Parameters
+        
+        `other: Substructure | Structure`
+            The other structure to concatenate.
+        
+        ## Returns
+        
+        `Substructure | Structure`
+            A new structure containing the atoms and bonds of both structures.
+        
+        ## Examples
+            ``` Python
+            mol1 = Molecule.from_smiles("C1=CC=CC=C1")
+            mol2 = Molecule.from_smiles("C1=CC=CC=C1")
+            mol1.heavy | mol2.heavy
+            Substructure(parent=Structure(12 atoms, 10 bonds), atoms=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) 
+            ```
+        """        
         if isinstance(other, Substructure) and other.parent == self._parent:
             return Substructure(self._parent, chain(self.atoms, other.atoms))
         else:

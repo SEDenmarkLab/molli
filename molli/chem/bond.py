@@ -13,8 +13,7 @@ from functools import cache
 
 
 class BondType(IntEnum):
-    """
-    # `BondType`
+    """# `BondType`
     
     Enumerates through different kinds of bonds and assignes Brønsted-Lowry acid/base classifications
 
@@ -50,8 +49,7 @@ class BondType(IntEnum):
 
 
 class BondStereo(IntEnum):
-    """
-    # `BondStereo`
+    """# `BondStereo`
     
     Enumerates through different classifications for bond stereochemistry 
 
@@ -102,7 +100,15 @@ MOL2_BOND_TYPE_MAP = bidict(
 
 @attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Bond:
-    """`a1` and `a2` are always assumed to be interchangeable"""
+    """# `Bond`
+    The class for bonds in the MOLLI package.
+    a1 and a2 are the atoms that the bond connects, and their order is assumed to be interchangeable.
+    
+    ## Examples
+        ``` Python
+        _description_
+        ```
+    """    
 
     a1: Atom
     a2: Atom
@@ -131,6 +137,21 @@ class Bond:
 
     @property
     def order(self) -> float:
+        """# `order`
+        The order of the bond
+        
+        
+        
+        ## Returns
+        
+        `float`
+            The order of the bond
+        
+        ## Examples
+            ``` Python
+            _description_
+            ```
+        """        
         # if self.btype == BondType.FractionalOrder:
         #     return self._order
         # elif 0 < self.btype < 9:
@@ -297,9 +318,6 @@ class Connectivity(Promolecule):
         """# `bonds`
         All bonds 
 
-        
-        
-        
         ## Returns
         
         `List[Bond]`

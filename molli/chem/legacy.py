@@ -16,7 +16,6 @@ from . import ConformerEnsemble, Molecule, Atom, Bond, Element
 
 def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
     """
-
     # `ensemble_from_molli_old_xml`
     Parse an old version of the collection
 
@@ -24,7 +23,7 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
 
     ## Parameters
 
-    `f : StringIO`
+    `f : StringIO | BytesIO`
         xml file stream
 
     ## Returns
