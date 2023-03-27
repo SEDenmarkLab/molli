@@ -15,7 +15,7 @@ from functools import cache
 class BondType(IntEnum):
     """# `BondType`
     
-    Enumerates through different kinds of bonds and assignes Brønsted-Lowry acid/base classifications
+    Enumerates through different kinds of bonds and assignes hydrogen donor and acceptorclassifications
 
     Args:
 
@@ -24,8 +24,8 @@ class BondType(IntEnum):
     Potential Uses:
     ```Python
         double_bond = BondType(2) # Double
-        acid = BondType(100) # Brønsted-Lowry acid
-        acid == BondType.H_Donor # True 
+        donor = BondType(100) # hydrogen donor
+        donor == BondType.H_Donor # True 
     ```
     """
     Unknown = 0
@@ -226,7 +226,7 @@ class Bond:
     @property
     def expected_length(self) -> float:
         """# `expected_length`
-            Calculates bond length 
+            Calculates bond length in Angstroms based on the covalent radii of the atoms.
         
         
         
@@ -237,7 +237,7 @@ class Bond:
         
         ## Examples
             ``` Python
-            _description_
+            bond.expected_length == 1.54 # True
             ```
         """        
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
@@ -275,7 +275,7 @@ class Connectivity(Promolecule):
     """
     # `Connectivity`
     
-    Assigns bonds to atoms that do not have structure or geometry already assigned to them
+    Connectivity us a graph-like structure that connects the nodes(atoms) with edges(bonds).
 
     Args:
 
@@ -316,7 +316,7 @@ class Connectivity(Promolecule):
     @property
     def bonds(self) -> List[Bond]:
         """# `bonds`
-        All bonds 
+        List of all bonds in the molecule
 
         ## Returns
         
@@ -333,7 +333,7 @@ class Connectivity(Promolecule):
     @property
     def n_bonds(self) -> int:
         """# `n_bonds`
-        The number of bonds
+        The total number of bonds in the molecule
         
         
         
@@ -349,7 +349,7 @@ class Connectivity(Promolecule):
         """        
         return len(self._bonds)
 
-    def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> List[Bond] | None:
+    def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> Bond | None:
         """# `lookup_bond`
         Retrieves the bond that connects two atoms 
         
@@ -493,7 +493,9 @@ class Connectivity(Promolecule):
 
     def yield_bfsd(self, start: AtomLike) -> Generator[Tuple[Atom, int], None, None]:
         """# `yield_bfsd`
-        Yields atoms and their distances from start
+        Yields atoms in breadth-first search, in traversal order.
+        Distantce from the start atom is also yielded.
+        Stored in a tuple of (Atom, Distance)
 
         ## Yields
         `Generator[Tuple[Atom, int], None, None]`
@@ -502,8 +504,8 @@ class Connectivity(Promolecule):
         ## Examples 
 
         ```Python
-        for atom, distance in connectivity.yield_bfsd(a):
-            ...
+            for atom, distance in connectivity.yield_bfsd(a):
+            
         ```
         """
         _sa = self.get_atom(start)

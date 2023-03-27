@@ -35,6 +35,8 @@ class Structure(CartesianGeometry, Connectivity):
     # `Structure`
     
     Combines the functionality of `CartesianGeometry` andd `Connectivity`
+    'CartesianGeometry' gives the molecular data structure features of a 3d coordinate matrix
+    'Connectivity' gives the molecular data structure features of a undirected graph 
 
     Args:
 
