@@ -59,8 +59,6 @@ class Molecule(Structure):
         """# `atomic_charges`
         The atomic charges of the molecule.
         
-        
-        
         ## Returns
         
         `np.ndarray`
@@ -75,11 +73,8 @@ class Molecule(Structure):
 
     @atomic_charges.setter
     def atomic_charges(self, other: ArrayLike):
-
         """# `atomic_charges`
         Sets the atomic charges of the molecule.
-        
-        
         
         ## Raises
         
@@ -128,8 +123,6 @@ class Molecule(Structure):
     def dumps_mol2(self) -> str:
         """# `dumps_mol2`
         Returns a mol2 file as a string.
-        
-        
         
         ## Returns
         

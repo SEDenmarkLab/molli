@@ -109,7 +109,6 @@ class Bond:
         _description_
         ```
     """    
-
     a1: Atom
     a2: Atom
 
@@ -139,8 +138,6 @@ class Bond:
     def order(self) -> float:
         """# `order`
         The order of the bond
-        
-        
         
         ## Returns
         
@@ -226,9 +223,7 @@ class Bond:
     @property
     def expected_length(self) -> float:
         """# `expected_length`
-            Calculates bond length in Angstroms based on the covalent radii of the atoms.
-        
-        
+        Calculates bond length in Angstroms based on the covalent radii of the atoms.
         
         ## Returns
         
@@ -272,8 +267,7 @@ class Bond:
 
 
 class Connectivity(Promolecule):
-    """
-    # `Connectivity`
+    """# `Connectivity`
     
     Connectivity us a graph-like structure that connects the nodes(atoms) with edges(bonds).
 
@@ -334,8 +328,6 @@ class Connectivity(Promolecule):
     def n_bonds(self) -> int:
         """# `n_bonds`
         The total number of bonds in the molecule
-        
-        
         
         ## Returns
         
@@ -438,8 +430,6 @@ class Connectivity(Promolecule):
         """# `bonds_with_atom`
         Each bond on an atom
         
-        
-        
         ## Yields
         
         `Generator[Bond, None, None]`
@@ -468,8 +458,6 @@ class Connectivity(Promolecule):
     def n_bonds_with_atom(self, a: AtomLike) -> int:
         """# `n_bonds_with_atom`
         Total number of bonds on an atom
-        
-        
         
         ## Returns
         

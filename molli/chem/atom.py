@@ -47,8 +47,7 @@ class Element(IntEnum):
     @classmethod
     @cache
     def get(cls, elt: ElementLike) -> Element: 
-        """
-        # `get`
+        """# `get`
         Class method that provides more universial way of retrieving element instances.
         
         ## Parameters
@@ -130,7 +129,6 @@ class Element(IntEnum):
             ``` Python
             _description_
             ```
-
         """        
         prop_val = data.get("element", property_name, self.name, noexcept=True)
 
@@ -183,7 +181,6 @@ class Element(IntEnum):
             ``` Python
             _description_
             ```
-        
         """
         return self.get_property_value("covalent_radius_1")
 
@@ -208,8 +205,6 @@ class Element(IntEnum):
     def cov_radius_3(self) -> float:
         """# `cov_radius_3`
         The covalent radius of a triple bond
-        
-        
         
         ## Returns
         
@@ -247,8 +242,6 @@ class Element(IntEnum):
         """# `vdw_radius`
         The Van der Waals radius
         
-        
-        
         ## Returns
         
         `float`
@@ -265,8 +258,6 @@ class Element(IntEnum):
     def en_pauling(self) -> float:
         """# `en_pauling`
         The element's Pauling electronegativity 
-        
-        
         
         ## Returns
         
@@ -285,8 +276,6 @@ class Element(IntEnum):
         """# `color_cpk`
         The color of the element based on its classification according to the CPK color scheme 
         
-        
-        
         ## Returns
         
         `str`
@@ -303,8 +292,6 @@ class Element(IntEnum):
     def group(self) -> int | str:
         """# `group`
         The element's group
-        
-        
         
         ## Returns
         
@@ -323,8 +310,6 @@ class Element(IntEnum):
     def _serialize(self) -> int:
         """# `_serialize`
         Serializes the element
-        
-        
         
         ## Returns
         
@@ -468,7 +453,6 @@ A type alias for anything that can be resolved as an element
 `str`is interpreted as element symbol 
 `int` is interpreted as atomic number
 """
-
 # class Atom:
 #     """
 #     Atom is a mutable object that is compared by id.
@@ -520,11 +504,9 @@ A type alias for anything that can be resolved as an element
 class AtomType(IntEnum):
     """
     # `AtomType`
-    
     Enumerates through atom groups, hybridizations, and classifications. 
 
     Args:
-        
         IntEnum (cls): inherited class for enumeration of integers
 
     Potential Uses:
@@ -564,11 +546,9 @@ class AtomType(IntEnum):
 class AtomStereo(IntEnum):
     """
     # `AtomStereo`
-    
     Enumerates through stereogenic categories
-
+    
     Args:
-
         IntEnum (cls): inherited class for enumeration of integers
 
     Potential Uses:
@@ -590,11 +570,9 @@ class AtomStereo(IntEnum):
 class AtomGeom(IntEnum):
     """
     # `AtomGeom`
-    
     Enumerates through atom geometries
 
     Args:
-
         IntEnum (cls): inherited class for enumeration of integers
 
     Potential Uses:
@@ -672,8 +650,6 @@ class Atom:
         """# `evolve`
         Evolves the atom into a new atom with the changes specified in the `changes` dictionary.
         
-        
-        
         ## Returns
         
         `Atom`
@@ -687,12 +663,9 @@ class Atom:
         return attrs.evolve(self, **changes)
 
     def as_dict(self) -> dict:
-
         """# `as_dict`
         Returns the atom as a dictionary
-        
-        
-        
+    
         ## Returns
         
         `dict`
@@ -708,8 +681,6 @@ class Atom:
     def as_tuple(self):
         """# `as_tuple`
         Returns the atom as a tuple
-        
-        
         
         ## Returns
         
@@ -728,8 +699,6 @@ class Atom:
         """# `is_dummy`
         Checks if the atom type is a dummy 
         
-        
-        
         ## Returns
         
         `bool`
@@ -747,8 +716,6 @@ class Atom:
         """# `is_attachment_point`
         Checks if the atom is an attachment point
         
-        
-        
         ## Returns
         
         `bool`
@@ -765,8 +732,6 @@ class Atom:
     def idx(self) -> int | None:
         """# `idx`
         Returns the index of the current atom, if possible
-        
-        
         
         ## Returns
         
@@ -844,7 +809,6 @@ class Atom:
             ``` Python
             _description_
             ```
-        
         """
         return self.element.cov_radius_1
 
@@ -852,8 +816,6 @@ class Atom:
     def cov_radius_2(self) -> float:
         """# `cov_radius_2`
         The covalent radius of a double bond
-        
-        
         
         ## Returns
         
@@ -871,8 +833,6 @@ class Atom:
     def cov_radius_3(self) -> float:
         """# `cov_radius_3`
         The covalent radius of a double bond
-        
-        
         
         ## Returns
         
@@ -892,7 +852,6 @@ class Atom:
         This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
         
-        
         ## Returns
         
         `float`
@@ -910,8 +869,6 @@ class Atom:
     def color_cpk(self) -> str:
         """# `color_cpk`
         The color of the element based on its classification according to the CPK color scheme 
-        
-        
         
         ## Returns
         
@@ -1004,7 +961,6 @@ class Atom:
                 raise NotImplementedError(f"Cannot interpret mol2 type {m2t!r}")
 
     def get_mol2_type(self):
-
 
         match self.element, self.atype, self.geom:
             case _, AtomType.Regular, _:
@@ -1154,8 +1110,6 @@ class Promolecule:
         """# `attachment_points`
         List of atoms with attachment points
         
-        
-        
         ## Returns
         
         `List[Atom]`
@@ -1173,9 +1127,6 @@ class Promolecule:
         """# `n_attachment_points`
         Total number of attachment points
         
-        
-        
-        
         ## Returns
         
         `int`
@@ -1192,8 +1143,6 @@ class Promolecule:
     def name(self) -> str:
         """# `name`
         Atom's name
-        
-        
         
         ## Returns
         
@@ -1224,8 +1173,6 @@ class Promolecule:
         """# `atoms`
         Atoms in the Promolecule
         
-        
-        
         ## Returns
         
         `List[Atom]`
@@ -1242,8 +1189,6 @@ class Promolecule:
     def elements(self) -> List[Element]:
         """# `elements`
         Elements in the promolecule
-        
-        
         
         ## Returns
         
@@ -1262,8 +1207,6 @@ class Promolecule:
         """# `n_atoms`
         Total number of atoms in the promolecule
         
-        
-        
         ## Returns
         
         `int`
@@ -1279,8 +1222,6 @@ class Promolecule:
     def get_atom(self, _a: AtomLike) -> Atom:
         """# `get_atom`
         Fetches an atom from the promolecule
-        
-        
         
         ## Parameters
         
@@ -1321,8 +1262,6 @@ class Promolecule:
         """# `get_atoms`
         Fetches a list of atoms from the promolecule
         
-        
-        
         ## Returns
         
         `tuple[Atom]`
@@ -1338,8 +1277,6 @@ class Promolecule:
     def get_atom_index(self, _a: AtomLike) -> int:
         """# `get_atom_index`
         Fetches the index of an atom in the promolecule
-        
-        
         
         ## Parameters
         
@@ -1383,8 +1320,6 @@ class Promolecule:
         """# `get_atom_indices`
         Retrieves the indices of a list of atoms in the promolecule
         
-        
-        
         ## Returns
         
         `tuple[int]`
@@ -1400,8 +1335,6 @@ class Promolecule:
     def del_atom(self, _a: AtomLike):
         """# `del_atom`
         Deletes an atom from the promolecule
-        
-        
         
         ## Parameters
         
@@ -1419,8 +1352,6 @@ class Promolecule:
         """# `append_atom`
         Appends an atom to the promolecule
         
-        
-        
         ## Parameters
         
         `a: Atom`
@@ -1431,8 +1362,6 @@ class Promolecule:
     def index_atom(self, _a: Atom) -> int:
         """# `index_atom`
         Returns the index of an atom in the promolecule
-        
-        
         
         ## Parameters
         
@@ -1467,7 +1396,6 @@ class Promolecule:
     ) -> Generator[Atom, None, None]:
         """# `yield_atoms_by_element`
         Yields atoms that are within element of interest 
-        
         
         ## Arguments
 
@@ -1513,7 +1441,6 @@ class Promolecule:
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
         """# `yield_atoms_by_label`
         Yields atoms that have a desired label 
-        
         
         ## Arguments
 

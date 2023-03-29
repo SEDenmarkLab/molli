@@ -335,8 +335,6 @@ class Structure(CartesianGeometry, Connectivity):
         """# `heavy`
         Returns a substructure containing only heavy atoms.
         
-        
-        
         ## Returns
         
         `Substructure`
@@ -344,9 +342,7 @@ class Structure(CartesianGeometry, Connectivity):
         
         ## Examples
             ``` Python
-            mol = Molecule.from_smiles("C1=CC=CC=C1")
-            mol.heavy
-            Substructure(6 atoms, 5 bonds)
+
             ```
         """        
         return Substructure(self, [a for a in self.atoms if a.element != Element.H])
@@ -354,8 +350,6 @@ class Structure(CartesianGeometry, Connectivity):
     def bond_length(self, b: Bond) -> float:
         """# `bond_length`
         Returns the length of a bond.
-        
-        
         
         ## Parameters
         
@@ -369,9 +363,6 @@ class Structure(CartesianGeometry, Connectivity):
         
         ## Examples
             ``` Python
-            mol = Molecule.from_smiles("C1=CC=CC=C1")
-            mol.bond_length(mol.bonds[0])
-            1.54
             ```
         """        
         return self.distance(b.a1, b.a2)
@@ -379,8 +370,6 @@ class Structure(CartesianGeometry, Connectivity):
     def bond_vector(self, b: Bond) -> np.ndarray:
         """# `bond_vector`
         Returns the vector between the two atoms in a bond.
-        
-        
         
         ## Parameters
         
@@ -394,9 +383,7 @@ class Structure(CartesianGeometry, Connectivity):
         
         ## Examples
             ``` Python
-            mol = Molecule.from_smiles("C1=CC=CC=C1")
-            mol.bond_vector(mol.bonds[0])
-            array([1.54, 0.  , 0.  ])
+
             ```
         """        
         i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
@@ -405,8 +392,6 @@ class Structure(CartesianGeometry, Connectivity):
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
         """# `bond_coords`
         Returns the coordinates of the two atoms in a bond.
-        
-        
         
         ## Parameters
         
@@ -431,8 +416,6 @@ class Structure(CartesianGeometry, Connectivity):
         """# `__or__`
         This function concatenates two structures.
         
-        
-        
         ## Parameters
         
         `other: Structure`
@@ -445,10 +428,7 @@ class Structure(CartesianGeometry, Connectivity):
         
         ## Examples
             ``` Python
-            mol1 = Molecule.from_smiles("C1=CC=CC=C1")
-            mol2 = Molecule.from_smiles("C1=CC=CC=C1")
-            mol1 | mol2
-            Structure(12 atoms, 10 bonds)
+  
             ```
         """        
         return Structure.concatenate(self, other)
@@ -456,8 +436,6 @@ class Structure(CartesianGeometry, Connectivity):
     def perceive_atom_properties(self) -> None:
         """# `perceive_atom_properties`
         This function analyzes atom types
-        
-        
         
         ## Raises
         
@@ -480,8 +458,6 @@ class Structure(CartesianGeometry, Connectivity):
         """# `del_atom`
         This function deletes an atom from the structure.
         
-        
-        
         ## Parameters
         
         `_a: AtomLike`
@@ -489,8 +465,7 @@ class Structure(CartesianGeometry, Connectivity):
         
         ## Examples
             ``` Python
-            mol = Molecule.from_smiles("C1=CC=CC=C1")
-            mol.del_atom(mol.atoms[0])
+ 
             ```
         """         
         a = self.get_atom(_a)
@@ -520,8 +495,6 @@ class Substructure(Structure):
         """# `parent_atom_indices`
         Returns the indices of the atoms in the parent structure.
         
-        
-        
         ## Returns
         
         `list[int]`
@@ -529,9 +502,7 @@ class Substructure(Structure):
         
         ## Examples
             ``` Python
-            mol = Molecule.from_smiles("C1=CC=CC=C1")
-            mol.heavy.parent_atom_indices
-            [1, 2, 3, 4, 5]
+
             ```
         """        
         return list(self.yield_parent_atom_indices(self._atoms))
@@ -541,8 +512,6 @@ class Substructure(Structure):
         """# `coords`
         Returns the coordinates of the atoms in the substructure.
         
-        
-        
         ## Returns
         
         `np.ndarray`
@@ -550,9 +519,7 @@ class Substructure(Structure):
         
         ## Examples
             ``` Python
-            mol = Molecule.from_smiles("C1=CC=CC=C1")
-            mol.heavy.coords
-            array([[ 0.  ,  0.  ,  0.  ],
+ 
             ```
         """        
         return self._parent.coords[self.parent_atom_indices]
@@ -561,8 +528,6 @@ class Substructure(Structure):
     def coords(self, other: np.ndarray):
         """# `coords`
         Sets the coordinates of the atoms in the substructure.
-        
-        
         
         ## Parameters
         
@@ -574,8 +539,6 @@ class Substructure(Structure):
     def __or__(self, other: Substructure | Structure) -> Substructure | Structure:
         """# `__or__`
         This function concatenates two structures.
-        
-        
         
         ## Parameters
         
@@ -589,10 +552,6 @@ class Substructure(Structure):
         
         ## Examples
             ``` Python
-            mol1 = Molecule.from_smiles("C1=CC=CC=C1")
-            mol2 = Molecule.from_smiles("C1=CC=CC=C1")
-            mol1.heavy | mol2.heavy
-            Substructure(parent=Structure(12 atoms, 10 bonds), atoms=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) 
             ```
         """        
         if isinstance(other, Substructure) and other.parent == self._parent:

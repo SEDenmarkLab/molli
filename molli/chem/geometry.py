@@ -32,8 +32,7 @@ import math
 
 
 class DistanceUnit(Enum):
-    """
-    # `DistanceUnit`
+    """# `DistanceUnit`
     
     Enumerates through commonly used distance units
 
@@ -43,8 +42,7 @@ class DistanceUnit(Enum):
 
     Potential Uses:
     ```Python
-        nano_meter = DistanceUnit(0.100) # nanometer 
-        nano_meter == DistanceUnit.nm  # True 
+  
     ```
     """
     A = 1.0
@@ -58,10 +56,8 @@ class DistanceUnit(Enum):
 
 def _angle(v1: ArrayLike, v2: ArrayLike) -> float:
     """# `_angle`
-    Computes the angle between two vectors in degrees
+    Computes the angle between two vectors in radians
     This parameter is communtative 
-    
-    
     
     ## Parameters
     
@@ -73,12 +69,11 @@ def _angle(v1: ArrayLike, v2: ArrayLike) -> float:
     ## Returns
     
     `float`
-        the angle between the vectors in degrees 
+        the angle between the vectors in radians
 
     ## Examples
         ``` Python
-        _angle([1, 0, 0], [0, 1, 0])
-        90.0
+    
         ```
     """    
     dt = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
@@ -86,8 +81,7 @@ def _angle(v1: ArrayLike, v2: ArrayLike) -> float:
 
 
 class CartesianGeometry(Promolecule):
-    """
-    Cartesian Geometry Class
+    """#`Cartesian Geometry Class`
     Stores molecular geometry in ANGSTROM floating points.
     This version is generalizable to arbitrary coordinates and data types
     """
@@ -134,8 +128,6 @@ class CartesianGeometry(Promolecule):
         """# `add_atom`
         Adds an atom to the geometry
         
-        
-        
         ## Parameters
         
         `a: Atom`
@@ -150,7 +142,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            geom.add_atom(Atom(Element.H), coord=[0, 0, 0])
             ```
         """        
         _a = super().add_atom(a)
@@ -171,8 +162,6 @@ class CartesianGeometry(Promolecule):
         """# `new_atom`
         Adds a new atom to the geometry and returns it
         
-        
-        
         ## Parameters
         
         `element: Element`, optional, default: `...`
@@ -189,7 +178,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            geom.new_atom(Element.H, coord=[0, 0, 0])
             ```
         """        
         _a = Atom(element, isotope, **kwargs)
@@ -201,8 +189,6 @@ class CartesianGeometry(Promolecule):
         """# `coords`
         Returns the coordinates of the geometry
         
-        
-        
         ## Returns
         
         `ArrayLike`
@@ -210,9 +196,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            geom.coords
-            array([[0., 0., 0.],
-                     [1., 1., 1.]])
             ```
         """        
         return self._coords
@@ -221,8 +204,6 @@ class CartesianGeometry(Promolecule):
     def coords(self, other: ArrayLike):
         """# `coords`
         Sets the coordinates of the geometry
-        
-        
         
         ## Parameters
         
@@ -246,8 +227,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            geom.coords_as_list
-            [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
 
             ```
         """        
@@ -256,8 +235,6 @@ class CartesianGeometry(Promolecule):
     def extend(self, other: CartesianGeometry):
         """# `extend`
         Extends the current geometry with another geometry
-        
-        
         
         ## Parameters
         
@@ -274,8 +251,6 @@ class CartesianGeometry(Promolecule):
     def dump_xyz(self, output: StringIO, write_header: bool = True) -> None:
         """# `dump_xyz`
         Dumps the xyz file into the output stream
-        
-        
         
         ## Parameters
         
@@ -301,8 +276,6 @@ class CartesianGeometry(Promolecule):
     def dumps_xyz(self, write_header: bool = True) -> str:
         """# `dumps_xyz`
         Returns a string representation of the xyz file
-        
-        
         
         ## Parameters
         
@@ -424,8 +397,6 @@ class CartesianGeometry(Promolecule):
         """# `load_all_xyz`
         This function loads all xyz files from the input stream
         
-        
-        
         ## Parameters
         
         `cls: type[CartesianGeometry]`
@@ -468,8 +439,6 @@ class CartesianGeometry(Promolecule):
         """# `loads_all_xyz`
         This function loads all xyz files from the input string
         
-        
-        
         ## Parameters
         
         `cls: type[CartesianGeometry]`
@@ -489,7 +458,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            mol = CartesianGeometry.loads_all_xyz("mol.xyz")
             ```
         """        
         stream = StringIO(input)
@@ -509,8 +477,6 @@ class CartesianGeometry(Promolecule):
         """# `yield_from_xyz`
         This function loads all xyz files from the input string
         
-        
-        
         ## Parameters
         
         `cls: type[CartesianGeometry]`
@@ -529,7 +495,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            mol = CartesianGeometry.yield_from_xyz("mol.xyz")
             ```
         """    
         for xyzblock in read_xyz(stream):
@@ -551,8 +516,6 @@ class CartesianGeometry(Promolecule):
         """# `scale`
         Multiplication of all coordinates by a factor.
         
-        
-        
         ## Parameters
         
         `factor: float`
@@ -568,7 +531,6 @@ class CartesianGeometry(Promolecule):
             Scaling with a factor == 0 is not allowed.
         ## Examples
             ``` Python
-            mol.scale(1.2)
             ```
         """        
         if factor < 0 and not allow_inversion:
@@ -591,8 +553,6 @@ class CartesianGeometry(Promolecule):
     def distance(self, a1: AtomLike, a2: AtomLike) -> float:
         """# `distance`
         Calculates the distance between two atoms
-        
-        
         
         ## Parameters
         
@@ -619,8 +579,6 @@ class CartesianGeometry(Promolecule):
         """# `get_atom_coord`
         Returns the coordinates of the atom
         
-        
-        
         ## Parameters
         
         `_a: AtomLike`
@@ -642,8 +600,6 @@ class CartesianGeometry(Promolecule):
     def vector(self, a1: AtomLike, a2: AtomLike | np.ndarray) -> np.ndarray:
         """# `vector`
         Returns the vector between two atoms
-        
-        
         
         ## Parameters
         
@@ -674,8 +630,6 @@ class CartesianGeometry(Promolecule):
         """# `distance_to_point`
         Compute the distance between an atom and a point
         
-        
-        
         ## Parameters
         
         `a: AtomLike`
@@ -698,9 +652,7 @@ class CartesianGeometry(Promolecule):
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
         """# `angle`
-        Compute an angle between three atoms in degrees
-        
-        
+        Compute an angle between three atoms in radians
         
         ## Parameters
         
@@ -714,11 +666,10 @@ class CartesianGeometry(Promolecule):
         ## Returns
         
         `float`
-            Angle between the three atoms in degrees
+            Angle between the three atoms in radians 
         
         ## Examples
             ``` Python
-            mol.angle(1, 2, 3)
             ```
         """       
         i1, i2, i3 = map(self.get_atom_index, (a1, a2, a3))
@@ -735,8 +686,6 @@ class CartesianGeometry(Promolecule):
         """# `coord_subset`
         Returns the coordinates of a subset of atoms
         
-        
-        
         ## Parameters
         
         `atoms: Iterable[AtomLike]`
@@ -749,7 +698,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            mol.coord_subset([1, 2, 3]) = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
             ```
         """        
         indices = list(map(self.get_atom_index, atoms))
@@ -764,8 +712,6 @@ class CartesianGeometry(Promolecule):
     ) -> float:
         """# `dihedral`
         Compute the dihedral angle between four atoms in degrees
-        
-        
         
         ## Parameters
         
@@ -805,8 +751,6 @@ class CartesianGeometry(Promolecule):
         """# `translate`
         Translate coordinates
         
-        
-        
         ## Parameters
         
         `vector: ArrayLike`
@@ -814,7 +758,6 @@ class CartesianGeometry(Promolecule):
 
         ## Examples
             ``` Python
-            mol.translate([1, 2, 3]) == mol.coords += [1, 2, 3] # True
             ```
         """        
         v = np.array(vector)
@@ -824,8 +767,6 @@ class CartesianGeometry(Promolecule):
         """# `centroid`
         Centroid of the molecule
         
-        
-        
         ## Returns
         
         `np.ndarray`
@@ -833,9 +774,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            mol = CartesianGeometry.from_smiles("C1CCCCC1")
-            mol.centroid()
-            array([0., 0., 0.])
             ```
         """        
         return np.average(self.coords, axis=0)
@@ -876,9 +814,7 @@ class CartesianGeometry(Promolecule):
     def transform(self, _t_matrix: ArrayLike, /, validate=False):
         """# `transform`
         Transform the coordinates of the molecule
-        
-        
-        
+
         ## Parameters
         
         `_t_matrix: ArrayLike`
@@ -887,7 +823,6 @@ class CartesianGeometry(Promolecule):
         
         ## Examples
             ``` Python
-            mol.transform([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
             ```
         """        
         t_matrix = np.array(_t_matrix)
@@ -896,9 +831,7 @@ class CartesianGeometry(Promolecule):
     def del_atom(self, _a: AtomLike):
         """# `del_atom`
         Delete an atom from the molecule
-        
-        
-        
+
         ## Parameters
         
         `_a: AtomLike`
