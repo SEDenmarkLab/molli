@@ -35,7 +35,8 @@ def rotation_matrix_from_vectors(
 
     if c <= -1 + tol:
         # This case is for vectors that are nearly opposite and collinear
-        return np.diag([-1, -1, 1])
+        # It's complicated, but we could find a matrix that would rotate
+        return rotate_2dvec_outa_plane(v2n, math.pi, v1n)
     else:
         I = np.eye(3)
         Ux = np.outer(v1n, v2n) - np.outer(v2n, v1n)
@@ -56,3 +57,10 @@ def rotation_matrix_from_axis(_axis: ArrayLike, angle: float):
     k2 = 1 - math.cos(angle)
 
     return np.eye(3) + k1 * W + k2 * (W @ W)
+
+
+def rotate_2dvec_outa_plane(_vec: ArrayLike, angle: float, _plane_normal: ArrayLike = [0,0,1]):
+    R = rotation_matrix_from_vectors(_plane_normal, [0, 0, 1])
+    ax = np.cross([0, 0, 1], _vec)  
+    Rinv = np.linalg.inv(R)
+    return R @ rotation_matrix_from_axis(ax, angle) @ Rinv
