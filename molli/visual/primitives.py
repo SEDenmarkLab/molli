@@ -74,7 +74,7 @@ def test_ballnstick(s: ml.StructureLike):
     # w.point_data["scalars"] = [glyph_type(a) for a in s.atoms]
 
     tubes = w.tube(radius=0.05)
-    spheres = w.glyph(orient=False, scale="radius_cov", geom=pv.Sphere(radius=0.3))
+    spheres = w.glyph(orient=False, scale="radius_cov", geom=pv.Sphere(radius=0.4))
 
     # plt.add_mesh(
     #     tubes,
