@@ -47,3 +47,4 @@ from . import files
 from . import storage
 
 from .chem import *
+from .ftypes import *
