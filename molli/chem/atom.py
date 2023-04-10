@@ -93,7 +93,7 @@ class Element(IntEnum):
         return self.get_property_value("color_cpk")
 
     @property
-    def group(self) -> int | str:
+    def group(self) -> int:
         """element group identifier"""
         return self.get_property_value("group")
 
@@ -279,6 +279,29 @@ Integer is interpreted as atomic number
 #         return self._parent
 
 
+IMPLICIT_VALENCE = {
+    1: 1,
+    2: 2,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 0,
+    8: 0,
+    9: 0,
+    10: 0,
+    11: 0,
+    12: 0,
+    13: 3,
+    14: 4,
+    15: 3,
+    16: 2,
+    17: 1,
+    18: 0,
+}
+"""This is the expected number of bonds for main group elements"""
+
+
 class AtomType(IntEnum):
     Unknown = 0
     Regular = 1
@@ -419,6 +442,10 @@ class Atom:
     # This is a default version of hash function for objects
     def __hash__(self) -> int:
         return id(self)
+
+    @property
+    def implicit_valence(self) -> int:
+        return IMPLICIT_VALENCE[self.element.group]
 
     @property
     def Z(self) -> int:
