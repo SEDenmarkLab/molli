@@ -32,41 +32,57 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
         where sign of int signifies the direction of out-of-plane bending
         sign[1] > sign[0]
     """
-    assert abs(sign) == 1, "Sign can only be +/-1"
+    assert abs(sign) <= 2, "Sign can only be +/-1"
     b = s.lookup_bond(_a1, _a2)
     a1, a2 = s.get_atoms(_a1, _a2)
     i1, i2 = s.get_atom_indices(a1, a2)
 
     if b is None:
         raise CDXMLSyntaxWarning(f"{a1} and {a2} are not bonded. Aborting")
+    if abs(sign) == 1:
+        if s.is_bond_in_ring(b):
+            # Fun stuff happens here
+            # this is under a few assumptions
+            s.substructure((a1, a2)).coords += sign * np.array([[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]])
 
-    if s.is_bond_in_ring(b):
-        # Fun stuff happens here
-        # this is under a few assumptions
-        s.substructure((a1, a2)).coords += sign * [[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]]
+            for _b in s.bonds_with_atom(a1):
+                if not s.is_bond_in_ring(_b):
+                    s.substructure(s.yield_bfs(a1, _b % a1)).translate(
+                        sign * np.array([0.0, 0.5, 0.75])
+                    )
 
-        for _b in s.bonds_with_atom(a1):
-            if not s.is_bond_in_ring(_b):
-                s.substructure(s.yield_bfs(a1, _b % a1)).translate(
-                    sign * [0.0, 0.5, 0.75]
-                )
+            for _b in s.bonds_with_atom(a2):
+                if not s.is_bond_in_ring(_b):
+                    s.substructure(s.yield_bfs(a2, _b % a2)).translate(
+                        sign * np.array([0.0, 0.5, 1.5])
+                    )
 
-        for _b in s.bonds_with_atom(a2):
-            if not s.is_bond_in_ring(_b):
-                s.substructure(s.yield_bfs(a2, _b % a2)).translate(
-                    sign * [0.0, 0.5, 1.5]
-                )
+        else:
+            # We need to define the rotation matrix first.
+            normal = mean_plane(s.coord_subset(s.connected_atoms(a1)))
+            angle = sign * (radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60))
+            rotation = rotate_2dvec_outa_plane(s.vector(i1, i2), angle, normal)
+            substruct = s.substructure(s.yield_bfs(a1, a2))
+            v = s.get_atom_coord(a1)
+            substruct.translate(-v)
+            substruct.transform(rotation)
+            substruct.translate(v)
 
-    else:
-        # We need to define the rotation matrix first.
-        normal = mean_plane(s.coord_subset(s.connected_atoms(a1)))
-        angle = sign * (radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60))
-        rotation = rotate_2dvec_outa_plane(s.vector(i1, i2), angle, normal)
-        substruct = s.substructure(s.yield_bfs(a1, a2))
-        v = s.get_atom_coord(a1)
-        substruct.translate(-v)
-        substruct.transform(rotation)
-        substruct.translate(v)
+    elif abs(sign) == 2:
+            s.substructure((a1, a2)).coords += (sign/2) * np.array([0.0, 0.0, 1.0])
+
+            for _b in s.bonds_with_atom(a1):
+                if not s.is_bond_in_ring(_b):
+                    s.substructure(s.yield_bfs(a1, _b % a1)).translate(
+                        (sign/2) * np.array([0.0, 0.0, 1.0])
+                    )
+
+            for _b in s.bonds_with_atom(a2):
+                if not s.is_bond_in_ring(_b):
+                    s.substructure(s.yield_bfs(a2, _b % a2)).translate(
+                        (sign/2) * np.array([0.0, 0.0, 1.0])
+                    )
+        
 
 
 @define(repr=True)
@@ -110,11 +126,11 @@ class CDXMLFile:
     def keys(self):
         return self.labels.keys()
 
-    def __getitem__(self, key: str) -> et.Element:
+    def __getitem__(self, key: str) -> Molecule:
         if (grpf := self.labels[key].find("../fragment")) in self.fragments:
-            return grpf
+            frag = grpf
         else:
-            return self.fragments[
+            frag = self.fragments[
                 np.argmin(
                     np.sum(
                         np.abs(self.fragment_coords - position(self.labels[key])),
@@ -122,6 +138,8 @@ class CDXMLFile:
                     )
                 )
             ]
+        
+        return self._parse_fragment(frag, Molecule, name=key)
 
     def _parse_atom_node(self, node: et.Element) -> Atom:
         """
@@ -175,7 +193,7 @@ class CDXMLFile:
 
         return Bond(a1, a2, btype=btype)
 
-    def _parse_fragment(self, frag: et.Element, cls: type[Structure]) -> Structure:
+    def _parse_fragment(self, frag: et.Element, cls: type[Structure], name: str = None) -> Structure:
         atoms = []
         bonds = []
         coords = []
@@ -189,7 +207,7 @@ class CDXMLFile:
             atom_idx[node.get("id")] = atom
             coords.append(position(node))
 
-        result = cls(atoms, copy_atoms=False)
+        result = cls(atoms, name=name, copy_atoms=False)
         result.coords[:, 2] = 0
 
         for bd in frag.findall("./b"):
@@ -224,6 +242,8 @@ class CDXMLFile:
                     _cdxml_3dify_(result, i2, i1, sign=+1)
                 case "WedgedHashEnd":
                     _cdxml_3dify_(result, i2, i1, sign=-1)
+                case "Bold":
+                    _cdxml_3dify_(result, i1, i2, sign=+2)
                 case _:
                     pass
 
@@ -237,6 +257,7 @@ class CDXMLFile:
                 ap,
                 substruct.attachment_points[0],
                 optimize_rotation=(substruct.n_atoms > 1),
+                name=name
             )
 
         return result
