@@ -3,7 +3,7 @@ Fragment
 
 This is the pydoc code for the ``fragment`` module. 
 
-.. automodule:: fragment
+.. automodule:: molli.chem.fragment
     :members: 
     :undoc-members: 
     :show-inheritance:

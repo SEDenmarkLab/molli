@@ -49,20 +49,14 @@ class BondType(IntEnum):
 
 
 class BondStereo(IntEnum):
-    """# `BondStereo`
-    
+    """
     Enumerates through different classifications for bond stereochemistry 
 
-    Args:
-
-        IntEnum (cls): inherited class for enumeration of integers
-
-    Potential Uses:
-    ```Python
-        trans = BondStereo(10) # E
-        trans == BondStereo.E # True 
-        trans == BondStereo.Trans # True 
-    ```
+    *Example Usage*:
+    
+        >>> trans = BondStereo(10) # E
+        >>> trans == BondStereo.E # True 
+        >>> trans == BondStereo.Trans # True 
     """
     Unknown = 0
     NotStereogenic = 1
@@ -100,14 +94,9 @@ MOL2_BOND_TYPE_MAP = bidict(
 
 @attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Bond:
-    """# `Bond`
+    """
     The class for bonds in the MOLLI package.
     a1 and a2 are the atoms that the bond connects, and their order is assumed to be interchangeable.
-    
-    ## Examples
-        ``` Python
-        _description_
-        ```
     """    
     a1: Atom
     a2: Atom
@@ -136,18 +125,11 @@ class Bond:
 
     @property
     def order(self) -> float:
-        """# `order`
+        """
         The order of the bond
         
-        ## Returns
-        
-        `float`
-            The order of the bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: a float representing the order of the bond
+        :rtype: float
         """        
         # if self.btype == BondType.FractionalOrder:
         #     return self._order
@@ -222,18 +204,13 @@ class Bond:
 
     @property
     def expected_length(self) -> float:
-        """# `expected_length`
+        """
         Calculates bond length in Angstroms based on the covalent radii of the atoms.
         
-        ## Returns
-        
-        `float`
-            Bond Length
-        
-        ## Examples
-            ``` Python
-            bond.expected_length == 1.54 # True
-            ```
+        :returns: the expected bond length in Angstroms
+        :rtype: float
+        *Example Usage*:
+            >>> bond.expected_length == 1.54 # True
         """        
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
 
@@ -267,14 +244,13 @@ class Bond:
 
 
 class Connectivity(Promolecule):
-    """# `Connectivity`
-    
+    """
     Connectivity us a graph-like structure that connects the nodes(atoms) with edges(bonds).
 
-    Args:
-
-        `Promolecule` (cls): inherited class that contains parameters useful for working with promolecules
+    :param Promocule: inherited class that contains parameters useful for working with promolecules
+    :type Promolecule: cls
     """
+    
     # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
 
     def __init__(
@@ -309,61 +285,36 @@ class Connectivity(Promolecule):
 
     @property
     def bonds(self) -> List[Bond]:
-        """# `bonds`
+        """
         List of all bonds in the molecule
 
-        ## Returns
-        
-        `List[Bond]`
-            List of Bonds
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: list of bonds in the molecule
+        :rtype: List[Bond]
         """
         return self._bonds
 
     @property
     def n_bonds(self) -> int:
-        """# `n_bonds`
+        """
         The total number of bonds in the molecule
         
-        ## Returns
-        
-        `int`
-            Total Bonds
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: the number of bonds in the molecule
+        :rtype: int
         """        
         return len(self._bonds)
 
     def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> Bond | None:
-        """# `lookup_bond`
+        """
         Retrieves the bond that connects two atoms 
         
-        ## Parameters
-        `a1: AtomLike`
-            First Atom of Interest
-        `a2: AtomLike`
-            Second Atom of Interest
+        :param a1: the first atom
+        :type a1: AtomLike
+        :param a2: the second atom
+        :type a2: AtomLike
+        :return: the bond that connects the two atoms
+        :rtype: Bond | None
 
-        These atoms are assumed to be interchangeable
-        
-        ## Returns
-        
-        `List[Bond]`
-            Bond Connecting Atoms of Interest
-        `None`
-            NULL When Atoms Do Not Share a Bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        *None* is returned if the bond does not exist.
         """        
         _a1 = self.get_atom(a1)
         _a2 = self.get_atom(a2)
@@ -374,23 +325,13 @@ class Connectivity(Promolecule):
             return None
 
     def index_bond(self, b: Bond) -> int:
-        """# `index_bond`
+        """
         Index of Desired Bond 
 
-        ## Arguments
-        
-        `b: Bond`
-        Desired Bond 
-        
-        ## Returns
-        
-        `int`
-            Index of the Bond 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :param b: the bond to find the index of
+        :type b: Bond
+        :return: the index of the bond
+        :rtype: int
         """        
         return self._bonds.index(b)
 
@@ -427,13 +368,11 @@ class Connectivity(Promolecule):
         super().del_atom(_a)
 
     def bonds_with_atom(self, a: AtomLike) -> Generator[Bond, None, None]:
-        """# `bonds_with_atom`
+        """
         Each bond on an atom
         
-        ## Yields
-        
-        `Generator[Bond, None, None]`
-            Bonds Attached to Atom 
+        :param a: the atom to find the bonds of
+        :type a: AtomLike
         """        
         _a = self.get_atom(a)
         for b in self._bonds:
@@ -456,18 +395,13 @@ class Connectivity(Promolecule):
         return val
 
     def n_bonds_with_atom(self, a: AtomLike) -> int:
-        """# `n_bonds_with_atom`
+        """
         Total number of bonds on an atom
         
-        ## Returns
-        
-        `int`
-            Number of Bonds
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :param a: the atom to find the number of bonds of
+        :type a: AtomLike
+        :return: the number of bonds on the atom
+        :rtype: int
         """        
         return sum(1 for _ in self.connected_atoms(a))
 
@@ -480,21 +414,15 @@ class Connectivity(Promolecule):
                 q.appendleft((a, dist + 1))
 
     def yield_bfsd(self, start: AtomLike) -> Generator[Tuple[Atom, int], None, None]:
-        """# `yield_bfsd`
+        """
         Yields atoms in breadth-first search, in traversal order.
-        Distantce from the start atom is also yielded.
-        Stored in a tuple of (Atom, Distance)
+        
+        Distance from the start atom is also yielded.
 
-        ## Yields
-        `Generator[Tuple[Atom, int], None, None]`
-            Tuples of Atoms with Their Distances 
-
-        ## Examples 
-
-        ```Python
-            for atom, distance in connectivity.yield_bfsd(a):
-            
-        ```
+        :param start: the atom to start the search from
+        :type start: AtomLike
+        :return: the atom and its distance from the start atom
+        :rtype: Generator[Tuple[Atom, int], None, None]
         """
         _sa = self.get_atom(start)
         visited = set((_sa,))

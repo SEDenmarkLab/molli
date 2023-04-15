@@ -29,44 +29,29 @@ import attrs
 
 class Element(IntEnum):
     """
-    # `Element`
-    
     Enumerates through elements
 
-    Args:
-
-        IntEnum (cls): inherited class for enumeration of integers
-
-    Potential Uses:
-    ```Python
-        o = Element(8) # oxygen
-        f = Element["F"] # fluorine
-        f == Element.F # True
-    ```
+    *Example Usage*:
+        
+        >>> o = Element(8) # oxygen
+        >>> f = Element["F"] # fluorine
+        >>> f == Element.F # True
     """
     @classmethod
     @cache
     def get(cls, elt: ElementLike) -> Element: 
-        """# `get`
+        """
         Class method that provides more universial way of retrieving element instances.
         
-        ## Parameters
+        :param elt: Desired element
         
-        `elt: ElementLike`
+        :type elt: ElementLike
             
             'int' will be interpreted as atomic number 
             'str' will be interpreted as element name
         
-        ## Returns
-        
-        `Element`
-            Class instance of the element  
-        
-        ## Examples
-            ``` Python
-            
-            ```
-
+        :returns: Element instance
+        :rtype: Element
         """        
         match elt:
             case Element() | int():
@@ -78,248 +63,155 @@ class Element(IntEnum):
 
     @property
     def symbol(self) -> str:
-        """# `symbol`
+        """
         The symbol of the element
-        
-        ## Returns
-        
-        `str`
-          Elemental Symbol 
-        
-        ## Examples
-            ``` Python
-            
-            ```
 
+        :returns: A string representing the symbol of the element
+        :rtype: str
         """        
         return self.name
 
     @property
     def z(self) -> int:
-        """# `z`
+        """
         Atomic number of the element
         
-        ## Returns
-        
-        `int` 
-            Atomic Number
-        
-        ## Examples
-            ``` Python
-
-            ```
+        :returns: An interger representing the atomic number of the element
+        :rtype: int
         """        
         return self.value
 
     def get_property_value(self, property_name: str) -> int | str | float:
-        """# `get_property_value`
+        """
         Retrieves desired value from dictionary key
         
-        ## Parameters
-        `property_name: str`
-            Name of the property to be retrieved
-        
-        ## Returns
-        
-        `float` when asked for atomic weight, covalent radius, or Van der Waals radius 
-        `str` when asked for CPK coloring
-        `int` when group value is requested
+        :param property_name: Name of the property to be retrieved
+        :type property_name: str
 
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: Value of the property
+        :rtype: int | str | float
+
+        *float* when asked for atomic weight, covalent radius, or Van der Waals radius 
+
+        *str* when asked for CPK coloring 
+
+        *int* when group value is requested 
         """        
         prop_val = data.get("element", property_name, self.name, noexcept=True)
 
         return prop_val
 
     def __repr__(self) -> str:
-        """# `__repr__`
+        """
         Prints the name of the element
-        
-        ## Returns
-        
-        `str`
-            Name of Element  
 
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A string representing the name of the element
+        :rtype: str
         """
         return self.name
 
     @property
     def atomic_weight(self) -> float:
-        """# `atomic_weight`
+        """
         The atomic weight of the element
         
-        ## Returns
-        
-        `float`
-            Atomic Weight 
-
-        ## Examples
-            ``` Python
-            _description_
-            ```    
+        :returns: A float representing the atomic weight of the element
+        :rtype: float
         """ 
         return self.get_property_value("atomic_weight")
 
     @property
     def cov_radius_1(self) -> float:
-        """# `cov_radius_1`
+        """
         The covalent radius of a single bond
         
-        ## Returns
-        
-        `float`
-            Covalent Radius of Single Bond
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A float representing the covalent radius of a single bond
+        :rtype: float
         """
         return self.get_property_value("covalent_radius_1")
 
     @property
     def cov_radius_2(self) -> float:
-        """# `cov_radius_2`
+        """
         The covalent radius of a double bond
-        
-        ## Returns
-        
-        `float`
-            Covalent Radius of Double Bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+
+        :returns: A float representing the covalent radius of a double bond
+        :rtype: float
         """        
         return self.get_property_value("covalent_radius_2")
 
     @property
     def cov_radius_3(self) -> float:
-        """# `cov_radius_3`
+        """
         The covalent radius of a triple bond
         
-        ## Returns
-        
-        `float`
-            Covalent Radius of Triple Bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A float representing the covalent radius of a triple bond
+        :rtype: float
         """        
         return self.get_property_value("covalent_radius_3")
 
     @property
     def cov_radius_grimme(self) -> float:
-        """# `cov_radius_grimme`
+        """
         This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
         
         
-        ## Returns
-        
-        `float`
-            Covalent Radius of Single Bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
-        
+        :returns: A float representing the covalent radius of a single bond
+        :rtype: float
         """
         return self.get_property_value("covalent_radius_grimme")
     @property
     def vdw_radius(self) -> float:
-        """# `vdw_radius`
+        """
         The Van der Waals radius
-        
-        ## Returns
-        
-        `float`
-            Van der Waals Radius 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+
+        :returns: A float representing the Van der Waals radius
+        :rtype: float
         """ 
         return self.get_property_value("vdw_radius")
 
     @property
     def en_pauling(self) -> float:
-        """# `en_pauling`
+        """
         The element's Pauling electronegativity 
         
-        ## Returns
-        
-        `float`
-            Pauling Electronegativity 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A float representing the element's Pauling electronegativity
+        :rtype: float
         """ 
         return self.get_property_value("en_pauling")
 
     @property
     def color_cpk(self) -> str:
-        """# `color_cpk`
+        """
         The color of the element based on its classification according to the CPK color scheme 
         
-        ## Returns
-        
-        `str`
-            Name of Color 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A string representing the color of the element
+        :rtype: str
         """ 
         return self.get_property_value("color_cpk")
 
     @property
     def group(self) -> int | str:
-        """# `group`
+        """
         The element's group
         
-        ## Returns
+        :returns: An integer representing the element's group
+        :rtype: int | str
         
-        `int`
-            Group Number
-        `str`
-            Group Name
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        **int** when group number is requested
+        **str** when group name is requested
         """        
         return self.get_property_value("group")
 
     def _serialize(self) -> int:
-        """# `_serialize`
+        """
         Serializes the element
         
-        ## Returns
-        
+        :returns: Value of the element
+        :rtype: int
         `int`
             Value of the element
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
         """        
         return self.value
 
@@ -448,7 +340,7 @@ class Element(IntEnum):
 
 ElementLike = Element | str | int
 """
-# `ElementLike`
+*ElementLike*
 A type alias for anything that can be resolved as an element 
 `str`is interpreted as element symbol 
 `int` is interpreted as atomic number
@@ -503,17 +395,12 @@ A type alias for anything that can be resolved as an element
 
 class AtomType(IntEnum):
     """
-    # `AtomType`
     Enumerates through atom groups, hybridizations, and classifications. 
 
-    Args:
-        IntEnum (cls): inherited class for enumeration of integers
+    *Example Usage*:
 
-    Potential Uses:
-    ```Python
-        ring = AtomType(2)  # Aromatic
-        ring == AtomType.Aromatic # True 
-    ```
+        >>> ring = AtomType(2)  # Aromatic
+        >>> ring == AtomType.Aromatic # True 
     """
     Unknown = 0
     Regular = 1
@@ -545,17 +432,12 @@ class AtomType(IntEnum):
 
 class AtomStereo(IntEnum):
     """
-    # `AtomStereo`
     Enumerates through stereogenic categories
-    
-    Args:
-        IntEnum (cls): inherited class for enumeration of integers
 
-    Potential Uses:
-    ```Python
-        r = AtomStereo(10) # R
-        r == AtomStereo.R # True
-    ```
+    *Example Usage*:
+
+        >>> r = AtomStereo(10) # R
+        >>> r == AtomStereo.R # True
     """
     Unknown = 0
     NotStereogenic = 1
@@ -569,17 +451,13 @@ class AtomStereo(IntEnum):
 
 class AtomGeom(IntEnum):
     """
-    # `AtomGeom`
     Enumerates through atom geometries
 
-    Args:
-        IntEnum (cls): inherited class for enumeration of integers
+    *Example Usage*:
+    
+        >>> planar = AtomGeom(31) # Planar
+        >>> planar == AtomGeom.R3_Planar # True 
 
-    Potential Uses:
-    ```Python
-        planar = AtomGeom(31) # Planar
-        planar == AtomGeom.R3_Planar # True 
-    ```
     """
     Unknown = 0
     R1 = 10
@@ -647,103 +525,62 @@ class Atom:
     )
 
     def evolve(self, **changes) -> Atom:
-        """# `evolve`
+        """
         Evolves the atom into a new atom with the changes specified in the `changes` dictionary.
-        
-        ## Returns
-        
-        `Atom`
-            A new atom with the changes specified in the `changes` dictionary.
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+
+        :param changes: parameter changes to the Atom class       
+        :returns Atom: a new Atom instance with the changes specified in the `changes` dictionary.
+        :rtype: Atom 
         """        
         return attrs.evolve(self, **changes)
 
     def as_dict(self) -> dict:
-        """# `as_dict`
+        """
         Returns the atom as a dictionary
-    
-        ## Returns
-        
-        `dict`
-            A dictionary of the atom
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+            
+        :returns: a dictionary of the atom
+        :rtype: dict
         """        
         return attrs.asdict(self)
 
     def as_tuple(self):
-        """# `as_tuple`
+        """
         Returns the atom as a tuple
         
-        ## Returns
-        
-        `tuple`
-            A tuple of the atom
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: a tuple of the atom
+        :rtype: tuple
         """        
         return attrs.astuple(self)
 
     @property
     def is_dummy(self) -> bool:
-        """# `is_dummy`
+        """
         Checks if the atom type is a dummy 
         
-        ## Returns
-        
-        `bool`
-            TRUE or FALSE 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: TRUE or FALSE
+        :rtype: bool
         """        
         return self.atype == AtomType.Dummy
 
     @property
     def is_attachment_point(self) -> bool:
-        """# `is_attachment_point`
+        """
         Checks if the atom is an attachment point
         
-        ## Returns
-        
-        `bool`
-            TRUE or FALSE 
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: TRUE or FALSE
+        :rtype: bool
         """        
         return self.atype == AtomType.AttachmentPoint
 
     @property
     def idx(self) -> int | None:
-        """# `idx`
+        """
         Returns the index of the current atom, if possible
         
-        ## Returns
-        
-        `int`
-            Index
-        `None`
-            Null
+        :returns: index of the atom
+        :rtype: int | None
 
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        *None* is returned if the atom is not part of a molecule
         """
         if self._parent is None:
             return None
@@ -762,123 +599,73 @@ class Atom:
 
     @property
     def Z(self) -> int:
-        """# `Z`
-        Atomic number (nuclear charge) of the element
+        """
+        Atomic number of the element
         
-        ## Returns
-        
-        `int`
-            Atomic Number
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
-            
+        :returns: An interger representing the atomic number of the element
+        :rtype: int
         """        
         return self.element.z
 
     @property
     def vdw_radius(self) -> float:
-        """# `vdw_radius`
-        The Van Der Waals radius
-        
-        ## Returns
-        
-        `float`
-            Atom's Van Der Waals Radius
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
-        """    
+        """
+        The Van der Waals radius
+
+        :returns: A float representing the Van der Waals radius
+        :rtype: float
+        """ 
         return self.element.vdw_radius
 
     @property
     def cov_radius_1(self) -> float:
-        """# `cov_radius_1`
+        """
         The covalent radius of a single bond
         
-        ## Returns
-        
-        `float`
-            Covalent Radius of Single Bond
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A float representing the covalent radius of a single bond
+        :rtype: float
         """
         return self.element.cov_radius_1
 
     @property
     def cov_radius_2(self) -> float:
-        """# `cov_radius_2`
+        """
         The covalent radius of a double bond
-        
-        ## Returns
-        
-        `float`
-            Covalent Radius of Double Bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
-        """        
+
+        :returns: A float representing the covalent radius of a double bond
+        :rtype: float
+        """    
         return self.element.cov_radius_2
 
     @property
     def cov_radius_3(self) -> float:
-        """# `cov_radius_3`
-        The covalent radius of a double bond
+        """
+        The covalent radius of a triple bond
         
-        ## Returns
-        
-        `float`
-            Covalent Radius of Double Bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A float representing the covalent radius of a triple bond
+        :rtype: float
         """        
         return self.element.cov_radius_3
 
     @property
     def cov_radius_grimme(self) -> float:
-        """# `cov_radius_grimme`
+        """
         This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
         
-        ## Returns
         
-        `float`
-            Covalent Radius of Single Bond
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
-    
+        :returns: A float representing the covalent radius of a single bond
+        :rtype: float
         """
         return self.element.cov_radius_grimme
 
     @property
     def color_cpk(self) -> str:
-        """# `color_cpk`
+        """
         The color of the element based on its classification according to the CPK color scheme 
         
-        ## Returns
-        
-        `str`
-            Name of Color 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :returns: A string representing the color of the element
+        :rtype: str
         """ 
         return self.element.color_cpk
 
@@ -1039,11 +826,10 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 
 class Promolecule:
-    """
-    # `Promolecule` 
-    This is a parent class that only employs methods that work on a \n
-    **list of disconnected atoms with no structure or geometry assigned to them.** \n
-    Any class that adds functionality on top of atom list should inherit this class \n
+    """ 
+    This is a parent class that only employs methods that work on a *list of disconnected atoms with no structure or geometry assigned to them*. 
+    
+    Any class that adds functionality on top of atom list should inherit this class 
     for API compatibility reasons.
     """
     __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
@@ -1107,52 +893,31 @@ class Promolecule:
 
     @property
     def attachment_points(self) -> List[Atom]:
-        """# `attachment_points`
+        """
         List of atoms with attachment points
         
-        ## Returns
-        
-        `List[Atom]`
-            List of Atoms 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: a list containing all Atom instances with attachment points
+        :rtype:List[Atom] 
         """        
         return [a for a in self.atoms if a.atype == AtomType.AttachmentPoint]
 
     @property
     def n_attachment_points(self) -> int:
-        """# `n_attachment_points`
+        """
         Total number of attachment points
         
-        ## Returns
-        
-        `int`
-            Total Attachment Points
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: an integer representing the total number of attachment points
+        :rtype: int
         """      
         return len(self.attachment_points)
 
     @property
     def name(self) -> str:
-        """# `name`
+        """
         Atom's name
         
-        ## Returns
-        
-        `str`
-            Atom's name 
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: a string representing the atom's name
+        :rtype: str
         """        
         return self._name
 
@@ -1170,80 +935,44 @@ class Promolecule:
 
     @property
     def atoms(self) -> List[Atom]:
-        """# `atoms`
+        """ 
         Atoms in the Promolecule
         
-        ## Returns
-        
-        `List[Atom]`
-            List of Atoms
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: a list containing all Atom instances in the promolecule
+        :rtype:List[Atom]
         """        
         return self._atoms
 
     @property
     def elements(self) -> List[Element]:
-        """# `elements`
+        """
         Elements in the promolecule
         
-        ## Returns
-        
-        `List[Element]`
-            List of Elements
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: a list containing all Element instances in the promolecule
+        :rtype:List[Element]
         """       
         return [a.element for a in self.atoms]
 
     @property
     def n_atoms(self) -> int:
-        """# `n_atoms`
+        """
         Total number of atoms in the promolecule
-        
-        ## Returns
-        
-        `int`
-            Total Number of Atoms
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+
+        :return: an integer representing the total number of atoms
+        :rtype: int        
         """        
         return len(self.atoms)
 
     def get_atom(self, _a: AtomLike) -> Atom:
-        """# `get_atom`
+        """
         Fetches an atom from the promolecule
-        
-        ## Parameters
-        
-        `_a: AtomLike`
-            Atom to fetch
-        
-        ## Returns
-        
-        `Atom`
-            Class instance of the atom
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
-        
-        ## Raises
-        
-        `ValueError`
-            if the atom is not found
-        `ValueError`
-            if the atom type is not found
+
+        :param _a: an atom or an index of an atom
+        :type _a: AtomLike
+        :return: an Atom instance
+        :rtype: Atom
+        :raises ValueError: if the atom is not found
+        :raises ValueError: if the atom type is not found
         """        
         match _a:
             case Atom():
@@ -1259,46 +988,26 @@ class Promolecule:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
     def get_atoms(self, *_atoms: AtomLike) -> tuple[Atom]:
-        """# `get_atoms`
+        """
         Fetches a list of atoms from the promolecule
-        
-        ## Returns
-        
-        `tuple[Atom]`
-            Tuple of atoms from the promolecule
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+
+        :param _atoms: a list of atoms or indices of atoms
+        :type _atoms: AtomLike
+        :return: a tuple of Atom instances
+        :rtype: tuple[Atom]
         """        
         return tuple(map(self.get_atom, _atoms))
 
     def get_atom_index(self, _a: AtomLike) -> int:
-        """# `get_atom_index`
+        """
         Fetches the index of an atom in the promolecule
-        
-        ## Parameters
-        
-        `_a: AtomLike`
-            Atom to fetch
-        
-        ## Returns
-        
-        `int`
-            Index of the atom
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
-        
-        ## Raises
-        
-        `ValueError`
-            If the atom is not found    
-        `ValueError`
-            If the atom type is not found
+
+        :param _a: an atom or an index of an atom
+        :type _a: AtomLike
+        :return: an integer representing the index of the atom
+        :rtype: int
+        :raises ValueError: if the atom is not found
+        :raises ValueError: if the atom type is not found
         """        
         match _a:
             case Atom():
@@ -1317,66 +1026,42 @@ class Promolecule:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
     def get_atom_indices(self, *_atoms: AtomLike) -> tuple[int]:
-        """# `get_atom_indices`
+        """
         Retrieves the indices of a list of atoms in the promolecule
         
-        ## Returns
-        
-        `tuple[int]`
-            Tuple of atom indices
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :param _atoms: a list of atoms or indices of atoms
+        :type _atoms: AtomLike
+        :return: a tuple of integers representing the indices of the atoms
+        :rtype: tuple[int]
         """        
         return tuple(map(self.get_atom_index, _atoms))
 
     def del_atom(self, _a: AtomLike):
-        """# `del_atom`
+        """
         Deletes an atom from the promolecule
-        
-        ## Parameters
-        
-        `_a: AtomLike`
-            Atom to delete
 
-        ## Examples
-            ``` Python
-            _description_
-            ```
-        """        
+        :param _a: an atom or an index of the atom to delete
+        :type _a: AtomLike
+        """     
         self._atoms.remove(_a)
 
     def append_atom(self, a: Atom):
-        """# `append_atom`
+        """
         Appends an atom to the promolecule
         
-        ## Parameters
-        
-        `a: Atom`
-            Atom to append
+        :param a: an Atom instance of desired atom
+        :type a: Atom
         """        
         self._atoms.append(a)
 
     def index_atom(self, _a: Atom) -> int:
-        """# `index_atom`
+        """
         Returns the index of an atom in the promolecule
-        
-        ## Parameters
-        
-        `_a: Atom`
-            Atom to index
-        
-        ## Returns
-        
-        `int`
-            Index of the atom
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+
+        :param _a: an Atom instance of desired atom
+        :type _a: Atom
+        :return: an integer representing the index of the atom
+        :rtype: int
         """        
         return self._atoms.index(_a)
 
@@ -1394,42 +1079,29 @@ class Promolecule:
     def yield_atoms_by_element(
         self, elt: Element | str | int
     ) -> Generator[Atom, None, None]:
-        """# `yield_atoms_by_element`
+        """
         Yields atoms that are within element of interest 
         
-        ## Arguments
+        :param elt: an element, element name, or atomic number
+        :type elt: Element | str | int
 
-        `Element` Instance of element class 
-        `str` Name of element 
-        `int` Atomic number
+        *Element* Instance of element class 
+        *str* Name of element 
+        *int* Atomic number
 
-        ## Yields
-        
-        `Generator[Atom, None, None]`
-            Atoms Inside Input Element
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
-        """      
+        :yield: a generator of Atom instances
+        :rtype: Generator[Atom, None, None]
+        """
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
 
     def yield_attachment_points(self) -> Generator[Atom, None, None]:
-        """# `yield_attachment_points`
+        """
         Yields atoms that contain attachment points
         
-        ## Yields
-        
-        `Generator[Atom, None, None]`
-            Atoms with Attachment Points
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :yield: a generator of Atom instances
+        :rtype: Generator[Atom, None, None]
         """        
         for a in self.atoms:
             if a.atype == AtomType.AttachmentPoint:
@@ -1439,23 +1111,13 @@ class Promolecule:
         return tuple(self.yield_attachment_points(self))
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
-        """# `yield_atoms_by_label`
+        """
         Yields atoms that have a desired label 
         
-        ## Arguments
-
-        `lbl: str`
-            Label to sort by 
-
-        ## Yields
-        
-        `Generator[Atom, None, None]`
-            Atoms with Desired Label
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :param lbl: a string representing the label
+        :type lbl: str
+        :yield: a generator of Atom instances
+        :rtype: Generator[Atom, None, None]
         """      
         for a in self.atoms:
             if a.label == lbl:
@@ -1470,18 +1132,11 @@ class Promolecule:
 
     @property
     def formula(self) -> str:
-        """# `formula`
+        """
         Molecular formula of promolecule 
     
-        ## Returns
-        
-        `str`
-            Promolecule's Molecular Formula
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: a string representing the molecular formula
+        :rtype: str
         """ 
         if self.n_atoms > 0:
             ctr = Counter(x.element.symbol for x in self.atoms)
@@ -1500,20 +1155,13 @@ class Promolecule:
 
     @property
     def molecular_weight(self) -> float:
-        """# `molecular_weight`
+        """
         Molecular weight of the molecule
 
-        Warning: currently there is no support for isotopic masses.
+        **Warning**: currently there is no support for isotopic masses.
 
-        ## Returns
-
-        `float`
-            molecular weight in Da
-
-        ## Examples
-            ```Python
-            _description_
-            ```
+        :return: a float representing the molecular weight
+        :rtype: float
         """
         _mw = 0.0
         for a in self.atoms:
@@ -1521,22 +1169,14 @@ class Promolecule:
         return _mw
 
     def label_atoms(self, template: str = "{e}{n0}"):
-        """# `label_atoms`
+        """
+        **Format code**:
+        >>> `n0`: atom number (begin with 0)
+        >>>  `n1`: atom number (begin with 1)
+        >>> `e`: element symbol
 
-        Format code:
-        - `n0`: atom number (begin with 0)
-        - `n1`: atom number (begin with 1)
-        - `e`: element symbol
-
-        ## Parameters
-
-        `template: str`, optional, default: `"{e}{n}"`
-            Template for atom name
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :param template: template for atom name
+        :type template: str, optional, default: `"{e}{n}"`
         """
         for i, a in enumerate(self.atoms):
             a.label = template.format(

@@ -56,35 +56,22 @@ class Molecule(Structure):
 
     @property
     def atomic_charges(self) -> np.ndarray:
-        """# `atomic_charges`
+        """
         The atomic charges of the molecule.
         
-        ## Returns
-        
-        `np.ndarray`
-            Array of atomic charges.
-        
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :return: The atomic charges of the molecule.
+        :rtype: np.ndarray
         """        
         return self._atomic_charges
 
     @atomic_charges.setter
     def atomic_charges(self, other: ArrayLike):
-        """# `atomic_charges`
+        """
         Sets the atomic charges of the molecule.
         
-        ## Raises
-        
-        `ValueError`
-            Shape of the array is not (n_atoms,)
-
-        ## Examples
-            ``` Python
-            _description_
-            ```
+        :param other: The atomic charges of the molecule.
+        :type other: ArrayLike
+        :raises ValueError: Inappropriate shape of atomic charge array
         """        
         if other is Ellipsis:
             self._atomic_charges = np.zeros(self.n_atoms)
@@ -121,18 +108,11 @@ class Molecule(Structure):
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {btype:>10}\n")
         
     def dumps_mol2(self) -> str:
-        """# `dumps_mol2`
+        """
         Returns a mol2 file as a string.
         
-        ## Returns
-        
-        `str`
-            mol2 file as a string.
-        
-        ## Examples
-            ``` Python
-            _description
-            ```
+        :return: A mol2 file as a string.
+        :rtype: str
         """        
         stream = StringIO()
         self.dump_mol2(stream)        

@@ -5,9 +5,15 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../molli/chem'))
+sys.path.insert(0, os.path.abspath('..'))
 
-
+import molli.chem.atom
+import molli.chem.bond
+import molli.chem.ensemble
+import molli.chem.fragment 
+import molli.chem.geometry
+import molli.chem.molecule
+import molli.chem.structure
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -20,7 +26,12 @@ release = '1.0.0'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc']
+extensions = ['sphinx.ext.autodoc', 'myst_parser']
+
+autodoc_member_order = 'bysource'
+
+source_suffix = {".rst": "restructuredtext",
+                 ".md": "markdown",}
 
 templates_path = ['_templates']
 exclude_patterns = []

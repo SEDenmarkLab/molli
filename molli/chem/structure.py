@@ -32,16 +32,14 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 class Structure(CartesianGeometry, Connectivity):
     """
-    # `Structure`
-    
     Combines the functionality of `CartesianGeometry` andd `Connectivity`
     'CartesianGeometry' gives the molecular data structure features of a 3d coordinate matrix
     'Connectivity' gives the molecular data structure features of a undirected graph 
 
-    Args:
-
-        `CartesianGeometry` (cls) : inherited class for performing geometric operations
-        `Connectivity` (cls) : inherited class for establishing bonds between individual atoms
+    :param CartesianGeometry: inherited class for performing geometric operations
+    :type CartesianGeometry: cls
+    :param Connectivity: inherited class for establishing bonds between individual atoms
+    :type Connectivity: cls
     """
     # Improve efficiency of attribute access
     __slots__ = ("_name", "_atoms", "_bonds", "_coords", "charge", "mult")
@@ -332,141 +330,82 @@ class Structure(CartesianGeometry, Connectivity):
 
     @property
     def heavy(self) -> Substructure:
-        """# `heavy`
+        """
         Returns a substructure containing only heavy atoms.
         
-        ## Returns
-        
-        `Substructure`
-            A substructure containing only heavy atoms.
-        
-        ## Examples
-            ``` Python
-
-            ```
+        :return: A substructure containing only heavy atoms.
+        :rtype: Substructure
         """        
         return Substructure(self, [a for a in self.atoms if a.element != Element.H])
 
     def bond_length(self, b: Bond) -> float:
-        """# `bond_length`
+        """
         Returns the length of a bond.
         
-        ## Parameters
-        
-        `b: Bond`
-            The bond to measure.
-        
-        ## Returns
-        
-        `float`
-            The length of the bond.
-        
-        ## Examples
-            ``` Python
-            ```
+        :param b: The bond to measure.
+        :type b: Bond
+        :return: The length of the bond.
+        :rtype: float
         """        
         return self.distance(b.a1, b.a2)
 
     def bond_vector(self, b: Bond) -> np.ndarray:
-        """# `bond_vector`
+        """
         Returns the vector between the two atoms in a bond.
         
-        ## Parameters
-        
-        `b: Bond`
-            The bond to measure.
-        
-        ## Returns
-        
-        `np.ndarray`
-            The vector between the two atoms in the bond.
-        
-        ## Examples
-            ``` Python
-
-            ```
+        :param b: The bond to measure.
+        :type b: Bond
+        :return: The vector between the two atoms in the bond.
+        :rtype: np.ndarray
         """        
         i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
         return self.coords[i2] - self.coords[i1]
 
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
-        """# `bond_coords`
+        """
         Returns the coordinates of the two atoms in a bond.
         
-        ## Parameters
-        
-        `b: Bond`
-            The bond to measure.
-        
-        ## Returns
-        
-        `tuple[np.ndarray]`
-            The coordinates of the two atoms in the bond.
-        
-        ## Examples
-            ``` Python
-            mol = Molecule.from_smiles("C1=CC=CC=C1")
-            mol.bond_coords(mol.bonds[0])
-            (array([0., 0., 0.]), array([1.54, 0.  , 0.  ]))
-            ```
+        :param b: The bond to evaluate
+        :type b: Bond
+        :return: The coordinates of the two atoms in the bond.
+        :rtype: tuple[np.ndarray]
         """        
         return self.coord_subset((b.a1, b.a2))
 
     def __or__(self, other: Structure) -> Structure:
-        """# `__or__`
-        This function concatenates two structures.
-        
-        ## Parameters
-        
-        `other: Structure`
-            The other structure to concatenate.
-        
-        ## Returns
-        
-        `Structure`
-            A new structure containing the atoms and bonds of both structures.
-        
-        ## Examples
-            ``` Python
-  
-            ```
+        """
+        This function concatenates two structures
+
+        :param other: The other structure to concatenate with.
+        :type other: Structure
+        :return: The concatenated structure.
+        :rtype: Structure
         """        
         return Structure.concatenate(self, other)
 
     def perceive_atom_properties(self) -> None:
-        """# `perceive_atom_properties`
+        """
         This function analyzes atom types
         
-        ## Raises
-        
-        `NotImplementedError`
-            This function is not implemented.
+        :raises NotImplementedError: This function is not implemented.
         """        
         raise NotImplementedError
 
     def perceive_bond_properties(self) -> None:
-        """# `perceive_bond_properties`
+        """
         This function analyzes bond types
 
-        ## Raises
-        `NotImplementedError`
-            This function is not implemented.
+        :raises NotImplementedError: This function is not implemented.
         """
         raise NotImplementedError
 
     def del_atom(self, _a: AtomLike):
-        """# `del_atom`
+        """
         This function deletes an atom from the structure.
-        
-        ## Parameters
-        
-        `_a: AtomLike`
-            The atom to delete.
-        
-        ## Examples
-            ``` Python
- 
-            ```
+
+        :param _a: The atom to delete.
+        :type _a: AtomLike
+        :raises NotImplementedError: This function is not implemented.
         """         
         a = self.get_atom(_a)
         super().del_atom(a)
@@ -492,67 +431,42 @@ class Substructure(Structure):
 
     @property
     def parent_atom_indices(self) -> list[int]:
-        """# `parent_atom_indices`
+        """
         Returns the indices of the atoms in the parent structure.
         
-        ## Returns
-        
-        `list[int]`
-            The indices of the atoms in the parent structure.
-        
-        ## Examples
-            ``` Python
-
-            ```
+        :return: The indices of the atoms in the parent structure.
+        :rtype: list[int]
         """        
         return list(self.yield_parent_atom_indices(self._atoms))
 
     @property
     def coords(self) -> np.ndarray:
-        """# `coords`
+        """
         Returns the coordinates of the atoms in the substructure.
-        
-        ## Returns
-        
-        `np.ndarray`
-            The coordinates of the atoms in the substructure.
-        
-        ## Examples
-            ``` Python
- 
-            ```
+
+        :return: The coordinates of the atoms in the substructure.
+        :rtype: np.ndarray
         """        
         return self._parent.coords[self.parent_atom_indices]
 
     @coords.setter
     def coords(self, other: np.ndarray):
-        """# `coords`
+        """
         Sets the coordinates of the atoms in the substructure.
         
-        ## Parameters
-        
-        `other: np.ndarray`
-            Coordinates to set.
+        :param other: The new coordinates.
+        :type other: np.ndarray
         """        
         self._parent.coords[self.parent_atom_indices] = other
 
     def __or__(self, other: Substructure | Structure) -> Substructure | Structure:
-        """# `__or__`
+        """
         This function concatenates two structures.
         
-        ## Parameters
-        
-        `other: Substructure | Structure`
-            The other structure to concatenate.
-        
-        ## Returns
-        
-        `Substructure | Structure`
-            A new structure containing the atoms and bonds of both structures.
-        
-        ## Examples
-            ``` Python
-            ```
+        :param other: The other structure to concatenate with.
+        :type other: Substructure | Structure
+        :return: The concatenated structure.
+        :rtype: Substructure | Structure
         """        
         if isinstance(other, Substructure) and other.parent == self._parent:
             return Substructure(self._parent, chain(self.atoms, other.atoms))

@@ -3,7 +3,7 @@ Atom
 
 This is the pydoc code for the ``atom`` module. 
 
-.. automodule:: atom
+.. automodule:: molli.chem.atom
     :members: 
     :undoc-members: 
     :show-inheritance:
