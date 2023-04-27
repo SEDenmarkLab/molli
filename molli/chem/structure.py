@@ -105,9 +105,15 @@ class Structure(CartesianGeometry, Connectivity):
         if _stream is None:
             stream = StringIO()
 
+        if hasattr(self, "name"):
+            name = self.name
+        else:
+            name = "unknown"
+
+
         stream.write(f"# Produced with molli package\n")
         stream.write(
-            f"@<TRIPOS>MOLECULE\n{self.name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
+            f"@<TRIPOS>MOLECULE\n{name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
         )
 
         stream.write("@<TRIPOS>ATOM\n")
@@ -220,6 +226,12 @@ class Structure(CartesianGeometry, Connectivity):
             )
 
         return res
+
+    def dumps_mol2(self) -> str:
+        """
+        This returns a mol2 file as a string
+        """
+        return self.dump_mol2()
 
     @classmethod
     def from_dict(self):
