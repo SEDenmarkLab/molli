@@ -300,7 +300,7 @@ class Structure(CartesianGeometry, Connectivity):
         r2 = struct2.get_atom_coord(a2r)
 
         rotation = rotation_matrix_from_vectors(v2, -v1, tol=1e-6)
-        translation = v1 * (dist or nb.expected_length) / np.linalg.norm(v1)
+        translation = v1 * (dist or nb.expected_length or 1.5) / np.linalg.norm(v1)
 
         c1 = struct1.coords[loc1] - r1
         c2 = (struct2.coords[loc2] - r2) @ rotation + translation
