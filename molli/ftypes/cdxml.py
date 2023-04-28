@@ -166,10 +166,10 @@ class CDXMLFile:
                 elt = Element.Unknown
                 atyp = AtomType.AttachmentPoint
                 if apn := node.get("ExternalConnectionNum"):
-                    lbl = "AP" + apn
+                    lbl = lbl or "AP" + apn
                 else:
                     # NOTE: this is for the cases for when **chemdraw is true to itself in being inconsistent**
-                    lbl = "AP0"
+                    lbl = lbl or "AP0"
             case "Fragment" | "Nickname":  # The latter is just a monkey patch. May break.
                 elt = Element.Unknown
                 atyp = AtomType.AttachmentPoint
