@@ -1,0 +1,117 @@
+@startuml
+
+!includeurl https://raw.githubusercontent.com/inthepocket/plantuml-styles/master/styles.plantuml!0
+
+
+abstract class Promolecule {
+    -_atoms: AtomLike
+    -_atoms_index_cache: list
+    -_name: str 
+    -charge: int 
+    -mult:int 
+    -get_atom()
+    -get_atoms()
+    -get_atom_index()
+    -get_atoms_indices()
+    -del_atom()
+    -append_atom()
+    -index_atom()
+    -yield_atoms_by_element()
+    -get_attachment_points()
+    -yield_atoms_by_label()
+    -sort_atoms()
+    -label_atoms()
+
+}
+
+class Connectivity {
+    -bonds: Bond
+    -lookup_bond()
+    -index_bond()
+    -get_bond()
+    -append_bond()
+    -append_bonds()
+    -extend_bonds()
+    -del_bond()
+    -del_atom()
+    -bond_with_atoms()
+    -connected_atoms()
+    -bonded_valence()
+    -n_bonds_with_atoms()
+    -_bfs_single()
+    -yield_bfsd()
+
+}
+
+
+class CartesianGeometry {
+    -_coords_dtype: np.float64
+    -_coords: np.ndarray
+    -add_atoms()
+    -new_atom()
+    -dump_xyz()
+    -dumps_xyz()
+    -scale()
+    -invert()
+    -distance()
+    -get_atom_coord()
+    -vector()
+    -distance_to_point()
+    -angle()
+    -coord_subset()
+    -dihedral()
+    -translate()
+    -centroid()
+    -rmsd()
+    -transform()
+    -del_atom()
+
+
+}
+
+
+class ConformerEnsemble {
+    -n_conformers: int
+    -weights: ArrayLike
+    -coords: ArrayLike
+
+}
+class Conformer{
+
+}
+class Structure {
+
+    -dump_mol2()
+    -bond_length()
+    -bond_vector()
+    -bond_coords()
+    -percieve_atom_properties()
+    -percieve_bond_properties()
+    -del_atom()
+
+}
+
+class Substructure {
+
+    -yield_parent_atom_indices()
+
+}
+
+class Molecule {
+    -_atomic_charges: ArrayLike
+    -dumps_mol2()
+}
+
+
+Promolecule <|-- Connectivity
+Promolecule <|-- CartesianGeometry
+Connectivity <|--ConformerEnsemble
+CartesianGeometry *- Structure
+Connectivity *- Structure
+Structure *- Substructure
+Structure *- Molecule
+skinparam SequenceMessageAlign center
+Molecule <|-- Conformer
+
+
+@enduml

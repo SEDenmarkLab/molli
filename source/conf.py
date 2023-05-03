@@ -28,6 +28,8 @@ release = '1.0.0'
 
 extensions = ['sphinx.ext.autodoc', 'myst_parser']
 
+
+
 autodoc_member_order = 'bysource'
 
 source_suffix = {".rst": "restructuredtext",

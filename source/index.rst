@@ -7,19 +7,42 @@ Welcome to Molli's documentation!
 =================================
 
 .. docs/indext.rst 
-.. include:: ../COVER.rst
+.. include:: ../welcome.rst
+
+   
+
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started
 
-   atom
-   bond
-   ensemble
-   fragment
-   geometry
-   molecule
-   structure
+   installation.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API reference 
+
+   API/atom
+   API/bond
+   API/ensemble
+   API/fragment
+   API/geometry
+   API/molecule
+   API/structure
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Command Line Reference 
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Molli Cookbook
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Miscellaneous 
+   
+   Miscellaneous/inheritance_diagram
 
 
 
