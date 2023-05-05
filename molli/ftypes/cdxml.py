@@ -43,7 +43,9 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
         if s.is_bond_in_ring(b):
             # Fun stuff happens here
             # this is under a few assumptions
-            s.substructure((a1, a2)).coords += sign * np.array([[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]])
+            s.substructure((a1, a2)).coords += sign * np.array(
+                [[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]]
+            )
 
             for _b in s.bonds_with_atom(a1):
                 if not s.is_bond_in_ring(_b):
@@ -60,7 +62,9 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
         else:
             # We need to define the rotation matrix first.
             normal = mean_plane(s.coord_subset(s.connected_atoms(a1)))
-            angle = sign * (radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60))
+            angle = sign * (
+                radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60)
+            )
             rotation = rotate_2dvec_outa_plane(s.vector(i1, i2), angle, normal)
             substruct = s.substructure(s.yield_bfs(a1, a2))
             v = s.get_atom_coord(a1)
@@ -69,20 +73,19 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
             substruct.translate(v)
 
     elif abs(sign) == 2:
-            s.substructure((a1, a2)).coords += (sign/2) * np.array([0.0, 0.0, 1.0])
+        s.substructure((a1, a2)).coords += (sign / 2) * np.array([0.0, 0.0, 1.0])
 
-            for _b in s.bonds_with_atom(a1):
-                if not s.is_bond_in_ring(_b):
-                    s.substructure(s.yield_bfs(a1, _b % a1)).translate(
-                        (sign/2) * np.array([0.0, 0.0, 1.0])
-                    )
+        for _b in s.bonds_with_atom(a1):
+            if not s.is_bond_in_ring(_b):
+                s.substructure(s.yield_bfs(a1, _b % a1)).translate(
+                    (sign / 2) * np.array([0.0, 0.0, 1.0])
+                )
 
-            for _b in s.bonds_with_atom(a2):
-                if not s.is_bond_in_ring(_b):
-                    s.substructure(s.yield_bfs(a2, _b % a2)).translate(
-                        (sign/2) * np.array([0.0, 0.0, 1.0])
-                    )
-        
+        for _b in s.bonds_with_atom(a2):
+            if not s.is_bond_in_ring(_b):
+                s.substructure(s.yield_bfs(a2, _b % a2)).translate(
+                    (sign / 2) * np.array([0.0, 0.0, 1.0])
+                )
 
 
 @define(repr=True)
@@ -138,7 +141,7 @@ class CDXMLFile:
                     )
                 )
             ]
-        
+
         return self._parse_fragment(frag, Molecule, name=key)
 
     def _parse_atom_node(self, node: et.Element) -> Atom:
@@ -163,13 +166,19 @@ class CDXMLFile:
                 elt = Element.Unknown
                 atyp = AtomType.AttachmentPoint
                 if apn := node.get("ExternalConnectionNum"):
-                    lbl = "AP" + apn or lbl
+                    lbl = lbl or "AP" + apn
+                else:
+                    # NOTE: this is for the cases for when **chemdraw is true to itself in being inconsistent**
+                    lbl = lbl or "AP0"
             case "Fragment" | "Nickname":  # The latter is just a monkey patch. May break.
                 elt = Element.Unknown
                 atyp = AtomType.AttachmentPoint
                 lbl = node.get("id")
             case _:
                 atyp = AtomType.Regular
+                # Potentially add because Casey requests.
+                # Or at least make it consistent.
+                # lbl = node.get("Element") or "C"
 
         return Atom(elt, isotope=isot, label=lbl, atype=atyp)
 
@@ -193,7 +202,9 @@ class CDXMLFile:
 
         return Bond(a1, a2, btype=btype)
 
-    def _parse_fragment(self, frag: et.Element, cls: type[Structure], name: str = None) -> Structure:
+    def _parse_fragment(
+        self, frag: et.Element, cls: type[Structure], name: str = None
+    ) -> Structure:
         atoms = []
         bonds = []
         coords = []
@@ -257,7 +268,7 @@ class CDXMLFile:
                 ap,
                 substruct.attachment_points[0],
                 optimize_rotation=(substruct.n_atoms > 1),
-                name=name
+                name=name,
             )
 
         return result

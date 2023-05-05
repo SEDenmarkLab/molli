@@ -35,7 +35,7 @@ class StructureTC(ut.TestCase):
 
     def test_structure_from_xyz_file(self):
         # This opens in text mode
-        with ml.files.xyz.dendrobine.open() as f:
+        with open(ml.files.dendrobine_xyz) as f:
             m1 = chem.Structure.load_xyz(f, name="dendrobine", source_units="Angstrom")
 
         m2 = chem.Structure(m1)
@@ -43,7 +43,7 @@ class StructureTC(ut.TestCase):
         self.assertTrue(np.allclose(m1.coords, m2.coords, atol=1e-5))
 
     def test_yield_structures_from_xyz_file(self):
-        with ml.files.xyz.pentane_confs.open() as f:
+        with open(ml.files.pentane_confs_xyz)  as f:
             lst_structs = list(chem.Structure.yield_from_xyz(f, name="pentane"))
 
         self.assertEqual(len(lst_structs), 7)
@@ -57,7 +57,7 @@ class StructureTC(ut.TestCase):
         self.assertEqual(m.n_bonds, 2)
 
     def test_concatenate(self):
-        s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
+        s1 = chem.Structure.load_mol2(ml.files.dendrobine_mol2)
 
         s2 = chem.Structure(s1)
         s2.translate([50, 0, 0])
@@ -70,7 +70,7 @@ class StructureTC(ut.TestCase):
         self.assertAlmostEqual(s3.distance(0, s1.n_atoms), 50.0, 6)
 
     def test_zincdb(self):
-        with ml.files.mol2.zincdb_fda.open() as f:
+        with open(ml.files.dendrobine_mol2) as f:
             structs = ml.Structure.yield_from_mol2(f)
 
             for s in structs:
@@ -79,7 +79,7 @@ class StructureTC(ut.TestCase):
                 self.assertTrue(all(a.label is not None for a in s.atoms))
 
     def test_load_mol2_dummy(self):
-        m = ml.Structure.load_mol2(ml.files.mol2.dummy.path)
+        m = ml.Structure.load_mol2(ml.files.dummy_mol2)
         a1, a2 = m.atoms
         self.assertEqual(a1.atype, ml.AtomType.Dummy)
         self.assertEqual(a2.atype, ml.AtomType.Dummy)
@@ -89,7 +89,7 @@ class StructureTC(ut.TestCase):
         self.assertFalse(any(n == "unnamed" for n in names))
 
     def test_substruct(self):
-        s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
+        s1 = chem.Structure.load_mol2(ml.files.dendrobine_mol2)
         a_test = (1, 3, 5)
         sub = ml.Substructure(s1, a_test)
         sub_coord = sub.coords
@@ -98,7 +98,7 @@ class StructureTC(ut.TestCase):
         np.testing.assert_allclose(s1_coord, sub_coord)
 
     def test_del_atom(self):
-        s1 = chem.Structure.load_mol2(ml.files.mol2.dendrobine.path)
+        s1 = chem.Structure.load_mol2(ml.files.dendrobine_mol2)
         s1.del_atom(0)
 
         self.assertEqual(s1.n_atoms, 43)

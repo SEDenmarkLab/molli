@@ -1,5 +1,5 @@
 from __future__ import annotations
-from . import Atom, AtomLike, Promolecule, PromoleculeLike
+from . import Atom, Element, AtomLike, Promolecule, PromoleculeLike
 from dataclasses import dataclass, field, KW_ONLY
 from typing import Iterable, List, Generator, Tuple, Any
 from copy import deepcopy
@@ -172,7 +172,9 @@ class Bond:
 
     @property
     def expected_length(self) -> float:
-        return self.a1.cov_radius_1 + self.a2.cov_radius_1
+        r1 = self.a1.cov_radius_1
+        r2 = self.a2.cov_radius_1
+        return (r1 or Element.C.cov_radius_1) + (r2 or Element.C.cov_radius_1)
 
     @cache
     def set_mol2_type(self, m2t: str):

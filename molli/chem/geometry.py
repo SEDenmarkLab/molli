@@ -98,7 +98,7 @@ class CartesianGeometry(Promolecule):
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 
     def add_atom(self, a: Atom, coord: ArrayLike):
-        _a = super().add_atom(a)
+        super().append_atom(a)
         _coord = np.array(coord, dtype=self._coords_dtype)
         if not _coord.shape == (3,):
             raise ValueError(
