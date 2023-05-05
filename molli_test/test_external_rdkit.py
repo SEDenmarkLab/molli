@@ -10,7 +10,7 @@ class RDKitTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
     def test_create_rdkit_mol(self):
-        with ml.files.mol2.zincdb_fda.open() as f:
+        with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 molli_mol = ml.Molecule(s,name=s.name)
@@ -18,7 +18,7 @@ class RDKitTC(ut.TestCase):
                 self.assertIsInstance(molli_mol_rdmol_dict[molli_mol], PropertyMol)
 
     def test_molli_mol_reorder(self):
-        with ml.files.mol2.zincdb_fda.open() as f:
+        with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 molli_mol = ml.Molecule(s,name=s.name)
@@ -31,7 +31,7 @@ class RDKitTC(ut.TestCase):
                     np.testing.assert_array_equal(can_rdkit_atom_elem,new_molli_elem)
 
     def test_rdkit_atom_filter(self):
-        m1 = ml.Molecule.load_mol2(ml.files.mol2.dendrobine.path,name='dendrobine')
+        m1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2,name='dendrobine')
 
         molli_rdkit_dict = _rdkit.create_rdkit_mol(m1)
         af_mol = _rdkit.rdkit_atom_filter(molli_rdkit_dict[m1])

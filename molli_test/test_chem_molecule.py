@@ -9,7 +9,7 @@ class MoleculeTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
     def test_yield_from_mol2(self):
-        with files.mol2.pentane_confs.open("t") as f:
+        with open(files.pentane_confs_mol2) as f:
             lst_structs: list[chem.Molecule] = list(
                 chem.Molecule.yield_from_mol2(f, name="pentane")
             )
@@ -22,7 +22,7 @@ class MoleculeTC(ut.TestCase):
 
     # @ut.skip("Not implemented yet")
     def test_molecule_cloning(self):
-        with files.mol2.pentane_confs.open("t") as f:
+        with open(files.pentane_confs_mol2) as f:
             m1 = chem.Molecule.load_mol2(f, name="pentane")
 
         m2 = chem.Molecule(m1)
@@ -41,10 +41,16 @@ class MoleculeTC(ut.TestCase):
         self.assertEqual(np.linalg.norm(m1.coords - m2.coords), 0)
 
     def test_dump_mol2(self):
-        for file in files.mol2:
+        for file in [
+            files.pentane_confs_mol2,
+            files.dendrobine_mol2,
+            files.dummy_mol2,
+            files.fxyl_mol2,
+            files.nanotube_mol2
+        ]:
 
-            with file.open("t") as f:
-                m1 = chem.Molecule.load_mol2(f, name="pentane")
+            with open(file) as f:
+                m1 = chem.Molecule.load_mol2(f)
             
             new_m1 = next(Molecule.yield_from_mol2(Molecule.dumps_mol2(m1)))
 
