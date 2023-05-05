@@ -379,7 +379,7 @@ class CartesianGeometry(Promolecule):
 
     def transform(self, _t_matrix: ArrayLike, /, validate=False):
         t_matrix = np.array(_t_matrix)
-        self.coords = t_matrix @ self.coords
+        self.coords = self.coords @ t_matrix
 
     def del_atom(self, _a: AtomLike):
         ai = self.index_atom(_a)

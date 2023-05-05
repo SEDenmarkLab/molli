@@ -56,9 +56,9 @@ MOL2_BOND_TYPE_MAP = bidict(
         "1": BondType.Single,
         "2": BondType.Double,
         "3": BondType.Triple,
-        # "4" : BondType.Quadruple,
-        # "5" : BondType.Quintuple,
-        # "6" : BondType.Sextuple,
+        "4": BondType.Quadruple,
+        "5": BondType.Quintuple,
+        "6": BondType.Sextuple,
         "ar": BondType.Aromatic,
         "am": BondType.Amide,
         "du": BondType.Dummy,
@@ -316,15 +316,19 @@ class Connectivity(Promolecule):
     def n_bonds_with_atom(self, a: AtomLike):
         return sum(1 for _ in self.connected_atoms(a))
 
-    def _bfs_single(self, q: deque, visited: set):
-        start, dist = q.pop()
-        for a in self.connected_atoms(start):
-            if a not in visited:
-                yield (a, dist + 1)
-                visited.add(a)
-                q.appendleft((a, dist + 1))
+    # def _bfs_single(self, q: deque, visited: set):
+    #     start, dist = q.pop()
+    #     for a in self.connected_atoms(start):
+    #         if a not in visited:
+    #             yield (a, dist + 1)
+    #             visited.add(a)
+    #             q.appendleft((a, dist + 1))
 
-    def yield_bfsd(self, start: AtomLike) -> Generator[Tuple[Atom, int], None, None]:
+    def yield_bfsd(
+        self,
+        _start: AtomLike,
+        _direction: AtomLike = None,
+    ) -> Generator[Tuple[Atom, int], None, None]:
         """
         Yields atoms and their distances from start
 
@@ -333,8 +337,67 @@ class Connectivity(Promolecule):
             ...
         ```
         """
-        _sa = self.get_atom(start)
-        visited = set((_sa,))
-        q = deque([(_sa, 0)])
-        while q:
-            yield from self._bfs_single(q, visited)
+        start = self.get_atom(_start)
+        visited = {start}
+        queue = deque()
+
+        if _direction is None:
+            queue.append((start, 0))
+            # yield (start, 0)
+        else:
+            direction = self.get_atom(_direction)
+            assert direction in set(
+                self.connected_atoms(start)
+            ), "Direction must be an atom connected to the start"
+            visited.add(direction)
+            queue.append((direction, 1))
+            yield (direction, 1)
+        while queue:
+            start, dist = queue.pop()
+            for a in self.connected_atoms(start):
+                if a not in visited:
+                    yield (a, dist + 1)
+                    visited.add(a)
+                    queue.appendleft((a, dist + 1))
+
+    def yield_bfs(
+        self, _start: AtomLike, _direction: AtomLike = None
+    ) -> Generator[Atom, None, None]:
+        """
+        Yields atoms and their distances from start
+
+        ```python
+        for atom in connectivity.yield_bfsd(a):
+            ...
+        ```
+        """
+        start = self.get_atom(_start)
+        visited = {start}
+        queue = deque()
+
+        if _direction is None:
+            queue.append(start)
+            # yield (start, 0)
+        else:
+            direction = self.get_atom(_direction)
+            assert direction in set(
+                self.connected_atoms(start)
+            ), "Direction must be an atom connected to the start"
+            visited.add(direction)
+            queue.append(direction)
+            yield direction
+        while queue:
+            start = queue.pop()
+            for a in self.connected_atoms(start):
+                if a not in visited:
+                    yield a
+                    visited.add(a)
+                    queue.appendleft(a)
+
+    def is_bond_in_ring(self, _b: Bond):
+        connections = {a for a in self.connected_atoms(_b.a1) if a != _b.a2}
+        for a in self.yield_bfs(_b.a1, _b.a2):
+            if a in connections:
+                return True
+
+        return False
