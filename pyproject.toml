@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 authors = [{ name = "Alexander S. Shved", email = "shvedalx@illinois.edu" }]
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.10"
 name = "molli"
 description = "Molecular toolbox library"
 # dynamic = ["version"]
@@ -22,7 +22,6 @@ dependencies = [
     "networkx>=2.8.7",
     "tqdm~=4.64.0",
     "h5py~=3.7.0",
-    "pyvista~=0.37",
 ]
 version = "1.0.0a7"
 
