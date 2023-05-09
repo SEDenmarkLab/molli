@@ -59,3 +59,19 @@ class MoleculeTC(ut.TestCase):
             self.assertListEqual([a1.element.symbol for a1 in m1.atoms],[new_a1.element.symbol for new_a1 in new_m1.atoms])
 
             self.assertListEqual([b1.btype for b1 in m1.bonds],[new_b1.btype for new_b1 in new_m1.bonds])
+    
+    def test_del_atom(self):
+        """This tests if atom deletion is correctly handled for atomic charges"""
+
+        mol = Molecule.load_mol2(files.dendrobine_mol2)
+        na = mol.n_atoms
+        nb = mol.n_bonds
+
+        mol.del_atom(0)
+
+        self.assertEqual(mol.n_atoms, na - 1)
+        self.assertEqual(mol.n_bonds, nb - 3) # atom 0 is connected to 3 bonds
+        self.assertEqual(mol._atomic_charges.shape, (na - 1,))
+
+
+            
