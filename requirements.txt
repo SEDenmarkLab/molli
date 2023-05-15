@@ -1,0 +1,8 @@
+pytest
+rdkit
+IPython
+
+# FIXME: openbable currently not working within container
+# openbabel
+
+

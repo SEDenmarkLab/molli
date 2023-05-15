@@ -1,0 +1,12 @@
+
+# Usage: docker compose run molli list
+
+version: '3.9'
+services:
+
+  molli:
+    image: hub.ncsa.illinois.edu/mmli/molli
+    stdin_open: true
+    tty: true
+    build:
+      context: .
