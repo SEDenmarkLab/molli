@@ -71,7 +71,12 @@ class ConformerEnsemble(Connectivity):
 
     @property
     def coords(self):
-        """Set of atomic positions in shape (n_atoms, 3)"""
+        """
+        Set of atomic positions in shape (n_atoms, 3)
+        
+        :return: The atomic positions
+        :rtype: np.ndarray
+        """
         return self._coords
 
     @coords.setter
@@ -80,6 +85,12 @@ class ConformerEnsemble(Connectivity):
 
     @property
     def weights(self):
+        """
+        weights of the conformers in the ensemble.
+
+        :return: The weights
+        :rtype: np.ndarray
+        """
         return self._weights
 
     @weights.setter
@@ -88,6 +99,12 @@ class ConformerEnsemble(Connectivity):
 
     @property
     def atomic_charges(self):
+        """
+        The atomic charges of the conformers in the ensemble.
+
+        :return: The atomic charges
+        :rtype: np.ndarray
+        """
         return self._atomic_charges
 
     @atomic_charges.setter
@@ -315,6 +332,12 @@ class Conformer(Molecule):
 
     @property
     def name(self):
+        """
+        Name of the molecule
+
+        :return: name
+        :rtype: str
+        """
         return self._parent.name
 
     @property

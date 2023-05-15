@@ -26,11 +26,15 @@ release = '1.0.0'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc', 'myst_parser']
+extensions = ['sphinx.ext.autodoc', 'myst_parser', "nbsphinx"]
 
-
+#Ensures that Jupyter notebook files area always read through this extension
+nbsphinx_execute = 'always'
 
 autodoc_member_order = 'bysource'
+
+# Separates the class and the constructor signature, leading to the html page looking cleaner
+autodoc_class_signature = "separated"
 
 source_suffix = {".rst": "restructuredtext",
                  ".md": "markdown",}

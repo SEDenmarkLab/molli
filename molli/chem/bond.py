@@ -380,12 +380,25 @@ class Connectivity(Promolecule):
                 yield b
 
     def connected_atoms(self, a: AtomLike) -> Generator[Atom, None, None]:
+        """
+        :param a: the atom to find the connected atoms of
+        :type a: AtomLike
+        :return: the atoms connected to the atom
+        :rtype: Generator[Atom, None, None]
+        """
         _a = self.get_atom(a)
         for b in self.bonds_with_atom(_a):
             yield b % _a
 
     def bonded_valence(self, a: AtomLike) -> float:
-        # TODO: rewrite using sum()
+        """
+        Sum of valences of all atoms bonded to an atom
+
+        :param a: the atom to find the bonded valence of
+        :type a: AtomLike
+        :return: the sum of valences of all atoms bonded to the atom
+        :rtype: float
+        """
         _a_bonds = self.bonds_with_atom(a)
 
         val = 0.0

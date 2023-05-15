@@ -9,8 +9,6 @@ Welcome to Molli's documentation!
 .. docs/indext.rst 
 .. include:: ../welcome.rst
 
-   
-
 
 .. toctree::
    :maxdepth: 2
@@ -34,15 +32,20 @@ Welcome to Molli's documentation!
    :maxdepth: 2
    :caption: Command Line Reference 
 
+   command_line/commands
+
 .. toctree::
    :maxdepth: 2
    :caption: Molli Cookbook
 
+   cookbook/001-basic-objects
+   cookbook/002-molecule
+   
 .. toctree::
    :maxdepth: 2
    :caption: Miscellaneous 
    
-   Miscellaneous/inheritance_diagram
+   miscellaneous/inheritance_diagram
 
 
 
