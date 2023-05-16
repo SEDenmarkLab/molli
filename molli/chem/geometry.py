@@ -382,6 +382,6 @@ class CartesianGeometry(Promolecule):
         self.coords = self.coords @ t_matrix
 
     def del_atom(self, _a: AtomLike):
-        ai = self.index_atom(_a)
-        self._coords = np.delete(self._coords, ai, 0)
+        ai = self.get_atom_index(_a)
+        self._coords = np.delete(self._coords, ai, axis=0)
         super().del_atom(_a)

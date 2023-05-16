@@ -1,16 +1,20 @@
 from ..chem import Molecule
 from typing import Dict
-from rdkit import Chem
-from rdkit.Chem import Draw
-from rdkit.Chem.PropertyMol import PropertyMol
-from rdkit.Chem import rdqueries as chemq
-from rdkit import DataStructs
-from rdkit.Chem import rdCIPLabeler
-from rdkit.Chem import rdMolDescriptors
-from rdkit.Chem.Draw import IPythonConsole
-from rdkit.Chem.Draw import rdMolDraw2D
+
 import numpy as np
-from .openbabel import to_mol2_w_ob
+
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Draw
+    from rdkit.Chem.PropertyMol import PropertyMol
+    from rdkit.Chem import rdqueries as chemq
+    from rdkit import DataStructs
+    from rdkit.Chem import rdCIPLabeler
+    from rdkit.Chem import rdMolDescriptors
+    from rdkit.Chem.Draw import IPythonConsole
+    from rdkit.Chem.Draw import rdMolDraw2D
+except:
+    raise ImportError("RDKit is not installed in this environment")
 
 def visualize_mols(name: str, rdkit_mol_list: list, molsPerRow=5, prop:str='_Name', svg=True, png=False):
     '''
@@ -30,7 +34,7 @@ def create_rdkit_mol(molli_mol:Molecule, removeHs=False) -> Dict[Molecule,Proper
     '''
     Uses mol2 generated from openbabel's implementation of mol2 generation.
     '''
-
+    from .openbabel import to_mol2_w_ob
     try:
         rdkit_mol = PropertyMol(Chem.MolFromMol2Block(to_mol2_w_ob(molli_mol), removeHs=removeHs))
         rdkit_mol.SetProp("_Name", f'{molli_mol.name}')
