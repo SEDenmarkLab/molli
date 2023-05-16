@@ -18,15 +18,15 @@ Welcome to Molli's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: API reference 
+   :caption: API  
 
-   API/atom
-   API/bond
-   API/ensemble
-   API/fragment
-   API/geometry
-   API/molecule
-   API/structure
+   API/molli.chem/index
+   API/molli.data/index
+   API/molli.descriptor/index
+   API/molli.external/index
+   API/molli.files/index
+   API/molli.math/index
+
 
 .. toctree::
    :maxdepth: 2
