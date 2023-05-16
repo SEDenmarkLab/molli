@@ -8,8 +8,6 @@ from io import StringIO, BytesIO
 import re
 from warnings import warn
 
-from openbabel import openbabel as ob
-
 # def to_obmol(self):
 #     obm = ob.OBMol()
 
@@ -48,6 +46,11 @@ from openbabel import openbabel as ob
 #         mol.new_bond(i1 - 1, i2 - 1, order)
 
 #     return mol
+
+try:
+    from openbabel import openbabel as ob
+except:
+    raise ImportError("OpenBabel is not installed in this environment")
 
 
 def obabel_load(fname: str, input_ext: str = "mol2"):
