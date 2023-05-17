@@ -26,7 +26,6 @@ import importlib.machinery as impm
 
 
 class ForeColor:
-
     COLORS = {
         "red": colorama.Fore.RED,
         "green": colorama.Fore.GREEN,

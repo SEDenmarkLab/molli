@@ -12,7 +12,7 @@ def assert_molli_version_min(vmin: str):
     Asserts the current version of molli is above the minimum requirement
 
     This is commonly encountered when scripts were written to use a very specific version of the API.
-    This is a control step to ensure 
+    This is a control step to ensure
 
     ## Parameters
 
@@ -58,16 +58,16 @@ def assert_molli_version_in_range(vmin: str, vmax: str):
     """
     # `assert_molli_version_in_range`
     Asserts the current version of molli to be within the specified range
-    
+
     This is commonly encountered when scripts were written to use a very specific version of the API.
     This ensures a control step to ensure compatibility.
-    
+
     ## Parameters
-    
+
     `vmin: str`
         _description_
     `vmax: str`
         _description_
-    """    
+    """
     assert_molli_version_min(vmin)
     assert_molli_version_max(vmax)
