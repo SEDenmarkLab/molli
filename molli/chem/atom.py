@@ -481,7 +481,6 @@ class Atom:
         return self.element.color_cpk
 
     def set_mol2_type(self, m2t: str):
-
         if "." in m2t:
             mol2_elt, mol2_type = m2t.split(".", maxsplit=1)
         else:
@@ -491,12 +490,9 @@ class Atom:
             self.element = mol2_elt
 
         match mol2_type:
-
             case "4":
                 if self.element != Element.N:
-                    raise NotImplementedError(
-                        f"{mol2_type} not implemented for {mol2_elt}, only N"
-                    )
+                    raise NotImplementedError(f"{mol2_type} not implemented for {mol2_elt}, only N")
                 else:
                     self.atype = AtomType.N_Ammonium
                     self.geom = AtomGeom.R4_Tetrahedral
@@ -546,9 +542,7 @@ class Atom:
             case _ if mol2_elt == "Du":
                 # This case if to handle Du.X
                 self.element = (
-                    Element[mol2_type]
-                    if mol2_type in Element._member_names_
-                    else Element.Unknown
+                    Element[mol2_type] if mol2_type in Element._member_names_ else Element.Unknown
                 )
                 self.atype = AtomType.Dummy
 
@@ -559,7 +553,6 @@ class Atom:
                 raise NotImplementedError(f"Cannot interpret mol2 type {m2t!r}")
 
     def get_mol2_type(self):
-
         match self.element, self.atype, self.geom:
             case _, AtomType.Regular, _:
                 return f"{self.element.symbol}"
@@ -579,21 +572,15 @@ class Atom:
             case Element.C, _, _:
                 if self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
-                elif (self.atype == AtomType.C_Guanidinium) & (
-                    self.geom == AtomGeom.R3_Planar
-                ):
+                elif (self.atype == AtomType.C_Guanidinium) & (self.geom == AtomGeom.R3_Planar):
                     return f"{self.element.symbol}.cat"
                 else:
                     return f"{self.element.symbol}"
 
             case Element.N, _, _:
-                if (self.atype == AtomType.N_Ammonium) & (
-                    self.geom == AtomGeom.R4_Tetrahedral
-                ):
+                if (self.atype == AtomType.N_Ammonium) & (self.geom == AtomGeom.R4_Tetrahedral):
                     return f"{self.element.symbol}.4"
-                elif (self.atype == AtomType.N_Amide) & (
-                    self.geom == AtomGeom.R3_Planar
-                ):
+                elif (self.atype == AtomType.N_Amide) & (self.geom == AtomGeom.R3_Planar):
                     return f"{self.element.symbol}.am"
                 elif self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
@@ -609,13 +596,9 @@ class Atom:
                     return f"{self.element.symbol}"
 
             case Element.S, _, _:
-                if (self.atype == AtomType.O_Sulfoxide) & (
-                    self.geom == AtomGeom.R3_Pyramidal
-                ):
+                if (self.atype == AtomType.O_Sulfoxide) & (self.geom == AtomGeom.R3_Pyramidal):
                     return f"{self.element.symbol}.O"
-                elif (self.atype == AtomType.O_Sulfone) & (
-                    self.geom == AtomGeom.R4_Tetrahedral
-                ):
+                elif (self.atype == AtomType.O_Sulfone) & (self.geom == AtomGeom.R4_Tetrahedral):
                     return f"{self.element.symbol}.O2"
                 else:
                     return f"{self.element.symbol}"
@@ -648,7 +631,7 @@ class Promolecule:
     for API compatibility reasons.
     """
 
-    __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
+    # __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
 
     def __init__(
         self,
@@ -701,14 +684,10 @@ class Promolecule:
                 self._atoms = list(Atom(a) for a in atoms)
 
             case _:
-                raise NotImplementedError(
-                    f"Cannot interpret {other} of type {type(other)}"
-                )
+                raise NotImplementedError(f"Cannot interpret {other} of type {type(other)}")
 
     def __repr__(self) -> str:
-        return (
-            f"{type(self).__name__}(name={self.name!r}," f" formula={self.formula!r})"
-        )
+        return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
 
     @property
     def attachment_points(self) -> List[Atom]:
@@ -732,7 +711,7 @@ class Promolecule:
         else:
             sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {value} -->" f" {sub}")
+            warn(f"Replaced illegal characters in molecule name: {value} --> {sub}")
 
     @property
     def atoms(self) -> List[Atom]:
@@ -809,9 +788,7 @@ class Promolecule:
     # ) -> Generator[Atom, None, None]:
     #     return map(self.get_atom, atoms)
 
-    def yield_atoms_by_element(
-        self, elt: Element | str | int
-    ) -> Generator[Atom, None, None]:
+    def yield_atoms_by_element(self, elt: Element | str | int) -> Generator[Atom, None, None]:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a

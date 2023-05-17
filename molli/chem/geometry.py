@@ -59,7 +59,6 @@ class CartesianGeometry(Promolecule):
     """
 
     _coords_dtype = np.float64
-    __slots__ = "_atoms", "_coords", "_name", "charge", "mult"
 
     def __init_subclass__(cls, coords_dtype=np.float64, **kwds) -> None:
         super().__init_subclass__(**kwds)
