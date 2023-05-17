@@ -106,7 +106,6 @@ class Bond:
         # elif self.btype in {BondType.Aromatic}
 
         match self.btype:
-
             case 0 | 1 | 2 | 3 | 4 | 5 | 6 as b:
                 return float(b)
 
@@ -206,8 +205,6 @@ class Bond:
 
 
 class Connectivity(Promolecule):
-    # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
-
     def __init__(
         self,
         other: Promolecule = None,
@@ -232,9 +229,7 @@ class Connectivity(Promolecule):
 
         if isinstance(other, Connectivity):
             atom_map = {other.atoms[i]: self.atoms[i] for i in range(self.n_atoms)}
-            self._bonds = list(
-                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds
-            )
+            self._bonds = list(b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds)
         else:
             self._bonds = list()
 
