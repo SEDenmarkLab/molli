@@ -130,6 +130,7 @@ def opt_w_ob(mlmol:Molecule, ff = 'UFF', inplace = False) -> Molecule:
     If inplace = True, this mutates mlmol to optimized coordinates and returns None
     If inplace = False, mlmol is unchanged and an optimized copy is returned
     '''
+    warn('This function may not be the final version. Current iteration only contains atoms and bonds, not charges and multiplicity.')
     obm = ob.OBMol()
 
     for i, a in enumerate(mlmol.atoms):
