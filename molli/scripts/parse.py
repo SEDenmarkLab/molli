@@ -4,8 +4,9 @@ This package parses chemical files, such as .cdxml, and creates a collection of 
 import molli as ml
 from pprint import pprint
 from argparse import ArgumentParser
-import tqdm
+from tqdm import tqdm
 from time import sleep
+from pathlib import Path
 
 arg_parser = ArgumentParser(
     f"molli parse",
@@ -35,9 +36,25 @@ arg_parser.add_argument(
 )
 
 
+arg_parser.add_argument(
+    "--hadd",
+    action="store_true",
+    help=(
+        "Add implicit hydrogen atoms wherever possible. By default this only affects elements in"
+        " groups 13-17."
+    ),
+)
+
+
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = arg_parser.parse_args(args)
 
-    for x in tqdm.tqdm(parsed.files, colour="green", dynamic_ncols=True):
-        # print(x)
-        sleep(0.5)
+    fpath = Path(parsed.file)
+    cdxml_file = ml.CDXMLFile(fpath)
+
+    with ml.MoleculeLibrary.new(fpath.with_suffix(".mlib"), overwrite=False) as lib:
+        for k in tqdm(cdxml_file.keys()):
+            mol = cdxml_file[k]
+            if parsed.hadd:
+                mol.add_implicit_hydrogens()
+            lib.append(mol.name, mol)
