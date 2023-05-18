@@ -124,3 +124,32 @@ def to_file_w_ob(molli_mol: Molecule,ftype:str):
     conv.SetOutFormat(ftype)
 
     return conv.WriteString(obm)
+
+def opt_w_ob(mlmol:Molecule, ff = 'UFF') -> Molecule:
+    '''
+    This returns a the same Molecule object with forcefield optimized coordinates
+    '''
+    obm = ob.OBMol()
+
+    for i, a in enumerate(mlmol.atoms):
+        oba: ob.OBAtom = obm.NewAtom()
+        oba.SetAtomicNum(a.Z)
+        x, y, z = map(float, mlmol.coords[i])
+        oba.SetVector(x, y, z)
+
+    for j, b in enumerate(mlmol.bonds):
+        a1_idx = mlmol.get_atom_index(b.a1)
+        a2_idx = mlmol.get_atom_index(b.a2)
+        obb: ob.OBBond = obm.AddBond(a1_idx + 1, a2_idx + 1, int(b.order))
+
+    obf = ob.OBForceField.FindForceField(ff)
+    obf.Setup(obm)
+    obf.ConjugateGradients(500)
+    obf.GetCoordinates(obm)
+
+    for i, a in enumerate(mlmol.atoms):
+        ob_atom = obm.GetAtomById(i)
+        new_coords = np.array((ob_atom.GetX(),ob_atom.GetY(), ob_atom.GetZ()))
+        mlmol.coords[i] = new_coords
+    
+    return mlmol
