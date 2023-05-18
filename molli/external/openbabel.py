@@ -125,9 +125,10 @@ def to_file_w_ob(molli_mol: Molecule,ftype:str):
 
     return conv.WriteString(obm)
 
-def opt_w_ob(mlmol:Molecule, ff = 'UFF') -> Molecule:
+def opt_w_ob(mlmol:Molecule, ff = 'UFF', inplace = False) -> Molecule:
     '''
-    This returns a the same Molecule object with forcefield optimized coordinates
+    If inplace = True, this mutates mlmol to optimized coordinates and returns None
+    If inplace = False, mlmol is unchanged and an optimized copy is returned
     '''
     obm = ob.OBMol()
 
@@ -147,9 +148,16 @@ def opt_w_ob(mlmol:Molecule, ff = 'UFF') -> Molecule:
     obf.ConjugateGradients(500)
     obf.GetCoordinates(obm)
 
-    for i, a in enumerate(mlmol.atoms):
-        ob_atom = obm.GetAtomById(i)
-        new_coords = np.array((ob_atom.GetX(),ob_atom.GetY(), ob_atom.GetZ()))
-        mlmol.coords[i] = new_coords
-    
-    return mlmol
+    if inplace == True:
+        for i, a in enumerate(mlmol.atoms):
+            ob_atom = obm.GetAtomById(i)
+            new_coords = np.array((ob_atom.GetX(),ob_atom.GetY(), ob_atom.GetZ()))
+            mlmol.coords[i] = new_coords
+        return None
+    else:
+        rtn = Molecule(mlmol)
+        for i, a in enumerate(rtn.atoms):
+            ob_atom = obm.GetAtomById(i)
+            new_coords = np.array((ob_atom.GetX(),ob_atom.GetY(), ob_atom.GetZ()))
+            rtn.coords[i] = new_coords
+        return rtn
