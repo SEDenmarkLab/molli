@@ -8,6 +8,7 @@ __all__ = [
     "gbca",
     "parse",
     "align",
+    "inspect",
 ]
 
 __all__.sort()
