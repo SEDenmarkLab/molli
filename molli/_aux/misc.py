@@ -122,27 +122,34 @@ class catch_interrupt:
             raise exc
 
 
-def unique_path(
-    _path: Path | str,
-) -> Path:
+def unique_path(_path: Path | str, *, idx_format: str = "0>3") -> Path:
     """ """
 
     proposed = Path(_path)
 
-    if proposed.is_file():
-        name = proposed.name
-        fn, first, *rest = name.split(".")
-        if len(first) == 32:
-            # This is probably uuid then
-            sfx = (fn, uuid1().hex, *rest)
+    while proposed.is_file():
+        stem = proposed.stem
+        stem1, *stem2 = stem.rsplit("___", maxsplit=1)
+        try:
+            idx = int(stem2[0])
+        except:
+            idx = 1
         else:
-            sfx = (fn, uuid1().hex, first, *rest)
+            idx += 1
 
-        new_name = ".".join(sfx)
-        return proposed.with_name(new_name)
+        proposed = proposed.with_stem(f"{stem1}___{idx:{idx_format}}")
 
-    else:
-        return proposed
+        # fn, first, *rest = name.split(".")
+        # if len(first) == 32:
+        #     # This is probably uuid then
+        #     sfx = (fn, uuid1().hex, *rest)
+        # else:
+        #     sfx = (fn, uuid1().hex, first, *rest)
+
+        # new_name = ".".join(sfx)
+        # return proposed.with_name(new_name)
+
+    return proposed
 
 
 def load_external_module(fpath: Path | str, modname: str):
