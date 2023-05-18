@@ -24,3 +24,6 @@ substituents_cdxml = ROOT / "substituents.cdxml"
 parser_demo_cdxml = ROOT / "parser_demo.cdxml"
 
 oldstyle_xml = ROOT / "oldstyle.xml"
+
+box_cores_test_1 = ROOT / "BOX_cores_test_1.cdxml"
+box_substituents_test_1 = ROOT / "BOX_substituents_test_1.cdxml"
