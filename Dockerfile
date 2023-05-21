@@ -1,26 +1,14 @@
-# Usage instructions
-#
-# This Docker image can be used to quickly run MOLLI
-# The image contains all dependencies necessary to run the application
-#
-#  Build the image: 
-#      docker build -t molli .
-#  Run the built image:
-#      docker run -it molli list
-#  Interactive shell:
-#      docker run -it --entrypoint /bin/bash molli
+FROM ubuntu:20.04
 
-# Start with a fresh Python image
-ARG PYTHON_VERSION=3.10
-FROM python:${PYTHON_VERSION}
+# Install Miniconda 3
+RUN apt-get -qq update && apt-get -qq install wget && rm -rf /var/lib/apt/lists/*
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+RUN bash Miniconda3-latest-Linux-x86_64.sh -b -p /miniconda
+ENV PATH=$PATH:/miniconda/condabin:/miniconda/bin
 
-# Install Python dependencies
+# Use conda to build provided conda-recipe
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-# Copy in the source and install via pip
+RUN conda config --add channels conda-forge
+RUN conda install conda-build conda-verify
 COPY . .
-RUN pip install .
-
-ENTRYPOINT ["molli"]
+RUN conda build conda-recipe
