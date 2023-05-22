@@ -1,7 +1,7 @@
 import unittest as ut
 
-import molli as ml
 import numpy as np
+import molli as ml
 
 try:
     from rdkit.Chem.PropertyMol import PropertyMol
@@ -9,38 +9,60 @@ except:
     _RDKIT_INSTALLED = False
 else:
     from molli.external import _rdkit
+
     _RDKIT_INSTALLED = True
+
 
 class RDKitTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
-
-    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
+    @ut.skipUnless(
+        _RDKIT_INSTALLED, "RDKit is not installed in current environment."
+    )
     def test_create_rdkit_mol(self):
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
-                molli_mol = ml.Molecule(s,name=s.name)
+                molli_mol = ml.Molecule(s, name=s.name)
                 molli_mol_rdmol_dict = _rdkit.create_rdkit_mol(molli_mol)
-                self.assertIsInstance(molli_mol_rdmol_dict[molli_mol], PropertyMol)
+                self.assertIsInstance(
+                    molli_mol_rdmol_dict[molli_mol], PropertyMol
+                )
 
-    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
+    @ut.skipUnless(
+        _RDKIT_INSTALLED, "RDKit is not installed in current environment."
+    )
     def test_molli_mol_reorder(self):
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
-                molli_mol = ml.Molecule(s,name=s.name)
+                molli_mol = ml.Molecule(s, name=s.name)
                 molli_mol_rdmol_dict = _rdkit.create_rdkit_mol(molli_mol)
-                rd_can_mol, atom_reorder, bond_reorder = _rdkit.can_mol_order(molli_mol_rdmol_dict[molli_mol])
-                molli_can_rdkit_dict = _rdkit.reorder_molecule(molli_mol,can_rdkit_mol_w_h=rd_can_mol, can_atom_reorder=atom_reorder, can_bond_reorder=bond_reorder)
-                for molli_mol,rdkit_mol in molli_can_rdkit_dict.items():
-                    can_rdkit_atom_elem = np.array([x.GetSymbol() for x in rdkit_mol.GetAtoms()])
-                    new_molli_elem = np.array([atom.element.symbol for atom in molli_mol.atoms])
-                    np.testing.assert_array_equal(can_rdkit_atom_elem,new_molli_elem)
-                    
-    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
+                rd_can_mol, atom_reorder, bond_reorder = _rdkit.can_mol_order(
+                    molli_mol_rdmol_dict[molli_mol]
+                )
+                molli_can_rdkit_dict = _rdkit.reorder_molecule(
+                    molli_mol,
+                    can_rdkit_mol_w_h=rd_can_mol,
+                    can_atom_reorder=atom_reorder,
+                    can_bond_reorder=bond_reorder,
+                )
+                for molli_mol, rdkit_mol in molli_can_rdkit_dict.items():
+                    can_rdkit_atom_elem = np.array(
+                        [x.GetSymbol() for x in rdkit_mol.GetAtoms()]
+                    )
+                    new_molli_elem = np.array(
+                        [atom.element.symbol for atom in molli_mol.atoms]
+                    )
+                    np.testing.assert_array_equal(
+                        can_rdkit_atom_elem, new_molli_elem
+                    )
+
+    @ut.skipUnless(
+        _RDKIT_INSTALLED, "RDKit is not installed in current environment."
+    )
     def test_rdkit_atom_filter(self):
-        m1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2,name='dendrobine')
+        m1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2, name="dendrobine")
 
         molli_rdkit_dict = _rdkit.create_rdkit_mol(m1)
         af_mol = _rdkit.rdkit_atom_filter(molli_rdkit_dict[m1])
