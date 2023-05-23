@@ -6,4 +6,5 @@
 examples-jupyter/
 examples-scripts
 Dockerfile*
+Dockerfile
 **/README*
