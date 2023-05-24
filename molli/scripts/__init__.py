@@ -9,6 +9,7 @@ __all__ = [
     "parse",
     "align",
     "inspect",
+    "combine",
 ]
 
 __all__.sort()
