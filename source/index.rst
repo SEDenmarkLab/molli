@@ -20,13 +20,10 @@ Welcome to Molli's documentation!
    :maxdepth: 2
    :caption: API  
 
-   API/molli.chem/index
-   API/molli.data/index
-   API/molli.descriptor/index
-   API/molli.external/index
-   API/molli.files/index
-   API/molli.math/index
+   API/molli.chem/_index
+   API/molli.data/_index
 
+  
 
 .. toctree::
    :maxdepth: 2
@@ -40,6 +37,8 @@ Welcome to Molli's documentation!
 
    cookbook/001-basic-objects
    cookbook/002-molecule
+   cookbook/005-visualize
+
    
 .. toctree::
    :maxdepth: 2

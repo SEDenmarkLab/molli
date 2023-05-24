@@ -26,7 +26,11 @@ release = '1.0.0'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc', 'myst_parser', "nbsphinx"]
+extensions = ['sphinx.ext.autodoc', 
+              'myst_parser', 
+              "nbsphinx",
+              "recommonmark",
+              "sphinx_markdown_tables",]
 
 #Ensures that Jupyter notebook files area always read through this extension
 nbsphinx_execute = 'always'
