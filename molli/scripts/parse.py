@@ -16,11 +16,13 @@ arg_parser = ArgumentParser(
 arg_parser.add_argument("file", action="store", help="File to be parsed.")
 
 arg_parser.add_argument(
-    "-i",
-    "--input",
+    "-f",
+    "--format",
     action="store",
-    metavar="<fpath>",
     default=None,
+    choices=[
+        "cdxml",
+    ],
     help=(
         "Override the source file format. Defaults to the file extension. Supported types: 'cdxml'"
     ),
@@ -48,13 +50,21 @@ arg_parser.add_argument(
 
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = arg_parser.parse_args(args)
-
     fpath = Path(parsed.file)
-    cdxml_file = ml.CDXMLFile(fpath)
 
-    with ml.MoleculeLibrary.new(fpath.with_suffix(".mlib"), overwrite=False) as lib:
-        for k in tqdm(cdxml_file.keys()):
-            mol = cdxml_file[k]
+    iformat = parsed.format or fpath.suffix[1:]
+    opath = Path(parsed.output) if parsed.output else fpath.with_suffix(".mlib")
+    match iformat:
+        case "cdxml":
+            input_file = ml.CDXMLFile(fpath)
+        case _:
+            with ml.aux.ForeColor("ltred"):
+                print("Unknown input format: {iformat}")
+            exit(1)
+
+    with ml.MoleculeLibrary.new(opath, overwrite=False) as lib:
+        for k in tqdm(input_file.keys()):
+            mol = input_file[k]
             if parsed.hadd:
                 mol.add_implicit_hydrogens()
             lib.append(mol.name, mol)
