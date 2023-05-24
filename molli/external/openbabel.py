@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ..chem import Molecule, Element
+from ..chem import Molecule, Element, Bond
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, Dict
 from enum import Enum
 import numpy as np
@@ -53,29 +53,29 @@ except:
     raise ImportError("OpenBabel is not installed in this environment")
 
 
-def obabel_load(fname: str, input_ext: str = "mol2"):
-    conv = ob.OBConversion()
-    obmol = ob.OBMol()
-    conv.SetInFormat(input_ext)
-    conv.ReadFile(obmol, fname)
+# def obabel_load(fname: str, input_ext: str = "mol2"):
+#     conv = ob.OBConversion()
+#     obmol = ob.OBMol()
+#     conv.SetInFormat(input_ext)
+#     conv.ReadFile(obmol, fname)
 
-    n_atoms = obmol.NumAtoms()
-    n_bonds = obmol.NumBonds()
-    mlmol = Molecule([Element.Unknown for _ in range(n_atoms)])
+#     n_atoms = obmol.NumAtoms()
+#     n_bonds = obmol.NumBonds()
+#     mlmol = Molecule([Element.Unknown for _ in range(n_atoms)])
 
-    for i in range(n_atoms):
-        obat: ob.OBAtom = obmol.GetAtomById(i)
-        mlmol.atoms[i].element = Element.get(obat.GetAtomicNum())
-        mlmol.coords[i] = [obat.GetX(), obat.GetY(), obat.GetZ()]
+#     for i in range(n_atoms):
+#         obat: ob.OBAtom = obmol.GetAtomById(i)
+#         mlmol.atoms[i].element = Element.get(obat.GetAtomicNum())
+#         mlmol.coords[i] = np.array([obat.GetX(), obat.GetY(), obat.GetZ()])
 
-    for j in range(n_bonds):
-        obbd: ob.OBBond = obmol.GetBondById(j)
-        i1 = obbd.GetBeginAtomIdx()
-        i2 = obbd.GetEndAtomIdx()
-        order = obbd.GetBondOrder()
-        mlmol.new_bond(i1 - 1, i2 - 1, order)
+#     for j in range(n_bonds):
+#         obbd: ob.OBBond = obmol.GetBondById(j)
+#         i1 = obbd.GetBeginAtomIdx()
+#         i2 = obbd.GetEndAtomIdx()
+#         order = obbd.GetBondOrder()
+#         mlmol.bonds[j] = Bond(a1 = i1 - 1, a2= i2 - 1, btype=order)
 
-    return mlmol
+#     return mlmol
 
 def to_mol2_w_ob(molli_mol: Molecule):
     '''
@@ -130,6 +130,7 @@ def opt_w_ob(mlmol:Molecule, ff = 'UFF', inplace = False) -> Molecule:
     If inplace = True, this mutates mlmol to optimized coordinates and returns None
     If inplace = False, mlmol is unchanged and an optimized copy is returned
     '''
+    warn('This function may not be the final version. Current iteration only contains atoms and bonds, not charges and multiplicity.')
     obm = ob.OBMol()
 
     for i, a in enumerate(mlmol.atoms):
