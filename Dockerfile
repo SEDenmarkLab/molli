@@ -20,8 +20,4 @@ RUN conda build molli/
 # Install the molli executable
 RUN conda install molli -c local
 
-# TEMP: Install necessary packages for executable
-WORKDIR /molli
-RUN pip install -e . --config-settings editable_mode=compat
-
 ENTRYPOINT ["molli"]
