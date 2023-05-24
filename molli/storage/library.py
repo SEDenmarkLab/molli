@@ -190,6 +190,16 @@ class _Library(Generic[T]):
             )
         self.goto(i)
         return self.decoder(self._read())
+    
+    def batch(self, start: int, batch_size: int):
+        for i in range(start, start + batch_size):
+            try:
+                item = self.get(i)
+            except IndexError:
+                pass
+            else:
+                yield item
+
 
     def yield_in_batches(self, batchsize: int = 256):
         """Read file in chunks"""
