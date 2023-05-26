@@ -3,6 +3,7 @@ from molli.external import _rdkit
 from openbabel import openbabel as ob
 import openbabel.pybel as pb
 import time
+from pathlib import Path
 
 from rdkit import Chem
 from rdkit.Chem import rdmolfiles   # from Ethan
@@ -19,9 +20,9 @@ from multiprocessing import Pool
 import shutil
 
         #in_dir = '../main_library/in_silico_library_uff_min_checked1/'
-in_dir = 'out1/out_combinatorial/combinatorial_lib.mlib'
+in_dir = 'in_combinatorial/combinatorial_lib.mlib'
 
-out_dir = 'out1/out_conformers1_separated_series/'           #'out1/out_conformers1_separated/'
+out_dir = 'out_conformers1/'           #'out1/out_conformers1_separated/'
         #out_dir_mxyz = 'out1/out_conformers1_mxyz/'
         #reference_structure_file = 'alignment_core.mol'
 
@@ -127,15 +128,18 @@ def get_oxazaline_alignment_atoms(mol):
     return first_N, c2, bridge, other_c2, second_N
 
 """ 
-The pool handler does the heavy lifting
+Should only be called through conformer_generation
 """
 ## see https://www.rdkit.org/UGM/2012/Ebejer_20110926_RDKit_1stUGM.pdf
-def conf_generate(args, n_confs=50, maxIter=10000) -> ml.ConformerEnsemble:
-    # separate our arguments
+def _conf_gen(args) -> ml.ConformerEnsemble:
+    # separate our arguments. Arguments should always be passed, if not then error in conformer_generation
     reference = args[0] # reference rd_mol object
     in_mol = args[1] # molli Molecule
     ref_alignment_atoms = args[2] # alignment atoms from ref
-    threshold = 15.0 # energy cutoff, change if you want different
+    n_confs = args[3]
+    maxIterations = args[4]
+    threshold = args[5] # check for bool or float before energy calculation
+
 # Start by checking the arguments and making sure they're passed correctly
     try: # try to read in the file, calc num rotatable bonds
         mol_dict = _rdkit.create_rdkit_mol(in_mol)
@@ -145,26 +149,23 @@ def conf_generate(args, n_confs=50, maxIter=10000) -> ml.ConformerEnsemble:
         AllChem.AssignCIPLabels(mol)
         # get the number of rotatable bonds, this will determine how many confs to make
         num_rotatable_bonds = AllChem.CalcNumRotatableBonds(mol)
-        n_confs = 0
-#        if num_rotatable_bonds <= 7:
-#            n_confs = 50
         if num_rotatable_bonds >=8:
-            n_confs *= 3    # originally 150
+            n_confs *= 3
     except Exception as exp:
         print(f'Failure for {mol} sanitization/CIP labeling/rotatable bond calculation: {exp!s}')
         return
-
+    
     try: # try to embed conformers
         # set some embedding parameters
         ps = AllChem.ETKDGv2()
-        ps.maxIterations = maxIter  # originally 10000
+        ps.maxIterations = maxIterations
         ps.randomSeed = 42
         ps.enforceChirality = True
         ps.useRandomCoords = True
         # add Hs
         mol = Chem.AddHs(mol, addCoords = True)
         # generate n_conformers
-        conf_ids = Chem.rdDistGeom.EmbedMultipleConfs(mol, numConfs = n_confs, params = ps)
+        conf_ids = Chem.rdDistGeom.EmbedMultipleConfs(mol, numConfs=n_confs, params=ps)
     except Exception as exp:
         print(f'Failure for {mol} on conformer embedding: {exp!s}')
         return
@@ -172,7 +173,7 @@ def conf_generate(args, n_confs=50, maxIter=10000) -> ml.ConformerEnsemble:
     try: # try to optimize conformer distribution
         # optimize with MMFF
         AllChem.MMFFSanitizeMolecule(mol)
-        AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads = 1, maxIters = 200)
+        AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads=1, maxIters=200) # issue here
     except Exception as exp:
         print(f'Failure for {mol} on conformer geometry optimization: {exp!s}')
         return
@@ -187,23 +188,33 @@ def conf_generate(args, n_confs=50, maxIter=10000) -> ml.ConformerEnsemble:
         print(f'Failure for {mol} on alignment: {exp!s}')
         return
 
-    try: # try to calculate energies for conformers
-        # sort the conformer list by increasing energy
-        energy_list = []
-        mol_props = AllChem.MMFFGetMoleculeProperties(mol)
-        for cid in list(conf_ids):
-            # print(f'minimming conf {cid}')
-            ff = AllChem.MMFFGetMoleculeForceField(mol, mol_props, confId = cid) 
-            energy_list.append(ff.CalcEnergy())
-    except Exception as exp:
-        print(f'Failure for {mol} on energy calculation: {exp!s}')
-        return
+    do_calc = True
+    if isinstance(threshold, bool):
+        if threshold == False:
+            do_calc = False
+        else:
+            threshold = 15.0
 
-    # sorted conformer energy list
-    sorted_conformers = sorted(zip(list(conf_ids), energy_list), key = lambda x: x[1], reverse = False)
-    min_energy = min([i[1] for i in sorted_conformers])
-    # filter conformers based on energy threshold
-    filtered_conformers = [i for i in sorted_conformers if (i[1] - min_energy < threshold)]
+    if do_calc:
+        try: # try to calculate energies for conformers
+            # sort the conformer list by increasing energy
+            energy_list = []
+            mol_props = AllChem.MMFFGetMoleculeProperties(mol)
+            for cid in list(conf_ids):
+                # print(f'minimming conf {cid}')
+                ff = AllChem.MMFFGetMoleculeForceField(mol, mol_props, confId = cid) 
+                energy_list.append(ff.CalcEnergy())
+        except Exception as exp:
+            print(f'Failure for {mol} on energy calculation: {exp!s}')
+            return
+
+        # sorted conformer energy list
+        sorted_conformers = sorted(zip(list(conf_ids), energy_list), key = lambda x: x[1], reverse = False)
+        min_energy = min([i[1] for i in sorted_conformers])
+        # filter conformers based on energy threshold
+        filtered_conformers = [i for i in sorted_conformers if (i[1] - min_energy < threshold)]
+    else:
+        filtered_conformers = zip(list(conf_ids))
 
     try: # convert conformers back to mol2 and put into conformer library
 #        make_lib = ml.ConformerLibrary.new(out_dir + "_conformers.clib")  
@@ -217,26 +228,77 @@ def conf_generate(args, n_confs=50, maxIter=10000) -> ml.ConformerEnsemble:
 #        clib.append(in_mol.name, ensemble)                                                      
 #        make_lib.close()                                                       # conformers are not named, important to fix or no?         
     except Exception as exp:
-        print(f'Failure for {mol} on creating conformer ensemble/library: {exp!s}')
+        print(f'Failure for {mol} on creating conformer ensemble: {exp!s}')
         return
 
     return ensemble
 
+# takes an mlib, either file path or string, and optional parameters
+def conformer_generation(
+    mlib: str | Path | ml.MoleculeLibrary,
+    n_confs: int = 50,
+    maxIterations: int = 10000,
+    threshold: float | bool = 15.0,
+    file_output: str | Path = None,
+    num_processes: int = 100
+    ):
+    '''
+    Generates a ConformerLibrary for a passed MoleculeLibrary.
+    MoleculeLibrary can be passed as the object or as its string or Path representation of its filepath.
+    Optional parameters for max conformers per molecule, max iterations for conformer embedding, and energy threshold for conformer filtering.
+    If threshold is set to False, conformers will not be filtered, if true, will set threshold back to default of 15.0.
+    If no out file path is given, ConformerLibrary will be written to the directory that conformer_generation was called from.
+    num_processes initializes size of pool of worker processes with the Pool class. Setting num_processes to None defaults to os.cpu_count()
+    '''
+    try:    # initialize or copy MoleculeLibrary
+        if isinstance(mlib, str | Path):
+            lib = ml.MoleculeLibrary(mlib)
+        else:
+            lib = mlib
+    except Exception as exp:
+        print(f'Invalid MoleculeLibrary: {exp!s}')
+        return
+    
+    ref_mol = lib[0]    
+    reference_dict = _rdkit.create_rdkit_mol(ref_mol)
+    reference_molecule = reference_dict[ref_mol] 
+    alignment_atoms = list(get_oxazaline_alignment_atoms(reference_molecule))
 
+    length = len(lib)
+    conf_list = [n_confs] * length
+    iter_list = [maxIterations] * length
+    thresh_list = [threshold] * length
+    #args should be [ref_mol, mol, [alignment_atoms], n_conf, maxIterations, threshold]
+    args = [i for i in zip([reference_molecule for i in range(length)], lib, [alignment_atoms for i in range(length)], conf_list, iter_list, thresh_list)]
 
+    try:    # create output file
+        if file_output is not None:
+            if isinstance(file_output, Path):
+                file_output / 'conformers.mlib'
+            else:
+                file_output += 'conformers.mlib'
+        else:
+            file_output = 'conformers.mlib'
+        clib = ml.ConformerLibrary.new(file_output)
+    except Exception as exp:
+        print(f'Error with output file creation: {exp!s}')
+        return
 
+    ensembles = None    # generate conformer ensembles, append to conformer library
+    with Pool(num_processes) as p:
+        ensembles = p.map(_conf_gen, args)
+    with clib:
+        for i in ensembles:
+            clib.append(i.name, i)    
 
-
-
+# DELETE BELOW IN FINAL VERSION
 if __name__ == '__main__':
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+#    if not os.path.exists(out_dir):
+#        os.makedirs(out_dir)
 #    if not os.path.exists(out_dir_mxyz):
 #        os.makedirs(out_dir_mxyz)
     mlib = ml.MoleculeLibrary(in_dir)
-#    reference_mol = AllChem.MolFromMolFile(reference_structure_file)
-#    files = os.listdir(in_dir)
     # it will save us some time to call this only once here
 
     ref_mol = mlib[0]
@@ -250,7 +312,8 @@ if __name__ == '__main__':
 #       p.map(pool_handler, args)           
 #    for arg in args:
 #        conf_generate(arg)
-    end = time.time()
+#    ens = conf_generate(args[0])
+#    end = time.time()
     print('Time elapsed: ' + str(end - start) + " s")
     print('Success!')
     # job id: 1082045
