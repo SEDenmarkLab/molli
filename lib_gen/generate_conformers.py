@@ -247,9 +247,21 @@ def conformer_generation(
     MoleculeLibrary can be passed as the object or as its string or Path representation of its filepath.
     Optional parameters for max conformers per molecule, max iterations for conformer embedding, and energy threshold for conformer filtering.
     If threshold is set to False, conformers will not be filtered, if true, will set threshold back to default of 15.0.
-    If no out file path is given, ConformerLibrary will be written to the directory that conformer_generation was called from.
+    If no out file path is given, ConformerLibrary will be written as 'conformers.mlib' to the directory that conformer_generation was called from.
     num_processes initializes size of pool of worker processes with the Pool class. Setting num_processes to None defaults to os.cpu_count()
     '''
+    try:    # catch invalid n_confs
+        assert n_confs > 0
+    except Exception as exp:
+        print(f'Invalid n_confs value: must be greater than 0')
+        return
+
+    try:    # catch invalid num_processes
+        assert num_processes > 0
+    except Exception as exp:
+        print(f'Invalid n_processes value: must be greater than 0')
+        return
+
     try:    # initialize or copy MoleculeLibrary
         if isinstance(mlib, str | Path):
             lib = ml.MoleculeLibrary(mlib)
@@ -272,13 +284,8 @@ def conformer_generation(
     args = [i for i in zip([reference_molecule for i in range(length)], lib, [alignment_atoms for i in range(length)], conf_list, iter_list, thresh_list)]
 
     try:    # create output file
-        if file_output is not None:
-            if isinstance(file_output, Path):
-                file_output / 'conformers.mlib'
-            else:
-                file_output += 'conformers.mlib'
-        else:
-            file_output = 'conformers.mlib'
+        if file_output is None:
+           file_output = 'conformers.mlib'
         clib = ml.ConformerLibrary.new(file_output)
     except Exception as exp:
         print(f'Error with output file creation: {exp!s}')

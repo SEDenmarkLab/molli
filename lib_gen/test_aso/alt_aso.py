@@ -5,7 +5,7 @@ import numpy as np
 import h5py
 # This is a bypass for DASK (to be abandoned in future molli development)
 
-lib = ml.ConformerLibrary("../out1/out_conformers1/conformers.clib")
+lib = ml.ConformerLibrary("../out1/out_conformers1/conformers3.mlib")
 grid = np.load("grid.npy")
 
 print("grid shape:", grid.shape)
@@ -20,7 +20,7 @@ if __name__ == "__main__":
             futures = []
             data = np.empty((len(batch), grid.shape[0]), dtype="float32")
             for ens in tqdm(batch, dynamic_ncols=True, position=1, leave=False, desc="Submitting calculations"):
-                fut = pool.submit(ml.descriptor.parallel_aso, ens, grid, n_threads=16, chunksize=1024)
+                fut = pool.submit(ml.descriptor.filtered_parallel_aso, ens, grid, n_threads=16, chunksize=1024)
                 futures.append(fut)
             
             for i, f in enumerate(tqdm(futures, dynamic_ncols=True, position=2, leave=False, desc="Gathering calculation results")):
