@@ -29,19 +29,17 @@ release = '1.0.0'
 extensions = ['sphinx.ext.autodoc', 
               'myst_parser', 
               "nbsphinx",
-              "recommonmark",
-              "sphinx_markdown_tables",]
+              "sphinxcontrib.autoyaml"]
 
 #Ensures that Jupyter notebook files area always read through this extension
 nbsphinx_execute = 'always'
 
 autodoc_member_order = 'bysource'
 
+autoyaml_level = 2
+
 # Separates the class and the constructor signature, leading to the html page looking cleaner
 autodoc_class_signature = "separated"
-
-source_suffix = {".rst": "restructuredtext",
-                 ".md": "markdown",}
 
 templates_path = ['_templates']
 exclude_patterns = []

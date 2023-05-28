@@ -5,7 +5,7 @@ from math import dist
 import molli_xt
 
 
-def _where_distance(p, g: np.ndarray, r: float):
+def _where_distance(p, g: np.ndarray, r: float) -> np.ndarray:
     """
     Return a numpy array of where point is within radius from gridpoints
     """
@@ -37,13 +37,13 @@ def aso2(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.nd
 
     return np.average(np.any(diff, axis=1), axis=0)
 
-def chunky_aso(ens: ConformerEnsemble, grid: np.ndarray, chunksize=512):
+def chunky_aso(ens: ConformerEnsemble, grid: np.ndarray, chunksize=512) -> np.ndarray:
     aso_chunks = []
     for subgrid in np.array_split(grid, grid.shape[0] // chunksize):
         aso_chunks.append(aso2(ens, subgrid))
     return np.concatenate(aso_chunks)
 
-def parallel_aso(ens: ConformerEnsemble, grid: np.ndarray, n_threads=4, chunksize=512):
+def parallel_aso(ens: ConformerEnsemble, grid: np.ndarray, n_threads=4, chunksize=512) -> np.ndarray:
     with ThreadPoolExecutor(n_threads) as tp:
         futures: list[Future] = []
         for subgrid in np.array_split(grid, grid.shape[0] // chunksize):

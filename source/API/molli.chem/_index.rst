@@ -1,9 +1,6 @@
 molli.chem
 =========================
 
-
-
-
 .. toctree::
    :maxdepth: 2
    :caption: molli.chem

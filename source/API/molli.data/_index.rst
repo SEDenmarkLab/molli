@@ -10,6 +10,5 @@ molli.data
    covalent_radius_1
    covalnet_radius_grimme
    electron_affinity
-   en_pauling
    element_group
    vdw_radius
