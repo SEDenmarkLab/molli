@@ -13,6 +13,18 @@ def rectangular_grid(
     spacing: float = 1.0,
     dtype: str = "float32",
 ) -> np.ndarray:
+    """
+    Creates a rectangular grid of points
+
+    :param r1: First corner of the rectangle
+    :param r2: Second corner of the rectangle
+    :param padding: Padding to add to the rectangle
+    :param spacing: Spacing between gridpoints
+    :param dtype: Data type of the gridpoints
+    
+    :returns: Gridpoints
+    :rtype: np.ndarray
+    """
     l = np.array(r1, dtype=dtype) - padding
     r = np.array(r2, dtype=dtype) + padding
 

@@ -22,6 +22,11 @@ def rotation_matrix_from_vectors(
     https://en.wikipedia.org/wiki/Rotation_matrix
     https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
 
+    :param _v1: Vector 1
+    :param _v2: Vector 2
+    :param tol: Tolerance for detecting nearly opposite vectors
+    :returns: Rotation matrix
+    :rtype: np.ndarray
     """
     v1 = np.array(_v1)
     v2 = np.array(_v2)

@@ -7,7 +7,14 @@ import molli_xt
 
 def _where_distance(p, g: np.ndarray, r: float) -> np.ndarray:
     """
-    Return a numpy array of where point is within radius from gridpoints
+    Function to return a numpy array of where a point is within radius from gridpoints
+
+    :param p: Point to check
+    :param g: Gridpoints to check against
+    :param r: Radius to check
+
+    :returns: Numpy array of where the point is within radius from gridpoints
+    :rtype: np.ndarray
     """
 
     diff = g - p
@@ -18,9 +25,16 @@ def _where_distance(p, g: np.ndarray, r: float) -> np.ndarray:
 
 def aso1(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.ndarray:
     aso_full = np.empty((ens.n_conformers, g.shape[0]), dtype=dtype)
+    """
+    Iterates over conformers in the ensemble with time complextiy O(n_confs * n_gpts)
 
-    # Iterate over conformers in the ensemble
-    # Complexity (O(n_confs * n_gpts))
+    :param ens: ConformerEnsemble to calculate ASO for
+    :param g: Gridpoints to calculate ASO for
+    :param dtype: Data type of the ASO array
+
+    :returns: ASO array
+    :rtype: np.ndarray
+    """
     for i, c in enumerate(ens):
         # Iterate over atoms
         for j, a in enumerate(c.atoms):

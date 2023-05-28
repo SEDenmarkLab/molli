@@ -2,14 +2,17 @@ from ..chem import Molecule, Atom, AtomLike, Substructure
 import numpy as np
 
 def dftd_coordination_number(mol: Molecule, a: AtomLike):
-    '''
+    """
     This is the coordination number defined by Grimme in "https://doi.org/10.1063/1.3382344".
     All covalent radii for metals will be scaled down by 10%, and is built to error if the element used is not 1-94.
 
     This defines a coordination number for individual atoms based on the location of all atoms
     
-    Could use some additional boundary cases, but is currently functioning the way it was implemented by Grimme.
-    '''
+    :param mol: Molecule to calculate coordination number for
+    :param a: Atom to calculate coordination number for
+    :returns: Coordination number for atom a
+    :rtype: float
+    """
 
     k1 = 16
     k2 = 4/3
