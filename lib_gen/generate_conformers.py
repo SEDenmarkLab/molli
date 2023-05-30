@@ -4,6 +4,8 @@ from openbabel import openbabel as ob
 import openbabel.pybel as pb
 import time
 from pathlib import Path
+import argparse # for argument parsing
+import warnings
 
 from rdkit import Chem
 from rdkit.Chem import rdmolfiles   # from Ethan
@@ -173,7 +175,7 @@ def _conf_gen(args) -> ml.ConformerEnsemble:
     try: # try to optimize conformer distribution
         # optimize with MMFF
         AllChem.MMFFSanitizeMolecule(mol)
-        AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads=1, maxIters=200) # issue here
+        AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads=1, maxIters=200)
     except Exception as exp:
         print(f'Failure for {mol} on conformer geometry optimization: {exp!s}')
         return
@@ -188,12 +190,12 @@ def _conf_gen(args) -> ml.ConformerEnsemble:
         print(f'Failure for {mol} on alignment: {exp!s}')
         return
 
-    do_calc = True
-    if isinstance(threshold, bool):
-        if threshold == False:
-            do_calc = False
-        else:
-            threshold = 15.0
+    do_calc = False
+    if isinstance(threshold, float):
+        do_calc = True
+    if threshold == True:
+        do_calc = True
+        threshold = 15.0
 
     if do_calc:
         try: # try to calculate energies for conformers
@@ -236,11 +238,11 @@ def _conf_gen(args) -> ml.ConformerEnsemble:
 # takes an mlib, either file path or string, and optional parameters
 def conformer_generation(
     mlib: str | Path | ml.MoleculeLibrary,
-    n_confs: int = 50,
+    n_confs: int | str = 50,
     maxIterations: int = 10000,
-    threshold: float | bool = 15.0,
+    threshold: float | bool = False,
     file_output: str | Path = None,
-    num_processes: int = 100
+    num_processes: int = 4
     ):
     '''
     Generates a ConformerLibrary for a passed MoleculeLibrary.
@@ -250,11 +252,34 @@ def conformer_generation(
     If no out file path is given, ConformerLibrary will be written as 'conformers.mlib' to the directory that conformer_generation was called from.
     num_processes initializes size of pool of worker processes with the Pool class. Setting num_processes to None defaults to os.cpu_count()
     '''
-    try:    # catch invalid n_confs
-        assert n_confs > 0
-    except Exception as exp:
-        print(f'Invalid n_confs value: must be greater than 0')
-        return
+    is_int = True
+    if(isinstance(n_confs, str)):
+        try:
+            temp = int(n_confs)
+        except Exception:   # not an int or a string representation of an int
+            is_int = False
+        else:
+            n_confs = temp
+    
+    if(is_int):
+        try:    # catch invalid n_confs
+            assert n_confs > 0
+        except Exception as exp:
+            print(f'Invalid n_confs value: must be greater than 0')
+            return
+    else:   # test that string matches specific conformer settings
+        try:
+            if n_confs == 'default':    # based on JCIM paper: https://doi.org/10.1021/ci2004658
+                n_confs = 50
+            elif n_confs == 'quick':
+                n_confs = 10
+            else:
+                raise ValueError()
+        except Exception as exp:
+            print(f'Invalid n_confs string: does not match settings (default or quick)')
+            return
+
+
 
     try:    # catch invalid num_processes
         assert num_processes > 0
@@ -292,37 +317,11 @@ def conformer_generation(
         return
 
     ensembles = None    # generate conformer ensembles, append to conformer library
+    warnings.filterwarnings('ignore')   # for ignoring mol2.py "UNITY warning"
     with Pool(num_processes) as p:
         ensembles = p.map(_conf_gen, args)
     with clib:
         for i in ensembles:
             clib.append(i.name, i)    
 
-# DELETE BELOW IN FINAL VERSION
-if __name__ == '__main__':
-
-#    if not os.path.exists(out_dir):
-#        os.makedirs(out_dir)
-#    if not os.path.exists(out_dir_mxyz):
-#        os.makedirs(out_dir_mxyz)
-    mlib = ml.MoleculeLibrary(in_dir)
-    # it will save us some time to call this only once here
-
-    ref_mol = mlib[0]
-    reference_dict = _rdkit.create_rdkit_mol(ref_mol)
-    reference_molecule = reference_dict[ref_mol] 
-    alignment_atoms = list(get_oxazaline_alignment_atoms(reference_molecule))
-    args = [i for i in zip([reference_molecule for i in range(len(mlib))], mlib, [alignment_atoms for i in range(len(mlib))])]
-
-    start = time.time()
-#    with Pool(100) as p:                   
-#       p.map(pool_handler, args)           
-#    for arg in args:
-#        conf_generate(arg)
-#    ens = conf_generate(args[0])
-#    end = time.time()
-    print('Time elapsed: ' + str(end - start) + " s")
-    print('Success!')
-    # job id: 1082045
-
-
+# if __name__ == '__main__':
