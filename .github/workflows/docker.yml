@@ -3,9 +3,9 @@ name: Docker
 # This will run when:
 # - when new code is pushed to main/develop to push the tags
 #   latest and develop
-# - when a pull request is created and updated  to make sure the
+# - when a pull request is created and updated, to make sure the
 #   Dockerfile is still valid.
-# To be able to push to dockerhub, this execpts the following
+# To be able to push to dockerhub, this expects the following
 # secrets to be set in the project:
 # - NCSAHARBOR_USERNAME : username that can push to the org
 # - NCSAHARBOR_PASSWORD : password associated with the username
@@ -54,10 +54,11 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      - name: Login to DockerHub
+      - name: Login to NCSA Harbor
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v2
         with:
+          registry: hub.ncsa.illinois.edu
           username: ${{ secrets.NCSAHARBOR_USERNAME }}
           password: ${{ secrets.NCSAHARBOR_PASSWORD }}
 
