@@ -36,6 +36,7 @@ class Molecule(Structure):
         charge: int = None,
         mult: int = None,
         name: str = None,
+        coords: ArrayLike = None,
         atomic_charges: ArrayLike = ...,
         **kwds,
     ):
@@ -44,7 +45,9 @@ class Molecule(Structure):
         """
         # if isinstance(other, Molecule | Structure):
         #     ...
-        super().__init__(other, n_atoms=n_atoms, name=name, charge=charge, mult=mult, **kwds)
+        super().__init__(
+            other, n_atoms=n_atoms, name=name, charge=charge, mult=mult, coords=coords, **kwds
+        )
         self.atomic_charges = atomic_charges
 
     # @property
@@ -106,10 +109,10 @@ class Molecule(Structure):
         stream = StringIO()
         self.dump_mol2(stream)
         return stream.getvalue()
-    
+
     def add_atom(self, a: Atom, coord: ArrayLike, charge: float = None):
         super().add_atom(a, coord)
-        self._atomic_charges =np.append(self._atomic_charges, [charge], axis=0)
+        self._atomic_charges = np.append(self._atomic_charges, [charge], axis=0)
 
     def del_atom(self, _a: AtomLike):
         _i = self.get_atom_index(_a)
