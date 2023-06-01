@@ -7,29 +7,29 @@ authors = [{ name = "Alexander S. Shved", email = "shvedalx@illinois.edu" }]
 requires-python = ">=3.10"
 name = "molli"
 description = "Molecular toolbox library"
-# dynamic = ["version"]
 dependencies = [
-    "numpy>=1.22.3",
+    "numpy>=1.24.0",
     "scipy>=1.9.1",
-    "attrs~=22.1.0",
-    "packaging~=22.0",
-    "bidict~=0.21.2",
-    "requests~=2.28",
-    "PyYAML~=5.3",
-    "msgpack~=1.0.3",
-    "scipy>=1.4.1",
+    "h5py>=3.8",
+    "msgpack>=1.0.3",
+    "attrs>=22.1.0",
+    "bidict>=0.21.2",
+    "requests>=2.28",
+    "PyYAML>=5.3",
     "colorama>=0.4.4",
-    "networkx>=2.8.7",
-    "tqdm~=4.64.0",
-    "h5py~=3.7.0",
+    "networkx>=3.0",
+    "tqdm>=4.64.0",
+    "packaging>=23.1",
 ]
 version = "1.0.0a7"
 
+
+[tool.setuptools.package-data]
+"molli.files" = ["*"]
+"molli.data" = ["*.yml"]
+
 [tool.setuptools.packages.find]
-include = ["molli", "molli_test"]
+include = ["molli", "molli.*", "molli_test"]
 
 [project.scripts]
 molli = "molli.__main__:main"
-
-# [tool.setuptools.dynamic]
-# version = { attr = "molli.__version__" }

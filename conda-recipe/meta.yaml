@@ -35,21 +35,22 @@ requirements:
 
   run:
     - python {{ python }}
-    - numpy~=1.24
-    - scipy>=1.9.1
-    - attrs~=22.1.0
-    - bidict~=0.21.2
+    - numpy~=1.24.0
+    - scipy~=1.9.1
+    - h5py>=3.8
     - msgpack-python>=1.0.4
-    - networkx~=2.8.7
-    - colorama~=0.4.5
-    - tqdm~=4.64.0
-    - pyyaml~=5.4.1
-    - requests~=2.28
-    - h5py~=3.7.0
+    - attrs>=22.1.0
+    - bidict>=0.21.2
+    - networkx~=3.0
+    - colorama>=0.4.5
+    - tqdm>=4.64.0
+    - pyyaml>=5.4.1
+    - requests>=2.28
+    - packaging>=23.1
 
 build:
   number: 0
-  # include_recipe: True
+  include_recipe: True
   script: "python -m pip install --no-deps -vvv ." 
 
 test:
