@@ -1,7 +1,6 @@
 import unittest as ut
-
-import molli as ml
 import numpy as np
+import molli as ml
 import math
 
 

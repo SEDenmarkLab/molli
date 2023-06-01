@@ -1,6 +1,5 @@
 import unittest as ut
-
-from molli import chem
+import molli as ml
 
 
 class PromoleculeTC(ut.TestCase):
@@ -8,8 +7,8 @@ class PromoleculeTC(ut.TestCase):
 
     def test_promolecule_empty_constructor(self):
         """Tests if empty promolecule is correctly created"""
-        empty1 = chem.Promolecule()
-        empty2 = chem.Promolecule()
+        empty1 = ml.Promolecule()
+        empty2 = ml.Promolecule()
 
         # Default tests here
         assert empty1.n_atoms == 0, "This should be an empty promolecule"
@@ -26,19 +25,19 @@ class PromoleculeTC(ut.TestCase):
         ), "The ID of atom lists are different"
 
     def test_promolecule_natoms_constructor(self):
-        pm = chem.Promolecule(n_atoms=10)
+        pm = ml.Promolecule(n_atoms=10)
 
     def test_promolecule_list_constructor(self):
         # This more or less just tests if all elements can end up in the promolecule upon such a creation
-        pm = chem.Promolecule([elt for elt in chem.Element])
+        pm = ml.Promolecule([elt for elt in ml.Element])
 
     def test_new_atom(self):
         """Tests programmatic creation of a simple water promolecule"""
-        pm = chem.Promolecule()
+        pm = ml.Promolecule()
         # This tests if string description of the element is a viable constructor option
-        pm.append_atom(chem.Atom(chem.Element.H, label="H1"))
-        pm.append_atom(chem.Atom("H", label="H2"))
-        pm.append_atom(chem.Atom(8, label="O3"))
+        pm.append_atom(ml.Atom(ml.Element.H, label="H1"))
+        pm.append_atom(ml.Atom("H", label="H2"))
+        pm.append_atom(ml.Atom(8, label="O3"))
 
         self.assertEqual(
             pm.n_atoms, 3, "This promolecule (H2O) must have 3 atoms"
@@ -56,7 +55,7 @@ class PromoleculeTC(ut.TestCase):
 
     def test_atoms_property(self):
         """Tests if the atoms property is programmatically protected"""
-        pm = chem.Promolecule()
+        pm = ml.Promolecule()
 
         self.assertIsInstance(pm.atoms, list)
         with self.assertRaises(AttributeError):
@@ -68,17 +67,17 @@ class PromoleculeTC(ut.TestCase):
 
     def test_atom_indexing(self):
         """Tests atom indexing procedures and their stability with respect to atom creation/deletion/rearrangement"""
-        pm = chem.Promolecule()
+        pm = ml.Promolecule()
         # old deprecated syntax
-        # h1 = chem.Atom.add_to(pm, chem.Element.H, label="H1")
-        # h2 = chem.Atom.add_to(pm, chem.Element.H, label="H2")
-        # o3 = chem.Atom.add_to(pm, chem.Element.O, label="O3")
+        # h1 = ml.Atom.add_to(pm, ml.Element.H, label="H1")
+        # h2 = ml.Atom.add_to(pm, ml.Element.H, label="H2")
+        # o3 = ml.Atom.add_to(pm, ml.Element.O, label="O3")
 
-        h1 = chem.Atom(chem.Element.H, label="H1")
-        h2 = chem.Atom(chem.Element.H, label="H2")
-        o3 = chem.Atom(chem.Element.O, label="O3")
+        h1 = ml.Atom(ml.Element.H, label="H1")
+        h2 = ml.Atom(ml.Element.H, label="H2")
+        o3 = ml.Atom(ml.Element.O, label="O3")
 
-        pm = chem.Promolecule([h1, h2, o3])
+        pm = ml.Promolecule([h1, h2, o3])
 
         # Simple tests of atom indexing
         self.assertEqual(
@@ -92,8 +91,10 @@ class PromoleculeTC(ut.TestCase):
         self.assertEqual(
             pm.index_atom(o3),
             1,
-            "That would now be the second atom in that promolecule, since h2"
-            " was deleted",
+            (
+                "That would now be the second atom in that promolecule, since"
+                " h2 was deleted"
+            ),
         )
 
         with self.assertRaises(ValueError):
@@ -101,7 +102,7 @@ class PromoleculeTC(ut.TestCase):
                 h2
             )  # This should fail as h2 is no longer in the atom list
 
-        h2 = chem.Atom(chem.Element.H, label="H2")
+        h2 = ml.Atom(ml.Element.H, label="H2")
         pm.append_atom(h2)
         hydrogens = list(pm.yield_atoms_by_element("H"))
 

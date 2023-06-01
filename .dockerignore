@@ -1,0 +1,10 @@
+.git*
+.github
+.gitattributes
+.gitignore
+.vscode/
+examples-jupyter/
+examples-scripts
+Dockerfile*
+Dockerfile
+**/README*
