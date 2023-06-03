@@ -10,11 +10,6 @@ from warnings import warn
 
 try:
     from openbabel import openbabel as ob
-
-    warn(
-        "OpenBabel conversion may not be fully correct."
-        "Please, report unexpected behavior to the developers."
-    )
 except:
     raise ImportError("OpenBabel is not installed in this environment")
 
@@ -128,10 +123,6 @@ def obabel_optimize(
     If inplace = True, this mutates mlmol to optimized coordinates and returns None
     If inplace = False, mlmol is unchanged and an optimized copy is returned
     """
-    warn(
-        "This function may not be the final version. Current iteration only contains atoms and"
-        " bonds, not charges and multiplicity."
-    )
 
     obm = to_obmol(mol, dummy=dummy, coord_displace=coord_displace)
     obff = ob.OBForceField.FindForceField(ff)

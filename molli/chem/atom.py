@@ -762,6 +762,9 @@ class Promolecule:
                         f" with {self.n_atoms} atoms"
                     )
 
+            case str():
+                return self._atoms.index(next(self.yield_atoms_by_label(_a)))
+
             case _:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
