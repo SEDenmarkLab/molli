@@ -9,7 +9,7 @@ import h5py
 
 
 grid_file = "grid.npy"
-conformer_lib_file = "../out1/out_conformers1/conformers3.mlib"
+conformer_lib_file = "../../../out_conformers1/conformers-cmd-test.mlib"
 aso_file = "massive_aso.h5"
 
 

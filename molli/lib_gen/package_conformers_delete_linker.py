@@ -3,8 +3,9 @@ from openbabel import openbabel as ob
 import os
 from tqdm import tqdm
 import numpy as np
+from pathlib import Path
 
-indir = 'out1/out_conformers1_separated_checked/'
+inlib = '../molli/conformers-cmd-test2.mlib'
 
 # from Blake
 def load_obmol(fname, input_ext: str = 'xyz') -> ob.OBMol:
@@ -32,12 +33,62 @@ def obmol_to_mol2(obmol: ob.OBMol):
     return conv.WriteString(obmol)
 
 
-if __name__ == '__main__':
+def linker_deletion(lib: ml.ConformerLibrary, new_lib: ml.ConformerLibrary):  # adds linker deleted conformers to new library (THIS PASSED LIBRARY SHOULD BE EMPTY)
+    for ensemble in lib:
+        ensemble_str = ''
+        for c in ensemble:
+            id = c._conf_id                                               # assuming conformer id is arbitrary? double check this
+            mol = ml.Molecule.loads_mol2(c.dumps_mol2())                 # load conformer into new Molecule, free from ensemble overhead
 
+            bromines = [i for i in mol.yield_atoms_by_element('Br')]     # deleting of methylene bridge
+            assert len(bromines) == 2
+            carbon = next(mol.connected_atoms(bromines[0]))
+
+            for a in bromines:
+                mol.del_atom(a)
+            mol.del_atom(carbon)
+
+            # convert molecule back into mol2 string, add to ensemble string
+            ensemble_str += mol.dumps_mol2()
+        # convert ensemble string into new ensemble, add new one into new library
+        new_ensemble = ml.ConformerEnsemble.loads_mol2(ensemble_str)
+        with new_lib:
+            new_lib.append(new_ensemble.name, new_ensemble)
+
+
+
+
+
+#            # get the atoms we need to remove
+#            bromines = [i for i in c.yield_atoms_by_element('Br')]
+#            assert len(bromines) == 2
+#            carbon = next(c.connected_atoms(bromines[0]))
+
+            # remove the atoms. I OVERRODE DEL_ATOM IN MOLECULE CLASS TO DEAL WITH ATOMIC_CHARGES (old note, not from me)
+#            for a in bromines:
+#                c.del_atom(a)
+#            c.del_atom(carbon) 
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    clib = ml.ConformerLibrary("../../out_conformers1/conformers-cmd-test2-nolink.mlib")
+    linker_deletion(clib)
+    print(clib)
+    print(clib[0])
+
+    print('Success!')
+
+'''
     conformer_dict = {}
 
     # this will be our conformer library
-    lib = ml.ConformerLibrary.new("out1/conformers_no_linker.mlib",)
+    lib = ml.ConformerLibrary.new("../../out_conformers1/conformers-cmd-test2-linker-delete.mlib",)
 
     ## first pair up the conformer files with the core structure in a dictionary.
     for f in os.listdir(indir):
@@ -94,7 +145,6 @@ if __name__ == '__main__':
 
             # add this ensemble to the larger library
             lib.append(ensemble.name, ensemble)
-
-    print('Success!')
+'''
 
 

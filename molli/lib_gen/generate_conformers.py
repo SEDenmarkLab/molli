@@ -250,13 +250,14 @@ def conformer_generation(
     Optional parameters for max conformers per molecule, max iterations for conformer embedding, and energy threshold for conformer filtering.
     If threshold is set to False, conformers will not be filtered, if true, will set threshold back to default of 15.0.
     If no out file path is given, ConformerLibrary will be written as 'conformers.mlib' to the directory that conformer_generation was called from.
+    Otherwise, will output file in format of (file_output + "_conformers.mlib")
     num_processes initializes size of pool of worker processes with the Pool class. Setting num_processes to None defaults to os.cpu_count()
     '''
     is_int = True
     if(isinstance(n_confs, str)):
         try:
             temp = int(n_confs)
-        except Exception:   # not an int or a string representation of an int
+        except ValueError:   # not an int or a string representation of an int
             is_int = False
         else:
             n_confs = temp
@@ -280,7 +281,6 @@ def conformer_generation(
             return
 
 
-
     try:    # catch invalid num_processes
         assert num_processes > 0
     except Exception as exp:
@@ -288,7 +288,7 @@ def conformer_generation(
         return
 
     try:    # initialize or copy MoleculeLibrary
-        if isinstance(mlib, str | Path):
+        if isinstance(mlib, (str, Path)):
             lib = ml.MoleculeLibrary(mlib)
         else:
             lib = mlib
@@ -296,7 +296,7 @@ def conformer_generation(
         print(f'Invalid MoleculeLibrary: {exp!s}')
         return
     
-    ref_mol = lib[0]    
+    ref_mol = lib[0]    # takes first molecule from library as reference molecule
     reference_dict = _rdkit.create_rdkit_mol(ref_mol)
     reference_molecule = reference_dict[ref_mol] 
     alignment_atoms = list(get_oxazaline_alignment_atoms(reference_molecule))
@@ -311,7 +311,7 @@ def conformer_generation(
     try:    # create output file
         if file_output is None:
            file_output = 'conformers.mlib'
-        clib = ml.ConformerLibrary.new(file_output)
+        clib = ml.ConformerLibrary.new(file_output + '_conformers.mlib')
     except Exception as exp:
         print(f'Error with output file creation: {exp!s}')
         return
@@ -322,6 +322,6 @@ def conformer_generation(
         ensembles = p.map(_conf_gen, args)
     with clib:
         for i in ensembles:
-            clib.append(i.name, i)    
+            clib.append(i.name, i)
 
 # if __name__ == '__main__':
