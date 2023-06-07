@@ -9,7 +9,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "input",
     action="store",
-    required=True,
     type=str,
     metavar='<fpath>',
     help="ConformerLibrary file to be parsed"
@@ -28,7 +27,7 @@ parser.add_argument(
 def molli_main(args, config=None, output=None, **kwargs):
     args = parser.parse_args(args)
 
-    clib = args.file
+    clib = args.input
     output = args.output
 
     aa.aso_description(clib, output)

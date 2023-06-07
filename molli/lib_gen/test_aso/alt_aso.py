@@ -7,7 +7,7 @@ from pathlib import Path
 # This is a bypass for DASK (to be abandoned in future molli development)
 
 #lib = ml.ConformerLibrary("../../../out_conformers1/conformers-cmd-test2-nolink.mlib")
-grid = np.load("grid.npy")      # ISSUE WITH FINDING THIS FILE NOW
+grid = np.load("molli/lib_gen/test_aso/grid.npy")      # ISSUE WITH FINDING THIS FILE NOW
 
 print("grid shape:", grid.shape)
 
