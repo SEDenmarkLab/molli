@@ -8,7 +8,7 @@
 # ================================================================================
 """
 ---------------
-# `MOLLI 1.0.0a6`
+# `MOLLI 1.0.0a7`
 ---------------
 (C) 2022 Alexander S. Shved and the Denmark laboratory  
 University of Illinois at Urbana-Champaign, Department of Chemistry

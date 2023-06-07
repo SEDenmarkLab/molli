@@ -1,17 +1,16 @@
 import unittest as ut
-
-from molli import chem, files, Molecule
 import numpy as np
 from pathlib import Path
 
+import molli as ml
 
 class MoleculeTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
     def test_yield_from_mol2(self):
-        with open(files.pentane_confs_mol2) as f:
-            lst_structs: list[chem.Molecule] = list(
-                chem.Molecule.yield_from_mol2(f, name="pentane")
+        with open(ml.files.pentane_confs_mol2) as f:
+            lst_structs: list[ml.Molecule] = list(
+                ml.Molecule.yield_from_mol2(f, name="pentane")
             )
 
         self.assertEqual(len(lst_structs), 7)
@@ -22,10 +21,10 @@ class MoleculeTC(ut.TestCase):
 
     # @ut.skip("Not implemented yet")
     def test_molecule_cloning(self):
-        with open(files.pentane_confs_mol2) as f:
-            m1 = chem.Molecule.load_mol2(f, name="pentane")
+        with open(ml.files.pentane_confs_mol2) as f:
+            m1 = ml.Molecule.load_mol2(f, name="pentane")
 
-        m2 = chem.Molecule(m1)
+        m2 = ml.Molecule(m1)
 
         self.assertNotEqual(id(m1._atoms), id(m2._atoms))
         self.assertNotEqual(id(m1._bonds), id(m2._bonds))
@@ -42,17 +41,17 @@ class MoleculeTC(ut.TestCase):
 
     def test_dump_mol2(self):
         for file in [
-            files.pentane_confs_mol2,
-            files.dendrobine_mol2,
-            files.dummy_mol2,
-            files.fxyl_mol2,
-            files.nanotube_mol2
+            ml.files.pentane_confs_mol2,
+            ml.files.dendrobine_mol2,
+            ml.files.dummy_mol2,
+            ml.files.fxyl_mol2,
+            ml.files.nanotube_mol2
         ]:
 
             with open(file) as f:
-                m1 = chem.Molecule.load_mol2(f)
+                m1 = ml.Molecule.load_mol2(f)
             
-            new_m1 = next(Molecule.yield_from_mol2(Molecule.dumps_mol2(m1)))
+            new_m1 = next(ml.Molecule.yield_from_mol2(ml.Molecule.dumps_mol2(m1)))
 
             np.testing.assert_array_equal(m1._coords,new_m1._coords)
 
@@ -63,7 +62,7 @@ class MoleculeTC(ut.TestCase):
     def test_del_atom(self):
         """This tests if atom deletion is correctly handled for atomic charges"""
 
-        mol = Molecule.load_mol2(files.dendrobine_mol2)
+        mol = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
         na = mol.n_atoms
         nb = mol.n_bonds
 

@@ -90,7 +90,7 @@ class CartesianGeometry(Promolecule):
         self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 
         if isinstance(other, CartesianGeometry):
-            self.coords = other.coords
+            self.coords = coords if coords is not None else other.coords
         else:
             self.coords = coords if coords is not None else np.nan
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from struct import pack, unpack, Struct
 from pathlib import Path
-from typing import TypeVar, Generic, Callable, Sequence
+from typing import TypeVar, Generic, Callable, Iterable
 from functools import wraps
 from enum import IntFlag, auto
 import msgpack
@@ -87,7 +87,6 @@ class _Library(Generic[T]):
         encoder: Callable[[T], bytes] = ...,
         decoder: Callable[[bytes], T] = ...,
     ) -> _Library[T]:
-
         _path = Path(path)
 
         if _path.is_file() and not overwrite:
@@ -96,6 +95,32 @@ class _Library(Generic[T]):
 
         with open(_path, "wb") as f:
             f.write(_FILE_HEADER.pack(cls.GUARD1, cls.GUARD2))
+
+        return cls(_path, readonly=False, encoder=encoder, decoder=decoder)
+
+    @classmethod
+    def concatenate(
+        cls: type[_Library],
+        path: Path | str,
+        sources: Iterable[Path | str],
+        overwrite: bool = False,
+        encoder: Callable[[T], bytes] = ...,
+        decoder: Callable[[bytes], T] = ...,
+    ) -> _Library[T]:
+        _path = Path(path)
+
+        if _path.is_file() and not overwrite:
+            _path = unique_path(_path)
+            warn(f"Requested path was not available. New file name: {_path}")
+
+        with open(_path, "x+b") as out_f:
+            out_f.write(_FILE_HEADER.pack(cls.GUARD1, cls.GUARD2))
+
+            for source in sources:
+                with open(source, "rb") as src_f:
+                    src_f.seek(_FILE_HEADER.size)
+                    while chunk := src_f.read(131072):
+                        out_f.write(chunk)
 
         return cls(_path, readonly=False, encoder=encoder, decoder=decoder)
 
@@ -158,17 +183,13 @@ class _Library(Generic[T]):
         The cursor moves to the next block
         """
         pos = self._stream.tell()
-        key_size, data_size = _BLOCK_HEADER.unpack(
-            self._stream.read(_BLOCK_HEADER.size)
-        )
+        key_size, data_size = _BLOCK_HEADER.unpack(self._stream.read(_BLOCK_HEADER.size))
         _key: bytes = self._stream.read(key_size)
         self._stream.seek(data_size, 1)
         return self._stream.tell(), _key.decode("ascii")
 
     def _read(self) -> bytes:
-        key_size, data_size = _BLOCK_HEADER.unpack(
-            self._stream.read(_BLOCK_HEADER.size)
-        )
+        key_size, data_size = _BLOCK_HEADER.unpack(self._stream.read(_BLOCK_HEADER.size))
         _key: bytes = self._stream.read(key_size)
         return self._stream.read(data_size)
 
@@ -185,11 +206,18 @@ class _Library(Generic[T]):
     # @check_open
     def get(self, i: int) -> T:
         if i < 0 or i > len(self):
-            raise IndexError(
-                f"Index {i} is out of range for len(sequence) = {len(self)}"
-            )
+            raise IndexError(f"Index {i} is out of range for len(sequence) = {len(self)}")
         self.goto(i)
         return self.decoder(self._read())
+
+    def batch(self, start: int, batch_size: int):
+        for i in range(start, start + batch_size):
+            try:
+                item = self.get(i)
+            except IndexError:
+                pass
+            else:
+                yield item
 
     def yield_in_batches(self, batchsize: int = 256):
         """Read file in chunks"""

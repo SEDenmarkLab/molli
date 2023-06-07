@@ -18,3 +18,5 @@ molli_xt.*.so
 
 # Files not to be uploaded to repo
 **/_temp_*
+
+/.vscode/c_cpp_properties.json

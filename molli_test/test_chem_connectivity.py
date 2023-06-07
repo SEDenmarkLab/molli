@@ -1,6 +1,6 @@
 import unittest as ut
 
-from molli import chem
+import molli as ml
 
 
 class ConnectivityTC(ut.TestCase):
@@ -8,8 +8,8 @@ class ConnectivityTC(ut.TestCase):
 
     def test_connectivity_empty_constructor(self):
         """Tests if empty promolecule is correctly created"""
-        empty1 = chem.Connectivity()
-        empty2 = chem.Connectivity()
+        empty1 = ml.Connectivity()
+        empty2 = ml.Connectivity()
 
         # Default tests here
         assert empty1.n_bonds == 0, "This should be an empty connectivity table"
@@ -20,14 +20,14 @@ class ConnectivityTC(ut.TestCase):
         ###############################################
         # This creates a water molecule from scratch
 
-        h1 = chem.Atom(chem.Element.H, label="H1")
-        h2 = chem.Atom("H", label="H2")
-        o3 = chem.Atom(chem.Element.O, label="O3")
+        h1 = ml.Atom(ml.Element.H, label="H1")
+        h2 = ml.Atom("H", label="H2")
+        o3 = ml.Atom(ml.Element.O, label="O3")
 
-        cn = chem.Connectivity([h1, h2, o3])
+        cn = ml.Connectivity([h1, h2, o3])
 
-        b1 = chem.Bond(h1, o3, btype=chem.BondType.Single)
-        b2 = chem.Bond(h2, o3, btype=chem.BondType.Single)
+        b1 = ml.Bond(h1, o3, btype=ml.BondType.Single)
+        b2 = ml.Bond(h2, o3, btype=ml.BondType.Single)
 
         cn.append_bonds(b1, b2)
         ###############################################

@@ -12,6 +12,7 @@ __all__ = [
     "cluster",
     "conformers",
     "descriptors",
+    "combine",
 ]
 
 __all__.sort()
