@@ -9,7 +9,8 @@ import os
 # This is a bypass for DASK (to be abandoned in future molli development)
 
 #lib = ml.ConformerLibrary("../../../out_conformers1/conformers-cmd-test2-nolink.mlib")
-grid = np.load("molli/lib_gen/test_aso/grid.npy")
+grid = np.load("../molli/lib_gen/test_aso/grid.npy")
+# grid = np.load("grid.npy")
 
 print("grid shape:", grid.shape)
 
@@ -34,14 +35,15 @@ def aso_description(clib:ml.ConformerLibrary | str | Path, output: str | Path | 
         output = 'aso.h5'
 
     try:
-        with ThreadPoolExecutor(max_workers=64) as pool, h5py.File(output, "w") as output:
-            for batch in tqdm(lib.yield_in_batches(BATCH_SIZE), dynamic_ncols=True, position=0, desc="Loading batches of conformers", total=len(lib)//BATCH_SIZE):
-                futures = []
-                data = np.empty((len(batch), grid.shape[0]), dtype="float32")
-                for ens in tqdm(batch, dynamic_ncols=True, position=1, leave=False, desc="Submitting calculations"):
-                    fut = pool.submit(ml.descriptor.filtered_parallel_aso, ens, grid, n_threads=16, chunksize=1024)
-                    futures.append(fut)
-                
+        
+        for batch in tqdm(lib.yield_in_batches(BATCH_SIZE), dynamic_ncols=True, position=0, desc="Loading batches of conformers", total=len(lib)//BATCH_SIZE):
+            futures = []
+            with ThreadPoolExecutor(max_workers=64) as pool:
+                    # data = np.empty((len(batch), grid.shape[0]), dtype="float32")
+                    for ens in tqdm(batch, dynamic_ncols=True, position=1, leave=False, desc="Submitting calculations"):
+                        fut = pool.submit(ml.descriptor.filtered_parallel_aso, ens, grid, n_threads=16, chunksize=1024)
+                        futures.append(fut)
+            with h5py.File(output, "a") as output:     
                 for i, f in enumerate(tqdm(futures, dynamic_ncols=True, position=2, leave=False, desc="Gathering calculation results")):
                     output.create_dataset(batch[i].name, data=f.result(), dtype="f4")
     except Exception as exp:
