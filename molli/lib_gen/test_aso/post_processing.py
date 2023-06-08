@@ -7,7 +7,6 @@ from sklearn.decomposition import PCA
 import numpy as np
 import h5py
 from tqdm import tqdm
-
 # the output from molli aso calculation
 
 # use these lines for the full in silico library (without focused analogues)
@@ -49,7 +48,6 @@ def variance_feature_selection(data: pd.DataFrame, thld: float = 0) -> pd.DataFr
 
     print(f'shape of data after variance threshold: {data_vt.shape}')                           # keep in?
     print(f'total variance after variance threshold: {calc_total_variance(data_vt):.2f}\n')
-
     return data_vt
 
 # if no correlation coeffecient threshold is given, outputs list of tuples containing shape and variance of data after removing columns for

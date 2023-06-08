@@ -2,9 +2,7 @@ import molli as ml  # from Ethan
 from molli.external import _rdkit
 from openbabel import openbabel as ob
 import openbabel.pybel as pb
-import time
 from pathlib import Path
-import argparse # for argument parsing
 import warnings
 
 from rdkit import Chem
@@ -18,7 +16,9 @@ from rdkit.Chem.rdForceFieldHelpers import UFFGetMoleculeForceField
 import random
 import os
 from tqdm import tqdm
+from p_tqdm import p_map
 from multiprocessing import Pool
+from multiprocessing import Value
 import shutil
 
         #in_dir = '../main_library/in_silico_library_uff_min_checked1/'
@@ -221,12 +221,14 @@ def _conf_gen(args) -> ml.ConformerEnsemble:
     try: # convert conformers back to mol2 and put into conformer library
 #        make_lib = ml.ConformerLibrary.new(out_dir + "_conformers.clib")  
 #        make_lib.open(False)
-        mol2_string = ''                                                       # initialize string to hold all conformer mol2 data
-        for conf in enumerate(filtered_conformers):                            # iterate through all filtered conformer ids
-            temp = rdmolfiles.MolToMolBlock(mol, confId=conf[0])               # turn each conformer in mol into temporary molblock string
-            ob_temp = pb.readstring('mol', temp)                               # read that string into open_babel molecule
-            mol2_string += ob_temp.write(format='mol2')                        # write out ob_temp as mol2 string, append to mol2_string
-        ensemble = ml.ConformerEnsemble.loads_mol2(mol2_string)                # create ensemble with string mol2 data
+        mol2_string = ''
+        with progress.get_lock():                                                  # initialize string to hold all conformer mol2 data
+            for conf in enumerate(filtered_conformers):                            # iterate through all filtered conformer ids
+                temp = rdmolfiles.MolToMolBlock(mol, confId=conf[0])               # turn each conformer in mol into temporary molblock string
+                ob_temp = pb.readstring('mol', temp)                               # read that string into open_babel molecule
+                mol2_string += ob_temp.write(format='mol2')                        # write out ob_temp as mol2 string, append to mol2_string
+            ensemble = ml.ConformerEnsemble.loads_mol2(mol2_string)                # create ensemble with string mol2 data
+            progress.value += 1
 #        clib.append(in_mol.name, ensemble)                                                      
 #        make_lib.close()                                                       # conformers are not named, important to fix or no?         
     except Exception as exp:
@@ -250,7 +252,6 @@ def conformer_generation(
     Optional parameters for max conformers per molecule, max iterations for conformer embedding, and energy threshold for conformer filtering.
     If threshold is set to False, conformers will not be filtered, if true, will set threshold back to default of 15.0.
     If no out file path is given, ConformerLibrary will be written as 'conformers.mlib' to the directory that conformer_generation was called from.
-    Otherwise, will output file in format of (file_output + "_conformers.mlib")
     num_processes initializes size of pool of worker processes with the Pool class. Setting num_processes to None defaults to os.cpu_count()
     '''
     is_int = True
@@ -266,8 +267,7 @@ def conformer_generation(
         try:    # catch invalid n_confs
             assert n_confs > 0
         except Exception as exp:
-            print(f'Invalid n_confs value: must be greater than 0')
-            return
+            warnings.warn(f'Invalid n_confs value: must be greater than 0')
     else:   # test that string matches specific conformer settings
         try:
             if n_confs == 'default':    # based on JCIM paper: https://doi.org/10.1021/ci2004658
@@ -277,15 +277,13 @@ def conformer_generation(
             else:
                 raise ValueError()
         except Exception as exp:
-            print(f'Invalid n_confs string: does not match settings (default or quick)')
-            return
+            warnings.warn(f'Invalid n_confs string: does not match settings (default or quick)')
 
 
     try:    # catch invalid num_processes
         assert num_processes > 0
     except Exception as exp:
-        print(f'Invalid n_processes value: must be greater than 0')
-        return
+        warnings.warn(f'Invalid n_processes value: must be greater than 0')
 
     try:    # initialize or copy MoleculeLibrary
         if isinstance(mlib, (str, Path)):
@@ -293,8 +291,7 @@ def conformer_generation(
         else:
             lib = mlib
     except Exception as exp:
-        print(f'Invalid MoleculeLibrary: {exp!s}')
-        return
+        warnings.warn(f'Invalid MoleculeLibrary: {exp!s}')
     
     ref_mol = lib[0]    # takes first molecule from library as reference molecule
     reference_dict = _rdkit.create_rdkit_mol(ref_mol)
@@ -311,17 +308,27 @@ def conformer_generation(
     try:    # create output file
         if file_output is None:
            file_output = 'conformers.mlib'
-        clib = ml.ConformerLibrary.new(file_output + '_conformers.mlib')
+        clib = ml.ConformerLibrary.new(file_output)
     except Exception as exp:
-        print(f'Error with output file creation: {exp!s}')
-        return
+        warnings.warn(f'Error with output file creation: {exp!s}')
+
+    global progress             # for progress updating
+    progress = Value("Q", 0, lock=True)
 
     ensembles = None    # generate conformer ensembles, append to conformer library
     warnings.filterwarnings('ignore')   # for ignoring mol2.py "UNITY warning"
-    with Pool(num_processes) as p:
-        ensembles = p.map(_conf_gen, args)
+    with Pool(num_processes) as p, tqdm(range(len(lib))) as pb:
+        ensembles = p.map_async(_conf_gen, args)
+        cur = 0
+        while not ensembles.ready():
+            ensembles.wait(0.3)
+            with progress.get_lock():
+                pb.update(progress.value - cur)
+                cur = progress.value
+#    ensembles = p_map(_conf_gen, args, )
+
     with clib:
-        for i in ensembles:
+        for i in ensembles.get():
             clib.append(i.name, i)
 
 # if __name__ == '__main__':

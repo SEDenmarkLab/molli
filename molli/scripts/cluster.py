@@ -9,7 +9,6 @@ import molli as ml
 import molli.lib_gen.test_aso.post_processing as pp
 import molli.lib_gen.test_aso.data_processing as dp    # check this out later
 
-
 parser = argparse.ArgumentParser(
     'molli cluster',
     description='Runs tsne or PCA and kmeans clustering on aso descriptor data'
@@ -96,7 +95,7 @@ parser.add_argument(
 )
 
 
-def molli_main(args, config=None, output=None, **kwargs):   #TODO
+def molli_main(args, config=None, output=None, **kwargs):
     parsed = parser.parse_args(args)
 
     try:
@@ -118,10 +117,17 @@ def molli_main(args, config=None, output=None, **kwargs):   #TODO
     except Exception as exp:
         warnings.warn(f'Issue with variance or correlation feature selection: {exp!s}')
 
-    match parsed.mode:  # where to check output filepath validity?
+    try:
+        assert parsed.k_clusters > 0
+    except Exception as exp:
+        warnings.warn(f'Invalid k_clusters argument, must be greater than 0: {exp!s}')
+
+    match parsed.mode:  # where to check output filepath validity? in data_processing.processed_json right now
         case 'tsne':
             dp.tsne_processing(df, parsed.output, parsed.perplexity, parsed.k_clusters, parsed.plot)
         case 'pca':
             dp.pca_processing(df, parsed.output, parsed.k_clusters, parsed.plot)
         case _:
             warnings.warn(f'Unknown mode: {parsed.mode}')
+
+    # issue with intel openmp and llvm openmp???

@@ -25,9 +25,9 @@ parser.add_argument(
 )
 
 def molli_main(args, config=None, output=None, **kwargs):
-    args = parser.parse_args(args)
+    parsed = parser.parse_args(args)
 
-    clib = args.input
-    output = args.output
+    clib = parsed.input
+    output = parsed.output
 
     aa.aso_description(clib, output)

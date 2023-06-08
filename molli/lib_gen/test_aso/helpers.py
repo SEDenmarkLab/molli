@@ -92,7 +92,7 @@ focused_analogues = [
 # labels that should appear in full_df. The second is the alpha value in pyplot to plot these with. The third is the pyplot color.
 #  Returns the transformed data.
 def tsne_score(full_df:pd.DataFrame, dimensions=2, name='test', plot=False, print_tsne_values = False, save_path = None, perplexity = 30, highlight_df:pd.DataFrame=None) -> pd.DataFrame: # clean up later
-
+    
     # this will allows us to pass in the TSNE solution on subsequent calls to this function, if we want
     if len(full_df.columns) != 2:
         full_df = pd.DataFrame( TSNE(n_components=2, random_state=42, perplexity=perplexity).fit_transform(full_df),
@@ -182,7 +182,7 @@ def exemplar_selector(kmeans : KMeans, data: pd.DataFrame) -> list:
 def assignments(exemplars : list, data: pd.DataFrame) -> pd.DataFrame:
     closest, _ = pairwise_distances_argmin_min(data, data.loc[exemplars]) # reverse of exemplars, array of indexes of clusters s.t. exemplars[closest[i]] is exemplar closest to data[i]
     assignments = pd.DataFrame(index=data.index)                    # change to actual exemplars
-    assignments['cluster assignments'] = closest                          
+    assignments['cluster assignments'] = closest          
     return assignments
 
 
@@ -269,5 +269,5 @@ def pca_plot(t_df: pd.DataFrame, pca_test: PCA, highlight_df: pd.DataFrame, dime
 
 def get_kmeans(df : pd.DataFrame, n_clusters : int) -> KMeans:
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    kmeans.fit(df)
+    kmeans.fit(df)  # intel openmp issue occurs here
     return kmeans
