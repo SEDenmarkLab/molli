@@ -18,6 +18,7 @@ COPY . /molli/
 RUN conda build --python=3.11 molli/
 
 # Create + activate a new environment for Python 11
+RUN conda init
 RUN conda create -n molli python=3.11
 RUN conda activate molli
 
