@@ -10,7 +10,7 @@ import os
 import molli as ml
 from tqdm import tqdm
 
-from dask import distributed, delayed
+# from dask import distributed, delayed
 import numpy as np
 import h5py
 import molli.lib_gen.test_aso.alt_aso as aa
@@ -110,7 +110,7 @@ def molli_main(args, config=None, output=None, **kwargs):
     print(f"Grid shape: {grid.shape}")
 
     if parsed.descriptor == 'ASO':
-        aa.aso_description(parsed.conflib, grid, parsed.output, parsed.nprocs, parsed.batchsize, parsed.chunk_size)
+        aa.aso_description(parsed.conflib, grid, parsed.output, parsed.nprocs, parsed.batchsize, parsed.chunksize)
 
 
     '''
