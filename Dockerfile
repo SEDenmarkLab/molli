@@ -15,9 +15,13 @@ RUN conda install conda-build conda-verify -n base
 COPY . /molli/
 
 # Use conda to build provided conda-recipe
-RUN conda build molli/
+RUN conda build --python=3.11 molli/
 
-# Install the molli executable
+# Create + activate a new environment for Python 11
+RUN conda create -n molli python=3.11
+RUN conda activate molli
+
+# Install the molli executable in the new environment
 RUN conda install molli -c local
 
 ENTRYPOINT ["molli"]
