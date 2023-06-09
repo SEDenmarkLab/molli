@@ -9,20 +9,21 @@ RUN apt-get -qq update && \
 
 # Configure conda base environment
 RUN conda init bash
-RUN /bin/bash -c "conda config --add channels conda-forge"
-RUN /bin/bash -c "conda install conda-build conda-verify -n base"
+RUN conda config --add channels conda-forge
+RUN conda install conda-build conda-verify -n base
 
 # Copy source code into the container image
 COPY . /molli/
 
 # Use conda to build provided conda-recipe
-RUN /bin/bash -c "conda build --python=3.11 molli/"
+RUN conda build --python=3.11 molli/
 
 # Create + activate a new environment for Python 11
-RUN /bin/bash -c "conda create -n molli python=3.11"
-RUN /bin/bash -c "conda activate molli"
+RUN conda create -n molli python=3.11
+RUN echo "conda activate molli" >> ~/.bashrc
+SHELL ["/bin/bash", "--login", "-c"]
 
 # Install the molli executable in the new environment
-RUN /bin/bash -c "conda install molli -c local"
+RUN conda install molli -c local
 
 ENTRYPOINT ["molli"]
