@@ -5,15 +5,16 @@ name: Docker
 #   latest and develop
 # - when a pull request is created and updated, to make sure the
 #   Dockerfile is still valid.
-# To be able to push to dockerhub, this expects the following
+# To be able to push to the GitHub Container Registry, this expects the following
 # secrets to be set in the project:
-# - NCSAHARBOR_USERNAME : username that can push to the org
-# - NCSAHARBOR_PASSWORD : password associated with the username
+# - GITHUB_USERNAME : username that write push packages to the moleculemaker GitHub org
+# - GITHUB_PASSWORD : PAT associated with the username
 on:
   push:
     branches:
       - main
       - develop
+      - ncsa-workflow
 
   pull_request:
   
@@ -28,7 +29,6 @@ on:
 # Certain actions will only run when this is the main repo.
 env:
   MAIN_REPO: SEDenmarkLab/molli
-  DOCKERHUB_ORG: mmli
 
 jobs:
   docker:
@@ -44,7 +44,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            hub.ncsa.illinois.edu/mmli/molli
+            ghcr.io/moleculemaker/molli
+            ghcr.io/SEDenmarkLab/molli
           tags: |
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
@@ -54,13 +55,12 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      - name: Login to NCSA Harbor
-        if: github.event_name != 'pull_request'
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          registry: hub.ncsa.illinois.edu
-          username: ${{ secrets.NCSAHARBOR_USERNAME }}
-          password: ${{ secrets.NCSAHARBOR_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ secrets.GITHUB_USERNAME }}
+          password: ${{ secrets.GITHUB_PASSWORD }}
 
 
       - name: Build and push
@@ -68,6 +68,6 @@ jobs:
         with:
           context: .
           platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
