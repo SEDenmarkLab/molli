@@ -8,6 +8,7 @@ RUN apt-get -qq update && \
     rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
 # Configure conda base environment
+RUN conda init bash && exec bash
 RUN conda config --add channels conda-forge
 RUN conda install conda-build conda-verify -n base
 
@@ -18,7 +19,6 @@ COPY . /molli/
 RUN conda build --python=3.11 molli/
 
 # Create + activate a new environment for Python 11
-RUN conda init
 RUN conda create -n molli python=3.11
 RUN conda activate molli
 
