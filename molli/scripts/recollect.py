@@ -59,6 +59,13 @@ arg_parser.add_argument(
     help="This option enables skipping malformed files within old collections. Warnings will be printed.",
 )
 
+arg_parser.add_argument(
+    "-bg",
+    "--base_geom",
+    action="store_true",
+    default=False,
+    help="This will include the base geometry when reading in old collections."
+)
 
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -103,7 +110,7 @@ def molli_main(args, config=None, output=None, **kwargs):
         for f in tqdm(zf.filelist, f"Reading data from {inp.name}", dynamic_ncols=True):
             if f.filename != "__molli__":
                 try:
-                    ens = ml.chem.ensemble_from_molli_old_xml(zf.open(f))
+                    ens = ml.chem.ensemble_from_molli_old_xml(zf.open(f), bg=parsed.base_geom)
                 except SyntaxError:
                     tqdm.write(f"File {f} in source collection cannot be read.")
                     if parsed.skip:
