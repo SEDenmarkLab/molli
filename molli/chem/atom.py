@@ -684,9 +684,12 @@ class Promolecule:
 
             case Promolecule() as pm:
                 self._atoms = list(a.evolve() for a in pm.atoms)
-                self.name = name or pm.name
-                self.charge = charge or pm.charge
-                self.mult = mult or pm.mult
+                if hasattr(pm, "name"):
+                    self.name = name or pm.name
+                if hasattr(pm, "charge"):
+                    self.charge = charge or pm.charge
+                if hasattr(pm, "mult"):
+                    self.mult = mult or pm.mult
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:

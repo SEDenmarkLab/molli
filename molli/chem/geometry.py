@@ -98,7 +98,7 @@ class CartesianGeometry(Promolecule):
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 
     def add_atom(self, a: Atom, coord: ArrayLike):
-        _a = super().add_atom(a)
+        super().append_atom(a)
         _coord = np.array(coord, dtype=self._coords_dtype)
         if not _coord.shape == (3,):
             raise ValueError(
@@ -382,6 +382,6 @@ class CartesianGeometry(Promolecule):
         self.coords = self.coords @ t_matrix
 
     def del_atom(self, _a: AtomLike):
-        ai = self.index_atom(_a)
-        self._coords = np.delete(self._coords, ai, 0)
+        ai = self.get_atom_index(_a)
+        self._coords = np.delete(self._coords, ai, axis=0)
         super().del_atom(_a)

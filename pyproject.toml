@@ -1,22 +1,35 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "pybind11", "numpy~=1.23"]
+requires = ["setuptools>=42", "wheel", "pybind11"]
 build-backend = "setuptools.build_meta"
 
-# [project]
-# requires-python = ">=3.10,<3.11"
-# name = "molli"
-# description = "molli"
-# dynamic = ["version", "authors"]
-# dependencies = [
-#     "matplotlib>=3.4.3",
-#     "numpy>=1.21.1",
-#     "PyYAML>=5.3",
-#     "msgpack",
-#     "scipy>=1.4.1",
-#     "colorama>=0.4.4",
-#     "networkx>=2.8.7",
-#     "tqdm",
-# ]
+[project]
+authors = [{ name = "Alexander S. Shved", email = "shvedalx@illinois.edu" }]
+requires-python = ">=3.10"
+name = "molli"
+description = "Molecular toolbox library"
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.9.1",
+    "h5py>=3.8",
+    "msgpack>=1.0.3",
+    "attrs>=22.1.0",
+    "bidict>=0.21.2",
+    "requests>=2.28",
+    "PyYAML>=5.3",
+    "colorama>=0.4.4",
+    "networkx>=3.0",
+    "tqdm>=4.64.0",
+    "packaging>=23.1",
+]
+version = "1.0.0a7"
 
-# [project.scripts]
-# molli = "molli.__main__:main"
+
+[tool.setuptools.package-data]
+"molli.files" = ["*"]
+"molli.data" = ["*.yml"]
+
+[tool.setuptools.packages.find]
+include = ["molli", "molli.*", "molli_test"]
+
+[project.scripts]
+molli = "molli.__main__:main"

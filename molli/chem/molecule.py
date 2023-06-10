@@ -7,6 +7,8 @@ from io import StringIO, BytesIO
 import re
 from warnings import warn
 
+from molli.chem import AtomLike
+
 from . import (
     Element,
     PromoleculeLike,
@@ -102,6 +104,11 @@ class Molecule(Structure):
         stream = StringIO()
         self.dump_mol2(stream)        
         return stream.getvalue()
+    
+    def del_atom(self, _a: AtomLike):
+        _i = self.get_atom_index(_a)
+        super().del_atom(_a)
+        self._atomic_charges = np.delete(self._atomic_charges, _i, axis=0)
+        
 
 StructureLike = Molecule | Structure | Substructure
-

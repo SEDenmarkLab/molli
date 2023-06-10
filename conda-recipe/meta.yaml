@@ -7,9 +7,14 @@
 # University of Illinois at Urbana-Champaign, Department of Chemistry
 # ================================================================================
 
+{% set pyproject = load_file_data("../pyproject.toml", from_recipe_dir=True)  %}
+# tool.setuptools.dynamic
+{% set version = pyproject.get('project').get('version') %}
+
+
 package:
   name: molli
-  version: 1.0.0a7
+  version: {{ version }}
   
 about:
   summary: "Molecular Library Toolkit"
@@ -22,37 +27,34 @@ source:
   path: ..
 
 requirements:
-  build:
-    - python>=3.10,<3.11
+  host:
+    - python {{ python }}
     - setuptools>=60
     - {{ compiler("cxx") }}
     - pybind11~=2.10
 
   run:
-    - python>=3.10,<3.11
-    - numpy>=1.22.3
-    - scipy>=1.9.1
-    - attrs~=22.1.0
-    - bidict~=0.21.2
+    - python {{ python }}
+    - numpy~=1.24.0
+    - scipy~=1.9.1
+    - h5py>=3.8
     - msgpack-python>=1.0.4
-    - networkx~=2.8.7
-    - colorama~=0.4.5
-    - tqdm~=4.64.0
-    - pyyaml~=5.4.1
-    - dask~=2022.9.1
-    - requests~=2.28
-    - h5py~=3.7.0
-    - openbabel~=3.1.1
+    - attrs>=22.1.0
+    - bidict>=0.21.2
+    - networkx~=3.0
+    - colorama>=0.4.5
+    - tqdm>=4.64.0
+    - pyyaml>=5.4.1
+    - requests>=2.28
+    - packaging>=23.1
 
 build:
   number: 0
   include_recipe: True
-  script: "python -m pip install --no-deps -vv ." 
+  script: "python -m pip install --no-deps -vvv ." 
 
 test:
   imports:
     - molli
     - molli_test
     - molli_xt
-
-

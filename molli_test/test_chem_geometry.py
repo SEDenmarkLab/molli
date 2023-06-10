@@ -1,7 +1,6 @@
 import unittest as ut
-
-import molli as ml
 import numpy as np
+import molli as ml
 import math
 
 
@@ -45,11 +44,11 @@ class GeometryTC(ut.TestCase):
         self.assertEqual(m.formula, "H2 O1")
 
     def test_load_xyz(self):
-        m1 = ml.CartesianGeometry.load_xyz(ml.files.xyz.pentane_confs.path)
-        lm2 = ml.CartesianGeometry.load_all_xyz(ml.files.xyz.pentane_confs.path)
+        m1 = ml.CartesianGeometry.load_xyz(ml.files.pentane_confs_xyz)
+        lm2 = ml.CartesianGeometry.load_all_xyz(ml.files.pentane_confs_xyz)
 
     def test_load_xyz_dummy(self):
-        m = ml.CartesianGeometry.load_xyz(ml.files.xyz.dummy.path)
+        m = ml.CartesianGeometry.load_xyz(ml.files.dummy_xyz)
         a1, a2 = m.atoms
         self.assertEqual(a1.atype, ml.AtomType.Dummy)
         self.assertEqual(a2.atype, ml.AtomType.Dummy)

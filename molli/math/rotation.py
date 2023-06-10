@@ -35,8 +35,16 @@ def rotation_matrix_from_vectors(
 
     if c <= -1 + tol:
         # This case is for vectors that are nearly opposite and collinear
-        # It's complicated, but we could find a matrix that would rotate
-        return rotate_2dvec_outa_plane(v2n, math.pi, v1n)
+        # Here we determine a vector that is orthogonal to v2n
+        # So instead of one -180 degree rotation we do two rotations
+        # One to an orthogonal vector `ort` 
+        _rcp = 1.0
+        while abs(_rcp) > 0.01: # In most tested cases it converges within one step
+            RV = np.random.rand(3)
+            RV /= np.linalg.norm(RV)
+            ort = RV - v2n * np.dot(RV, v2n) # This is a Gram-Schmidt orthogonalization
+            _rcp = np.dot(ort, v2n)
+        return rotation_matrix_from_vectors(v1, ort) @ rotation_matrix_from_vectors(ort, v2)
     else:
         I = np.eye(3)
         Ux = np.outer(v1n, v2n) - np.outer(v2n, v1n)
