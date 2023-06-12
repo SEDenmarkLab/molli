@@ -150,8 +150,15 @@ class CDXMLFile:
     def keys(self):
         return self.xlabels.keys()
 
+    def __len__(self):
+        return len(self.keys())
+
     def __getitem__(self, key: str) -> Molecule:
-        if key in self.xfrag_cache:  # if the
+        # TEMPORARY. DO A BETTER REWRITE.
+        if isinstance(key, int):
+            key = list(self.keys())[key]
+
+        if key in self.xfrag_cache:
             frag = self.xfrag_cache[key]
         elif (grpf := self.xlabels[key].find("../fragment")) in self.xfrags:
             frag = grpf
