@@ -73,9 +73,9 @@ class ConformerEnsemble(Connectivity):
     def coords(self):
         """
         Set of atomic positions in shape (n_atoms, 3)
-        
-        :return: The atomic positions
-        :rtype: np.ndarray
+       
+        Returns:
+            np.ndarray: The coordinates
         """
         return self._coords
 
@@ -88,8 +88,8 @@ class ConformerEnsemble(Connectivity):
         """
         weights of the conformers in the ensemble.
 
-        :return: The weights
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: The weights
         """
         return self._weights
 
@@ -102,8 +102,8 @@ class ConformerEnsemble(Connectivity):
         """
         The atomic charges of the conformers in the ensemble.
 
-        :return: The atomic charges
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: The atomic charges
         """
         return self._atomic_charges
 
@@ -335,8 +335,8 @@ class Conformer(Molecule):
         """
         Name of the molecule
 
-        :return: name
-        :rtype: str
+        Returns:
+            str: The name
         """
         return self._parent.name
 

@@ -51,12 +51,12 @@ def _angle(v1: ArrayLike, v2: ArrayLike) -> float:
 
     This parameter is communtative 
 
-    :param v1: First vector
-    :type v1: ArrayLike
-    :param v2: Second vector
-    :type v2: ArrayLike
-    :return: Angle between vectors in radians
-    :rtype: float
+    Args:
+        v1 (ArrayLike): First vector
+        v2 (ArrayLike): Second vector
+    
+    Returns:
+        float: Angle between vectors in radians
     """    
     dt = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
     return np.arccos(dt)
@@ -109,12 +109,14 @@ class CartesianGeometry(Promolecule):
     def add_atom(self, a: Atom, coord: ArrayLike):
         """
         Adds an atom to the geometry
+
+        Args:
+            a (Atom): Atom to be added
+            coord (ArrayLike): Coordinates of the atom
         
-        :param a: Atom to be added
-        :type a: Atom
-        :param coord: Coordinates of the atom
-        :type coord: ArrayLike
-        :raises ValueError: Inappropriate coordinates for atom (interpreted as {_coord})
+        Raises:
+            ValueError: Inappropriate coordinates for atom (interpreted as {_coord})
+        
         """        
         _a = super().add_atom(a)
         _coord = np.array(coord, dtype=self._coords_dtype)
@@ -134,15 +136,13 @@ class CartesianGeometry(Promolecule):
         """
         Adds a new atom to the geometry and returns it
         
-
-        :param element: Element of the atom, defaults to ...
-        :type element: Element, optional
-        :param isotope: Isotope of the atom, defaults to None
-        :type isotope: int, optional
-        :param coord: Coordinates of the atom, defaults to [0, 0, 0]
-        :type coord: ArrayLike, optional
-        :return: The newly created atom
-        :rtype: Atom
+        Args:
+            element (Element, optional): Element of the atom, defaults to ...
+            isotope (int, optional): Isotope of the atom, defaults to None
+            coord (ArrayLike, optional): Coordinates of the atom, defaults to [0, 0, 0]
+        
+        Returns:
+            Atom: The newly created atom
         """ 
         _a = Atom(element, isotope, **kwargs)
         self.add_atom(_a, coord)
@@ -152,9 +152,9 @@ class CartesianGeometry(Promolecule):
     def coords(self) -> ArrayLike:
         """
         Returns the coordinates of the geometry
-        
-        :return: The coordinates of the geometry
-        :rtype: ArrayLike
+
+        Returns:
+            ArrayLike: The coordinates of the geometry
         """        
         return self._coords
 
@@ -163,8 +163,8 @@ class CartesianGeometry(Promolecule):
         """
         Sets the coordinates of the geometry
         
-        :param other: The coordinates to be set
-        :type other: ArrayLike
+        Args:
+            other (ArrayLike): The coordinates to be set
         """        
         self._coords[:] = other
 
@@ -172,31 +172,31 @@ class CartesianGeometry(Promolecule):
     def coords_as_list(self) -> List[float]:
         """
         Returns the coordinates as a list of floats
-        
-        :return: The coordinates as a list of floats
-        :rtype: List[float]
+
+        Returns:
+            List[float]: The coordinates as a list of floats
         """        
         return self._coords.flatten().tolist()
 
     def extend(self, other: CartesianGeometry):
         """
         Extends the current geometry with another geometry
-        
-        :param other: The geometry to be extended with
-        :type other: CartesianGeometry
 
-        :raises NotImplementedError: Not implemented
+        Args:
+            other (CartesianGeometry): The geometry to be extended with
+        
+        Raises:
+            NotImplementedError: Not implemented
         """        
         raise NotImplementedError
 
     def dump_xyz(self, output: StringIO, write_header: bool = True) -> None:
-        """# `dump_xyz`
+        """
         Dumps the xyz file into the output stream
-        
-        :param output: Output stream
-        :type output: StringIO
-        :param write_header: Whether to write the header, defaults to True
-        :type write_header: bool, optional
+
+        Args:
+            output (StringIO): Output stream
+            write_header (bool, optional): Whether to write the header, defaults to True
         """        
         # Header need not be written in certain files
         # Like ORCA inputs
@@ -215,11 +215,12 @@ class CartesianGeometry(Promolecule):
     def dumps_xyz(self, write_header: bool = True) -> str:
         """
         Returns a string representation of the xyz file
+
+        Args:
+            write_header (bool, optional): Whether to write the header, defaults to True
         
-        :param write_header: Whether to write the header, defaults to True
-        :type write_header: bool, optional
-        :return: String representation of the xyz file
-        :rtype: str
+        Returns:
+            str: String representation of the xyz file
         """       
         # Header need not be written in certain files
         # Like ORCA inputs
@@ -240,16 +241,14 @@ class CartesianGeometry(Promolecule):
         This function loads a *single* xyz file into the current instance
         The input should be a stream or file name/path
 
-        :param cls: The class to load the xyz file into
-        :type cls: type[CartesianGeometry]
-        :param input: XYZ file to be loaded
-        :type input: str | Path | IO
-        :param name: Name of the geometry, defaults to None
-        :type name: str, optional
-        :param source_units: Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
-        :type source_units: str, optional
-        :return: The loaded geometry
-        :rtype: CartesianGeometry
+        Args:
+            cls (type[CartesianGeometry]): The class to load the xyz file into
+            input (str | Path | IO): XYZ file to be loaded
+            name (str, optional): Name of the geometry, defaults to None
+            source_units (str, optional): Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
+        
+        Returns:
+            CartesianGeometry: The loaded geometry
         """
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -273,16 +272,14 @@ class CartesianGeometry(Promolecule):
         This function loads a *single* xyz file into the current instance
         The input should be a string instance
 
-        :param cls: The class to load the xyz file into
-        :type cls: type[CartesianGeometry]
-        :param input: XYZ file to be loaded
-        :type input: str
-        :param name: Name of the geometry, defaults to None
-        :type name: str, optional
-        :param source_units: Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
-        :type source_units: str, optional
-        :return: The loaded geometry
-        :rtype: CartesianGeometry
+        Args:
+            cls (type[CartesianGeometry]): The class to load the xyz file into
+            input (str): XYZ file to be loaded
+            name (str, optional): Name of the geometry, defaults to None
+            source_units (str, optional): Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
+        
+        Returns:
+            CartesianGeometry: The loaded geometry
         """
         stream = StringIO(input)
         with stream:
@@ -300,17 +297,15 @@ class CartesianGeometry(Promolecule):
     ) -> List[CartesianGeometry]:
         """
         This function loads all xyz files from the input stream
+
+        Args:
+            cls (type[CartesianGeometry]): The class to load the xyz file into
+            input (str | Path | IO): Input must be an IOBase instance (typically, an open file)
+            name (str, optional): Name of the geometry, defaults to None
+            source_units (str, optional): Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
         
-        :param cls: The class to load the xyz file into
-        :type cls: type[CartesianGeometry]
-        :param input: Input must be an IOBase instance (typically, an open file)
-        :type input: str | Path | IO
-        :param name: Name of the geometry, defaults to None
-        :type name: str, optional
-        :param source_units: Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
-        :type source_units: str, optional
-        :return: The loaded geometry
-        :rtype: CartesianGeometry
+        Returns:
+            List[CartesianGeometry]: The loaded geometry
         """        
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -332,18 +327,16 @@ class CartesianGeometry(Promolecule):
     ) -> List[CartesianGeometry]:
         """
         This function loads all xyz files from the input string
+
+        Args: 
+            cls (type[CartesianGeometry]): The class to load the xyz file into
+            input (str | Path | IO): Input must be an IOBase instance (typically, an open file)
+            name (str, optional): Name of the geometry, defaults to None
+            source_units (str, optional): Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
         
-        :param cls: The class to load the xyz file into
-        :type cls: type[CartesianGeometry]
-        :param input: Input must be an IOBase instance (typically, an open file)
-        :type input: str | Path | IO
-        :param name: Name of the geometry, defaults to None
-        :type name: str, optional
-        :param source_units: Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
-        :type source_units: str, optional
-        :return: The loaded geometry
-        :rtype: CartesianGeometry
-        """   
+        Returns:
+            List[CartesianGeometry]: The loaded geometry
+        """
 
         stream = StringIO(input)
         with stream:
@@ -361,17 +354,15 @@ class CartesianGeometry(Promolecule):
     ) -> Generator[CartesianGeometry, None, None]:
         """
         This function loads all xyz files from the input string
+
+        Args:
+            cls (type[CartesianGeometry]): The class to load the xyz file into
+            stream (StringIO): Input must be an StringIO instance
+            name (str, optional): Name of the geometry, defaults to None
+            source_units (str, optional): Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
         
-        :param cls: The class to load the xyz file into
-        :type cls: type[CartesianGeometry]
-        :param stream: Input must be an StringIO instance
-        :type stream: StringIO
-        :param name: Name of the geometry, defaults to None
-        :type name: str, optional
-        :param source_units: Source units should be one of: A == Angstrom, Bohr == au, fm, pm, nm, defaults to "Angstrom"
-        :type source_units: str, optional
-        :yield: A loaded geometry
-        :rtype: Generator[CartesianGeometry, None, None]
+        Yields:
+            Generator[CartesianGeometry, None, None]: A loaded geometry
         """    
         for xyzblock in read_xyz(stream):
             geom = cls(n_atoms=xyzblock.n_atoms, coords=xyzblock.coords)
@@ -391,13 +382,13 @@ class CartesianGeometry(Promolecule):
     def scale(self, factor: float, allow_inversion=False) -> None:
         """
         Multiplication of all coordinates by a factor.
+
+        Args:
+            factor (float): Scaling factor
+            allow_inversion (bool, optional): If True, the geometry can be inverted, defaults to False
         
-        :param factor: Scaling factor
-        :type factor: float
-        :param allow_inversion: If True, the geometry can be inverted, defaults to False
-        :type allow_inversion: bool, optional
-        :raises ValueError: If the factor is 0
-        :raises ValueError: If the factor is negative and inversion is not allowed
+        Raises:
+            ValueError: If the factor is 0
         """        
         if factor < 0 and not allow_inversion:
             raise ValueError(
@@ -420,12 +411,12 @@ class CartesianGeometry(Promolecule):
         """
         Calculates the distance between two atoms
         
-        :param a1: First atom
-        :type a1: AtomLike
-        :param a2: Second atom
-        :type a2: AtomLike
-        :return: Distance between the two atoms
-        :rtype: float
+        Args:
+            a1 (AtomLike): First atom
+            a2 (AtomLike): Second atom
+        
+        Returns:
+            float: Distance between the two atoms
         """        
         i1, i2 = map(self.get_atom_index, (a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
@@ -433,24 +424,25 @@ class CartesianGeometry(Promolecule):
     def get_atom_coord(self, _a: AtomLike) ->np.ndarray:
         """
         Returns the coordinates of the atom
+
+        Args:
+            _a (AtomLike): Atom of interest
         
-        :param _a: Atom of interest
-        :type _a: AtomLike
-        :return: Coordinates of the atom
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: Coordinates of the atom
         """        
         return self.coords[self.get_atom_index(_a)]
 
     def vector(self, a1: AtomLike, a2: AtomLike | np.ndarray) -> np.ndarray:
         """
         Returns the vector between two atoms
+
+        Args:
+            a1 (AtomLike): First atom
+            a2 (AtomLike | np.ndarray): Second atom
         
-        :param a1: First atom
-        :type a1: AtomLike
-        :param a2: Second atom
-        :type a2: AtomLike | np.ndarray
-        :return: Vector between the two atoms
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: Vector between the two atoms
         """        
         v1 = self.get_atom_coord(a1)
         v2 = self.get_atom_coord(a2) if isinstance(a2, AtomLike) else np.array(a2)
@@ -460,28 +452,27 @@ class CartesianGeometry(Promolecule):
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
         """
         Compute the distance between an atom and a point
+
+        Args:
+            a (AtomLike): Atom of interest
+            p (ArrayLike): Point of interest
         
-        :param a: Atom of interest
-        :type a: AtomLike
-        :param p: Point of interest
-        :type p: ArrayLike
-        :return: Distance between the atom and the point
-        :rtype: float
+        Returns:
+            float: Distance between the atom and the point
         """        
         return np.linalg.norm(self.vector(a, p))
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
         """
         Compute an angle between three atoms in radians
+
+        Args:
+            a1 (AtomLike): First atom
+            a2 (AtomLike): Second atom
+            a3 (AtomLike): Third atom
         
-        :param a1: First atom
-        :type a1: AtomLike
-        :param a2: Second atom
-        :type a2: AtomLike
-        :param a3: Third atom
-        :type a3: AtomLike
-        :return: Angle between the three atoms in radians
-        :rtype: float
+        Returns:
+            float: Angle between the three atoms in radians
         """       
         i1, i2, i3 = map(self.get_atom_index, (a1, a2, a3))
 
@@ -496,11 +487,12 @@ class CartesianGeometry(Promolecule):
     def coord_subset(self, atoms: Iterable[AtomLike]) -> np.ndarray:
         """
         Returns the coordinates of a subset of atoms
+
+        Args:
+            atoms (Iterable[AtomLike]): Subset of atoms
         
-        :param atoms: Subset of atoms
-        :type atoms: Iterable[AtomLike]
-        :return: Coordinates of the subset of atoms
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: Coordinates of the subset of atoms
         """        
         indices = list(map(self.get_atom_index, atoms))
         return self.coords[indices]
@@ -514,16 +506,15 @@ class CartesianGeometry(Promolecule):
     ) -> float:
         """
         Compute the dihedral angle between four atoms in radians
+
+        Args:
+            a1 (AtomLike): First atom
+            a2 (AtomLike): Second atom
+            a3 (AtomLike): Third atom
+            a4 (AtomLike): Fourth atom
         
-        :param a1: First atom
-        :type a1: AtomLike
-        :param a2: Second atom
-        :type a2: AtomLike
-        :param a3: Third atom
-        :type a3: AtomLike
-        :param a4: Fourth atom
-        :type a4: AtomLike
-        :return: Dihedral angle between the four atoms in radians
+        Returns:
+            float: Dihedral angle between the four atoms in radians
         """        
         i1, i2, i3, i4 = map(self.get_atom_index, (a1, a2, a3, a4))
 
@@ -561,15 +552,14 @@ class CartesianGeometry(Promolecule):
     def rmsd(self, other: CartesianGeometry, validate_elements=True):
         """
         Compute the RMSD between two geometries
+
+        Args:
+            other (CartesianGeometry): Other geometry
+            validate_elements (bool, optional): Whether to validate the elements of the two geometries, defaults to True
         
-        :param other: Other geometry
-        :type other: CartesianGeometry
-        :param validate_elements: Whether to validate the elements of the two geometries, defaults to True
-        :type validate_elements: bool, optional
-        :raises ValueError: If the geometries have different number of atoms
-        :raises ValueError: If the geometries have different elements
-        :raises NotImplementedError: If the geometries have different number of atoms
-    
+        Raises:
+            ValueError: If the geometries have different number of atoms
+            ValueError: If the geometries have different elements
         """        
         if other.n_atoms != self.n_atoms:
             raise ValueError("Cannot compare geometries with different number of atoms")
@@ -585,9 +575,9 @@ class CartesianGeometry(Promolecule):
         """
         Transform the coordinates of the molecule
 
-        :param _t_matrix: Transformation matrix
-        :type _t_matrix: ArrayLike
-        :param validate: Whether to validate the transformation matrix, defaults to False
+        Args:
+            _t_matrix (ArrayLike): Transformation matrix
+            validate (bool, optional): Whether to validate the transformation matrix, defaults to False
         """        
         t_matrix = np.array(_t_matrix)
         self.coords = t_matrix @ self.coords
@@ -596,8 +586,8 @@ class CartesianGeometry(Promolecule):
         """
         Delete an atom from the molecule
 
-        :param _a: Atom to delete
-        :type _a: AtomLike
+        Args:
+            _a (AtomLike): Atom to delete
         """        
         ai = self.index_atom(_a)
         self._coords = np.delete(self._coords, ai, 0)

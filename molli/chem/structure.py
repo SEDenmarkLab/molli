@@ -36,10 +36,9 @@ class Structure(CartesianGeometry, Connectivity):
     'CartesianGeometry' gives the molecular data structure features of a 3d coordinate matrix
     'Connectivity' gives the molecular data structure features of a undirected graph 
 
-    :param CartesianGeometry: inherited class for performing geometric operations
-    :type CartesianGeometry: cls
-    :param Connectivity: inherited class for establishing bonds between individual atoms
-    :type Connectivity: cls
+    Args:
+        CartesianGeometry (cls): inherited class for performing geometric operations
+        Connectivity (cls): inherited class for establishing bonds between individual atoms
     """
     # Improve efficiency of attribute access
     __slots__ = ("_name", "_atoms", "_bonds", "_coords", "charge", "mult")
@@ -333,30 +332,33 @@ class Structure(CartesianGeometry, Connectivity):
         """
         Returns a substructure containing only heavy atoms.
         
-        :return: A substructure containing only heavy atoms.
-        :rtype: Substructure
+        Returns:
+            Substructure: The substructure containing only heavy atoms.
+
         """        
         return Substructure(self, [a for a in self.atoms if a.element != Element.H])
 
     def bond_length(self, b: Bond) -> float:
         """
         Returns the length of a bond.
+
+        Args:
+            b (Bond): The bond to measure.
         
-        :param b: The bond to measure.
-        :type b: Bond
-        :return: The length of the bond.
-        :rtype: float
+        Returns:
+            float: The length of the bond.
         """        
         return self.distance(b.a1, b.a2)
 
     def bond_vector(self, b: Bond) -> np.ndarray:
         """
         Returns the vector between the two atoms in a bond.
+
+        Args:
+            b (Bond): The bond to measure.
         
-        :param b: The bond to measure.
-        :type b: Bond
-        :return: The vector between the two atoms in the bond.
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: The vector between the two atoms in the bond.
         """        
         i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
         return self.coords[i2] - self.coords[i1]
@@ -364,11 +366,12 @@ class Structure(CartesianGeometry, Connectivity):
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
         """
         Returns the coordinates of the two atoms in a bond.
+
+        Args:
+            b (Bond): The bond to measure.
         
-        :param b: The bond to evaluate
-        :type b: Bond
-        :return: The coordinates of the two atoms in the bond.
-        :rtype: tuple[np.ndarray]
+        Returns:
+            tuple[np.ndarray]: The coordinates of the two atoms in the bond.
         """        
         return self.coord_subset((b.a1, b.a2))
 
@@ -376,10 +379,11 @@ class Structure(CartesianGeometry, Connectivity):
         """
         This function concatenates two structures
 
-        :param other: The other structure to concatenate with.
-        :type other: Structure
-        :return: The concatenated structure.
-        :rtype: Structure
+        Args:
+            other (Structure): The other structure to concatenate with.
+        
+        Returns:
+            Structure: The concatenated structure.
         """        
         return Structure.concatenate(self, other)
 
@@ -387,7 +391,8 @@ class Structure(CartesianGeometry, Connectivity):
         """
         This function analyzes atom types
         
-        :raises NotImplementedError: This function is not implemented.
+        Raises:
+            NotImplementedError: This function is not implemented.
         """        
         raise NotImplementedError
 
@@ -395,7 +400,8 @@ class Structure(CartesianGeometry, Connectivity):
         """
         This function analyzes bond types
 
-        :raises NotImplementedError: This function is not implemented.
+        Raises:
+            NotImplementedError: This function is not implemented.
         """
         raise NotImplementedError
 
@@ -403,9 +409,8 @@ class Structure(CartesianGeometry, Connectivity):
         """
         This function deletes an atom from the structure.
 
-        :param _a: The atom to delete.
-        :type _a: AtomLike
-        :raises NotImplementedError: This function is not implemented.
+        Args:
+            _a (AtomLike): The atom to delete.
         """         
         a = self.get_atom(_a)
         super().del_atom(a)
@@ -433,9 +438,9 @@ class Substructure(Structure):
     def parent_atom_indices(self) -> list[int]:
         """
         Returns the indices of the atoms in the parent structure.
-        
-        :return: The indices of the atoms in the parent structure.
-        :rtype: list[int]
+
+        Returns:
+            list[int]: The indices of the atoms in the parent structure.
         """        
         return list(self.yield_parent_atom_indices(self._atoms))
 
@@ -444,8 +449,8 @@ class Substructure(Structure):
         """
         Returns the coordinates of the atoms in the substructure.
 
-        :return: The coordinates of the atoms in the substructure.
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: The coordinates of the atoms in the substructure.
         """        
         return self._parent.coords[self.parent_atom_indices]
 
@@ -454,8 +459,8 @@ class Substructure(Structure):
         """
         Sets the coordinates of the atoms in the substructure.
         
-        :param other: The new coordinates.
-        :type other: np.ndarray
+        Args:
+            other (np.ndarray): The new coordinates.
         """        
         self._parent.coords[self.parent_atom_indices] = other
 
@@ -463,10 +468,11 @@ class Substructure(Structure):
         """
         This function concatenates two structures.
         
-        :param other: The other structure to concatenate with.
-        :type other: Substructure | Structure
-        :return: The concatenated structure.
-        :rtype: Substructure | Structure
+        Args:
+            other (Substructure | Structure): The other structure to concatenate with.
+        
+        Returns:
+            Substructure | Structure: The concatenated structure.
         """        
         if isinstance(other, Substructure) and other.parent == self._parent:
             return Substructure(self._parent, chain(self.atoms, other.atoms))

@@ -59,8 +59,8 @@ class Molecule(Structure):
         """
         The atomic charges of the molecule.
         
-        :return: The atomic charges of the molecule.
-        :rtype: np.ndarray
+        Returns:
+            np.ndarray: The atomic charges of the molecule.
         """        
         return self._atomic_charges
 
@@ -68,10 +68,12 @@ class Molecule(Structure):
     def atomic_charges(self, other: ArrayLike):
         """
         Sets the atomic charges of the molecule.
+
+        Args:
+            other (ArrayLike): The atomic charges of the molecule.
         
-        :param other: The atomic charges of the molecule.
-        :type other: ArrayLike
-        :raises ValueError: Inappropriate shape of atomic charge array
+        Raises:
+            ValueError: Inappropriate shape of atomic charge array
         """        
         if other is Ellipsis:
             self._atomic_charges = np.zeros(self.n_atoms)
@@ -111,8 +113,8 @@ class Molecule(Structure):
         """
         Returns a mol2 file as a string.
         
-        :return: A mol2 file as a string.
-        :rtype: str
+        Returns:
+            str: The mol2 file as a string.
         """        
         stream = StringIO()
         self.dump_mol2(stream)        

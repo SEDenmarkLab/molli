@@ -127,9 +127,9 @@ class Bond:
     def order(self) -> float:
         """
         The order of the bond
-        
-        :returns: a float representing the order of the bond
-        :rtype: float
+
+        Returns:
+            float: the order of the bond
         """        
         # if self.btype == BondType.FractionalOrder:
         #     return self._order
@@ -206,9 +206,10 @@ class Bond:
     def expected_length(self) -> float:
         """
         Calculates bond length in Angstroms based on the covalent radii of the atoms.
+
+        Returns:
+            float: the expected bond length in Angstroms
         
-        :returns: the expected bond length in Angstroms
-        :rtype: float
         *Example Usage*:
             >>> bond.expected_length == 1.54 # True
         """        
@@ -247,8 +248,8 @@ class Connectivity(Promolecule):
     """
     Connectivity us a graph-like structure that connects the nodes(atoms) with edges(bonds).
 
-    :param Promocule: inherited class that contains parameters useful for working with promolecules
-    :type Promolecule: cls
+    Args:
+        Promolecule (cls): inherited class for molecules
     """
     
     # __slots__ = "_atoms", "_bonds", "_name", "charge", "mult"
@@ -288,8 +289,8 @@ class Connectivity(Promolecule):
         """
         List of all bonds in the molecule
 
-        :return: list of bonds in the molecule
-        :rtype: List[Bond]
+        Returns:
+            List[Bond]: list of all bonds in the molecule
         """
         return self._bonds
 
@@ -298,23 +299,21 @@ class Connectivity(Promolecule):
         """
         The total number of bonds in the molecule
         
-        :return: the number of bonds in the molecule
-        :rtype: int
+        Returns:
+            int: the total number of bonds in the molecule
         """        
         return len(self._bonds)
 
     def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> Bond | None:
         """
         Retrieves the bond that connects two atoms 
-        
-        :param a1: the first atom
-        :type a1: AtomLike
-        :param a2: the second atom
-        :type a2: AtomLike
-        :return: the bond that connects the two atoms
-        :rtype: Bond | None
 
-        *None* is returned if the bond does not exist.
+        Args:
+            a1 (AtomLike): the first atom
+            a2 (AtomLike): the second atom
+        
+        Returns:
+            Bond | None: the bond that connects the two atoms, or None if the bond does not exist
         """        
         _a1 = self.get_atom(a1)
         _a2 = self.get_atom(a2)
@@ -328,10 +327,10 @@ class Connectivity(Promolecule):
         """
         Index of Desired Bond 
 
-        :param b: the bond to find the index of
-        :type b: Bond
-        :return: the index of the bond
-        :rtype: int
+        Args:
+            b (Bond): the bond to find the index of
+        Returns:
+            int: the index of the bond
         """        
         return self._bonds.index(b)
 
@@ -370,9 +369,12 @@ class Connectivity(Promolecule):
     def bonds_with_atom(self, a: AtomLike) -> Generator[Bond, None, None]:
         """
         Each bond on an atom
+
+        Args:
+            a (AtomLike): the atom to find the bonds of        
         
-        :param a: the atom to find the bonds of
-        :type a: AtomLike
+        Yields:
+            Generator[Bond, None, None]: the bonds on the atom
         """        
         _a = self.get_atom(a)
         for b in self._bonds:
@@ -381,10 +383,13 @@ class Connectivity(Promolecule):
 
     def connected_atoms(self, a: AtomLike) -> Generator[Atom, None, None]:
         """
-        :param a: the atom to find the connected atoms of
-        :type a: AtomLike
-        :return: the atoms connected to the atom
-        :rtype: Generator[Atom, None, None]
+        Each atom connected to an atom
+
+        Args:
+            a (AtomLike): the atom to find the connected atoms of
+        
+        Yields:
+            Generator[Atom, None, None]: the atoms connected to the atom
         """
         _a = self.get_atom(a)
         for b in self.bonds_with_atom(_a):
@@ -394,10 +399,11 @@ class Connectivity(Promolecule):
         """
         Sum of valences of all atoms bonded to an atom
 
-        :param a: the atom to find the bonded valence of
-        :type a: AtomLike
-        :return: the sum of valences of all atoms bonded to the atom
-        :rtype: float
+        Args:
+            a (AtomLike): the atom to find the bonded valence of
+        
+        Returns:
+            float: the sum of valences of all atoms bonded to the atom
         """
         _a_bonds = self.bonds_with_atom(a)
 
@@ -411,10 +417,11 @@ class Connectivity(Promolecule):
         """
         Total number of bonds on an atom
         
-        :param a: the atom to find the number of bonds of
-        :type a: AtomLike
-        :return: the number of bonds on the atom
-        :rtype: int
+        Args:
+            a (AtomLike): the atom to find the number of bonds of
+        
+        Returns:
+            int: the total number of bonds on the atom
         """        
         return sum(1 for _ in self.connected_atoms(a))
 
@@ -432,10 +439,11 @@ class Connectivity(Promolecule):
         
         Distance from the start atom is also yielded.
 
-        :param start: the atom to start the search from
-        :type start: AtomLike
-        :return: the atom and its distance from the start atom
-        :rtype: Generator[Tuple[Atom, int], None, None]
+        Args:
+            start (AtomLike): the atom to start the search from
+        
+        Yields:
+            Generator[Tuple[Atom, int], None, None]: the atoms in breadth-first search, in traversal order
         """
         _sa = self.get_atom(start)
         visited = set((_sa,))
