@@ -38,7 +38,10 @@ def tsne_processing(input: pd.DataFrame | str | Path,  output: str | Path, perpl
 #    return df, all_exemplars
 
 
-def pca_processing(input: pd.DataFrame | str | Path,  output: str | Path, upper_k: int=20, plot: bool=False) -> tuple:
+def pca_processing(input: pd.DataFrame | str | Path,  output: str | Path, upper_k: int=20, plot: bool=False): # -> tuple
+    '''
+    Same as tsne_processing, but outputs PCA scores instead of tsne scores. Also lacks a perplexity parameter.
+    '''
     if not isinstance(input, pd.DataFrame):
         try:
             temp = pc.unpack_h5py(input)
@@ -67,3 +70,7 @@ def processed_json(output: str | Path, df: pd.DataFrame, all_exemplars: list):  
             df.to_json(output + '_values_and_clusters.json')
         except Exception as exp:
             warnings.warn(f'Error with output file creation: {exp!s}')  # move to argument parser?
+
+if __name__ == '__main__':
+    df = pc.unpack_h5py('/home/ethangm2/NCSA Development/molli/ncsa-testing/ncsa-testing-data/aso_new_env.h5')
+    tsne_processing(df, '/scratch/ethangm2/cluster-test/debug', 5, 10)

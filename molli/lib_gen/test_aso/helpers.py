@@ -143,7 +143,7 @@ def kmeans_elbow(df: pd.DataFrame, max_clusters=20, name='test', save_path = Non
 
     distortions = []
     for k in range(1,max_clusters):
-        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10) # suppresses future warning
         kmeans.fit(df)
         _, distort = distortion_calculation(df, pd.DataFrame(kmeans.cluster_centers_))
         distortions.append(distort)
@@ -268,6 +268,6 @@ def pca_plot(t_df: pd.DataFrame, pca_test: PCA, highlight_df: pd.DataFrame, dime
 
 
 def get_kmeans(df : pd.DataFrame, n_clusters : int) -> KMeans:
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    kmeans.fit(df)  # intel openmp issue occurs here
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10) # suppresses future warning
+    kmeans.fit(df)  # intel openmp issue occurs here (make sure to install all packages into same env)
     return kmeans
