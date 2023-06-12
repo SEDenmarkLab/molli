@@ -7,9 +7,7 @@ from warnings import warn
 try:
     import py3Dmol
 except:
-    warn(
-        "`py3Dmol` must be installed for molecule visualization. Skipping dependent functions."
-    )
+    warn("`py3Dmol` must be installed for molecule visualization. Skipping dependent functions.")
 else:
 
     def view(m: Structure):
