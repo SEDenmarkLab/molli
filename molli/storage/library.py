@@ -158,7 +158,6 @@ class _Library(Generic[T]):
             nb += 1
             pos = newpos
 
-    @property
     def keys(self):
         return self._block_keys
 
