@@ -1,7 +1,7 @@
 # this file will handle optional post processing for that data with post_processing.py (option to modify in place or create new),
 # run tsne/PCA on the data and generate plots with customizability functionality
-import molli.lib_gen.test_aso.helpers as helpers
-import molli.lib_gen.test_aso.post_processing as pc         # FIX THESE !
+import helpers
+import post_processing as pc 
 from pathlib import Path
 import pandas as pd
 import json
