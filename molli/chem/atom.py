@@ -36,6 +36,7 @@ class Element(IntEnum):
         match elt:
             case Element() | int():
                 return cls(elt)
+
             case str() as s:
                 return cls[s.capitalize()]
             case _:
@@ -453,6 +454,10 @@ class Atom:
         return self.element.z
 
     @property
+    def atomic_weight(self) -> float:
+        return self.element.atomic_weight or 0.0
+
+    @property
     def vdw_radius(self) -> float:
         return self.element.vdw_radius
 
@@ -846,10 +851,7 @@ class Promolecule:
         `float`
             molecular weight in Da
         """
-        _mw = 0.0
-        for a in self.atoms:
-            _mw += a.element.atomic_weight
-        return _mw
+        return sum(a.atomic_weight for a in self.atoms)
 
     def label_atoms(self, template: str = "{e}{n0}"):
         """# `label_atoms`
