@@ -1,5 +1,5 @@
 import argparse
-import generate_conformers as gc 
+import molli.lib_gen.generate_conformers as gc 
 
 parser = argparse.ArgumentParser(
     "molli conformers",

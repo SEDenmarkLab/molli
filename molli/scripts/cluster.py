@@ -6,8 +6,8 @@ import argparse
 import warnings
 
 import molli as ml
-import post_processing as pp
-import data_processing as dp    # check this out later
+import molli.lib_gen.test_aso.post_processing as pp
+import molli.lib_gen.test_aso.data_processing as dp    # check this out later
 
 parser = argparse.ArgumentParser(
     'molli cluster',

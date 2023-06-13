@@ -1,7 +1,7 @@
 # this file will handle optional post processing for that data with post_processing.py (option to modify in place or create new),
 # run tsne/PCA on the data and generate plots with customizability functionality
-import helpers
-import post_processing as pc 
+from . import helpers
+from . import post_processing as pc 
 from pathlib import Path
 import pandas as pd
 import json
@@ -70,7 +70,3 @@ def processed_json(output: str | Path, df: pd.DataFrame, all_exemplars: list):  
             df.to_json(output + '_values_and_clusters.json')
         except Exception as exp:
             warnings.warn(f'Error with output file creation: {exp!s}')  # move to argument parser?
-
-if __name__ == '__main__':
-    df = pc.unpack_h5py('/home/ethangm2/NCSA Development/molli/ncsa-testing/ncsa-testing-data/aso_new_env.h5')
-    tsne_processing(df, '/scratch/ethangm2/cluster-test/debug', 5, 10)
