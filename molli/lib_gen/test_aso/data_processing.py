@@ -1,7 +1,7 @@
 # this file will handle optional post processing for that data with post_processing.py (option to modify in place or create new),
 # run tsne/PCA on the data and generate plots with customizability functionality
-import molli.lib_gen.test_aso.helpers as helpers
-import molli.lib_gen.test_aso.post_processing as pc         # FIX THESE !
+from . import helpers
+from . import post_processing as pc 
 from pathlib import Path
 import pandas as pd
 import json
@@ -38,7 +38,10 @@ def tsne_processing(input: pd.DataFrame | str | Path,  output: str | Path, perpl
 #    return df, all_exemplars
 
 
-def pca_processing(input: pd.DataFrame | str | Path,  output: str | Path, upper_k: int=20, plot: bool=False) -> tuple:
+def pca_processing(input: pd.DataFrame | str | Path,  output: str | Path, upper_k: int=20, plot: bool=False): # -> tuple
+    '''
+    Same as tsne_processing, but outputs PCA scores instead of tsne scores. Also lacks a perplexity parameter.
+    '''
     if not isinstance(input, pd.DataFrame):
         try:
             temp = pc.unpack_h5py(input)

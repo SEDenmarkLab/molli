@@ -10,9 +10,10 @@ import os
 import molli as ml
 from tqdm import tqdm
 
-from dask import distributed, delayed
+# from dask import distributed, delayed
 import numpy as np
 import h5py
+import molli.lib_gen.test_aso.alt_aso as aa
 
 DESCRIPTOR_CHOICES = ["ASO", "AEIF", "ADIF", "AESP", "ASR"]
 
@@ -27,7 +28,7 @@ arg_parser.add_argument(
     "descriptor",
     choices=DESCRIPTOR_CHOICES,
     type=str.upper,
-    help="This selects the specific descriptor to compute.",
+    help="This selects the specific descriptor to compute.",    # ONLY ASO IS IMPLEMENTED AS OF 6/9/2023
 )
 arg_parser.add_argument(
     "conflib",
@@ -62,7 +63,7 @@ arg_parser.add_argument(
     type=int,
     metavar=512,
     default=512,
-    help="Selects number of processors",
+    help="Selects number of processors",    # ?
 )
 
 
@@ -87,6 +88,16 @@ arg_parser.add_argument(
     help="Selects the locations of grid points.",
 )
 
+arg_parser.add_argument(
+    '-o',
+    '--output',
+    action='store',
+    type=str,
+    default=None,
+    metavar='<fpath>',  # ?
+    help='File path for directory to write to. Defaults to "aso.h5" in same directory as alt_aso.py'
+)
+
 
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -98,6 +109,11 @@ def molli_main(args, config=None, output=None, **kwargs):
     grid: np.ndarray = np.load(parsed.grid)
     print(f"Grid shape: {grid.shape}")
 
+    if parsed.descriptor == 'ASO':
+        aa.aso_description(parsed.conflib, grid, parsed.output, parsed.nprocs, parsed.batchsize, parsed.chunksize)
+
+
+    '''
     cluster = distributed.LocalCluster(n_workers=parsed.nprocs, processes=False)
     client = distributed.Client(cluster)
 
@@ -108,12 +124,13 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     strdt = h5py.special_dtype(vlen=str)
 
-    with h5py.File("test_descriptor.h5", "w") as f:
+    with h5py.File(parsed.output, "w") as f:
         handles = f.create_dataset("handles", dtype=strdt, shape=(len(lib),))
         handles[:] = lib._block_keys
 
         data = f.create_dataset("descriptor", dtype="f4", shape=(len(lib), grid.shape[0]))
         data[:] = -1.0       
+
 
     for bn, batch in enumerate(tqdm(lib.yield_in_batches(parsed.batchsize), total=nb)):
         # with ml.aux.timeit(f"Processing batch {bn + 1} / {nb}"):
@@ -135,8 +152,6 @@ def molli_main(args, config=None, output=None, **kwargs):
         _end = _start + len(batch)
 
 
-        with h5py.File("test_descriptor.h5", "r+") as f:
+        with h5py.File(parsed.output, "r+") as f:
             f["descriptor"][_start:_end] = asos
-            
-    
-        
+        '''

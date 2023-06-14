@@ -16,7 +16,6 @@ from rdkit.Chem.rdForceFieldHelpers import UFFGetMoleculeForceField
 import random
 import os
 from tqdm import tqdm
-from p_tqdm import p_map
 from multiprocessing import Pool
 from multiprocessing import Value
 import shutil

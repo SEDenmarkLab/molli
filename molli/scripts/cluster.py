@@ -105,13 +105,13 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     try:
         if parsed.variance != 'false':
-            if parsed.variance >= 0 and parsed.variance <= 1:
-                df = pp.variance_feature_selection(df, parsed.variance)
+            if float(parsed.variance) >= 0 and float(parsed.variance) <= 1:
+                df = pp.variance_feature_selection(df, float(parsed.variance))
             else:
                 raise ValueError('Invalid variance value')
         if parsed.correlation != 'false':
-            if parsed.correlation >= 0 and parsed.correlation <= 1:
-                df = pp.correlated_columns(df, parsed.correlation)
+            if float(parsed.correlation) >= 0 and float(parsed.correlation) <= 1:
+                df = pp.correlated_columns(df, float(parsed.correlation))
             else:
                 raise ValueError('Invalid correlation value')
     except Exception as exp:
