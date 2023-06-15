@@ -1,0 +1,6 @@
+notebook
+py3dmol
+openbabel
+rdkit
+scikit-learn
+pandas

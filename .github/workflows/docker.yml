@@ -7,8 +7,8 @@ name: Docker
 #   Dockerfile is still valid.
 # To be able to push to the GitHub Container Registry, this expects the following
 # secrets to be set in the project:
-# - GITHUB_USERNAME : username that write push packages to the moleculemaker GitHub org
-# - GITHUB_PASSWORD : PAT associated with the username
+# - GH_USERNAME : username that write push packages to the moleculemaker GitHub org
+# - GH_PASSWORD : PAT associated with the username
 on:
   push:
     branches:
@@ -59,8 +59,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ secrets.GITHUB_USERNAME }}
-          password: ${{ secrets.GITHUB_PASSWORD }}
+          username: ${{ secrets.GH_USERNAME }}
+          password: ${{ secrets.GH_PASSWORD }}
 
 
       - name: Build and push
