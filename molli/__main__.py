@@ -84,9 +84,9 @@ def main():
                 try:
                     requested_module = import_module(f"molli.scripts.{m}")
                     requested_module.molli_main
-                except:
+                except Exception as xc:
                     with ml.aux.ForeColor("ltred"):
-                        print(f"molli {m}:\nNOT IMPLEMENTED\n")
+                        print(f"molli {m}:\nERROR: {xc}\n")
                 else:
                     with ml.aux.ForeColor("green"):
                         print(f"molli {m}")

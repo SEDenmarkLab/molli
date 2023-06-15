@@ -13,4 +13,8 @@
         "100",
         "--experimental-string-processing"
     ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "none",
 }
