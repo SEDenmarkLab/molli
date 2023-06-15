@@ -116,6 +116,14 @@ arg_parser.add_argument(
 )
 
 
+arg_parser.add_argument(
+    "--overwrite",
+    action="store_true",
+    help="Overwrite the target files if they exist (default is false)",
+    default=False,
+)
+
+
 def _ml_init(_progress, _parsed, _outputs: mp.Queue):
     """
     This function is used to initialize workers.
@@ -262,7 +270,7 @@ def molli_main(args, config=None, output=None, **kwargs):
         dest_files = res.get()
 
     outputs = [outputs.get() for _ in range(outputs.qsize())]
-    lib = ml.MoleculeLibrary.concatenate(parsed.output, outputs)
+    lib = ml.MoleculeLibrary.concatenate(parsed.output, outputs, overwrite=parsed.overwrite)
     assert len(lib) == lib_size, (
         f"Something went wrong. Output library size is different: expected {lib_size}, obtained"
         f" {len(lib)}"

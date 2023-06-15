@@ -47,6 +47,13 @@ arg_parser.add_argument(
     ),
 )
 
+arg_parser.add_argument(
+    "--overwrite",
+    action="store_true",
+    help="Overwrite the target files if they exist (default is false)",
+    default=False,
+)
+
 
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -62,7 +69,7 @@ def molli_main(args, config=None, output=None, **kwargs):
                 print("Unknown input format: {iformat}")
             exit(1)
 
-    with ml.MoleculeLibrary.new(opath, overwrite=False) as lib:
+    with ml.MoleculeLibrary.new(opath, overwrite=parsed.overwrite) as lib:
         for k in tqdm(input_file.keys()):
             mol = input_file[k]
             if parsed.hadd:

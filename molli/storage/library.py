@@ -113,7 +113,7 @@ class _Library(Generic[T]):
             _path = unique_path(_path)
             warn(f"Requested path was not available. New file name: {_path}")
 
-        with open(_path, "x+b") as out_f:
+        with open(_path, "w+b" if overwrite else "x+b") as out_f:
             out_f.write(_FILE_HEADER.pack(cls.GUARD1, cls.GUARD2))
 
             for source in sources:

@@ -1,5 +1,3 @@
-# from . import backend_pyvista
-from .primitives import color_cpk, wireframe, test_ballnstick
 from typing import Type, Callable
 from molli import Structure
 from warnings import warn
