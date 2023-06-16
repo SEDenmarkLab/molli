@@ -164,7 +164,6 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
     # now coloring based on cluster, maximum 20 color variations
     # if this vizualization becomes more important, implement better coloration functionality
     c = [
-        'yellow',
         'mediumturquoise',
         'firebrick',
         'purple',
@@ -183,7 +182,8 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
         'navy',
         'gold',
         'darkgreen',
-        'crimson'
+        'crimson',
+        'yellow',
     ]
 
     # cluster assignment number = color list index
@@ -200,9 +200,11 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
             if i in highlight:
                 a = 1
                 style = "*"
+                zorder = 2
             else:
-                a = 0.5
+                a = 0.75
                 style = "o"
+                zorder = 1
 
             temp = t_df.loc[i]
             ax.scatter(
@@ -212,6 +214,7 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
                 marker=style,
                 color=c[int(temp[num_clusters + 1])],
                 label=i,
+                zorder=zorder
             )
 
     # Can adjust bbox_to_anchor to move legend
@@ -219,11 +222,11 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
     sorted_labels, sorted_handles = zip(
         *sorted(zip(labels, handles), key=lambda x: sorting_legend(x[0]))
     )
-
+    # legend specific to the 15 substituent format, will need to change to be more general
     ax.legend(sorted_handles, sorted_labels, loc="upper left", bbox_to_anchor=(0, -0.1), ncol=5)
 
     if save_path:
-        fig.savefig(save_path + f"t-SNE {name}.png", bbox_inches="tight")
+        fig.savefig(save_path, bbox_inches="tight")
     else:
         plt.show()
 
@@ -249,7 +252,6 @@ def pca_plot(
 
     # plot the whole in silico library
     c = [
-        'yellow',
         'mediumturquoise',
         'firebrick',
         'purple',
@@ -268,7 +270,8 @@ def pca_plot(
         'navy',
         'gold',
         'darkgreen',
-        'crimson'
+        'crimson',
+        'yellow',
     ]
 
     if highlight is None:
@@ -284,9 +287,11 @@ def pca_plot(
             if i in highlight:
                 a = 1
                 style = "*"
+                zorder = 2
             else:
-                a = 0.5
+                a = 0.75
                 style = "o"
+                zorder = 1
 
             temp = t_df.loc[i]
             ax.scatter(
@@ -296,6 +301,7 @@ def pca_plot(
                 marker=style,
                 color=c[int(temp[num_clusters + 1])],
                 label=i,
+                zorder=zorder
             )
 
     # Can adjust bbox_to_anchor to move legend
@@ -303,10 +309,11 @@ def pca_plot(
     sorted_labels, sorted_handles = zip(
         *sorted(zip(labels, handles), key=lambda x: sorting_legend(x[0]))
     )
+    # legend specific to the 15 substituent format, will need to change to be more general
     ax.legend(sorted_handles, sorted_labels, loc="upper left", bbox_to_anchor=(0, -0.1), ncol=5)
 
     if save_path:
-        fig.savefig(save_path + f"PC1 vs PC2 {name}.png", bbox_inches="tight")
+        fig.savefig(save_path, bbox_inches="tight")
     else:
         plt.show()
 

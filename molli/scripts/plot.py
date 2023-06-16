@@ -26,10 +26,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    'clusters',
+    '-k',
+    '--clusters',
     action='store',
-    type=int,
-    help='Number of clusters to represent in plot. Must be between 1 and k, inclusive'
+    default='elbow',
+    help=(
+        'Number of clusters to represent in plot. Must be between 1'
+        ' and max k of JSON file, inclusive. Defaults to "elbow"'
+        ' of k-means cluster plot'
+        )
 )
 
 parser.add_argument(
@@ -51,6 +56,7 @@ parser.add_argument(
           ' Accepted options are tsne and pca, currently.')
 )
 
+# TO-DO
 parser.add_argument(
     '-c',
     '--color_scheme',
@@ -74,10 +80,26 @@ def molli_main(args, config=None, output=None, **kwargs):
     except Exception as exp:
         warnings.warn(f"Error with JSON input files: {exp!s}")
 
+    if clusters is None:
+        clusters = exemp[-1]
+    else:
+        try:
+            temp = int(clusters)
+        except ValueError: # not an int
+            match clusters:
+                case 'elbow':
+                    clusters = exemp[-1]
+                case _:
+                    raise ValueError(f"Invalid cluster value: {method}")
+        else:   # is an str representation of an int. Must check within bounds
+            clusters = temp
+            if clusters < 1 or clusters > (len(scores) - 2):    # specific to formatting of JSON file
+                raise ValueError(f"Invalid cluster value: {method}")
+
     match method:
         case 'tsne':
-            helpers.tsne_plot(scores, exemp[:-1], 2, 'test', output, clusters)
+            helpers.tsne_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
         case 'pca':
-            helpers.pca_plot(scores, exemp[:-1], 2, 'test', output, clusters)
+            helpers.pca_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
         case _:
             raise ValueError(f"Unsupported mode: {method}")

@@ -14,7 +14,6 @@ def tsne_processing(
     output: str | Path,
     perplex: int = 5,
     upper_k: int = 20,
-    plot: bool = False,
 ):  # -> tuple
     """
     intakes aso.h5 file or dataframe, converts to dataframe, does kmeans clustering and automatically selects
@@ -25,7 +24,6 @@ def tsne_processing(
     catalyst_id as string | tSNE1 value as float | tSNE2 value as float | (1 -> k columns of cluster assignments)
     and a list of lists of exemplar catalysts. Saves plot as a .png to file path if plot=True
     """
-    import pandas as pd
 
     if not isinstance(input, pd.DataFrame):
         try:
@@ -34,7 +32,7 @@ def tsne_processing(
         except Exception as exp:
             warnings.warn(f"Invalid filepath: {exp!s}")
 
-    df = helpers.tsne_score(input, perplexity=perplex, save_path=output, plot=plot)
+    df = helpers.tsne_score(input, perplexity=perplex, save_path=output)
 
     all_exemplars = []
     distortions = []
@@ -61,7 +59,7 @@ def tsne_processing(
 
 
 def pca_processing(
-    input: pd.DataFrame | str | Path, output: str | Path, upper_k: int = 20, plot: bool = False
+    input: pd.DataFrame | str | Path, output: str | Path, upper_k: int = 20
 ):  # -> tuple
     """
     Same as tsne_processing, but outputs PCA scores instead of tsne scores. Also lacks a perplexity parameter.
@@ -73,7 +71,7 @@ def pca_processing(
         except Exception as exp:
             warnings.warn(f"Invalid filepath: {exp!s}")
 
-    df = helpers.pca_score(input, save_path=output, plot=plot)
+    df = helpers.pca_score(input, save_path=output)
 
     all_exemplars = []
     distortions = []
