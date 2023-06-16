@@ -40,7 +40,7 @@ def tsne_score(
         print("This data already had 2 dimensions! Skipping tSNE.")
 
     if plot:
-        tsne_plot(full_df, highlight_df, dimensions, name, save_path)
+        tsne_plot(full_df, highlight_df, dimensions, name, save_path)   # REMOVE THIS
 
     return full_df
 
@@ -58,7 +58,8 @@ def pca_score(
     _pca_test = PCA(n_components=2, random_state=42).fit(full_df)
     full_df = pd.DataFrame(_pca_test.transform(full_df), index=full_df.index)
 
-    pca_plot(full_df, _pca_test, highlight_df, dimensions, name, save_path)
+    if plot:
+        pca_plot(full_df, highlight_df, dimensions, name, save_path)
 
     return full_df
 
@@ -144,12 +145,12 @@ def assignments(exemplars: list, data: pd.DataFrame) -> pd.DataFrame:
 
 
 def sorting_legend(label):
-    x, y = map(int, label.split("_"))
+    x, y, _ = map(int, label.split("_")) # works for labels of format "X_Y_Y", needs to be changed for different implementations
     return x, y
 
 
-def tsne_plot(
-    t_df: pd.DataFrame, highlight_df: pd.DataFrame, dimensions: int, name: str, save_path
+def tsne_plot(  # functionality to be changed. Meant to be called on fully processed tsne dataframe, with all cluster assignment columns
+    t_df: pd.DataFrame, highlight: list, dimensions: int, name: str, save_path, num_clusters: int
 ):
     fig = plt.figure()
     # make 2D projection
@@ -160,45 +161,56 @@ def tsne_plot(
     plt.ylabel("tSNE2")
     plt.title(f"tSNE {dimensions} components: {name}")
 
+    # now coloring based on cluster, maximum 20 color variations
+    # if this vizualization becomes more important, implement better coloration functionality
     c = [
-        "red",
-        "red",
-        "red",
-        "red",
-        "red",
-        "darkolivegreen",
-        "darkolivegreen",
-        "darkolivegreen",
-        "darkolivegreen",
-        "darkolivegreen",
-        "navy",
-        "navy",
-        "navy",
-        "navy",
-        "navy",
+        'yellow',
+        'mediumturquoise',
+        'firebrick',
+        'purple',
+        'orange',
+        'darkcyan',
+        'red',
+        'fuchsia',
+        'lawngreen',
+        'deeppink',
+        'saddlebrown',
+        'black',
+        'lightcoral',
+        'dodgerblue',
+        'grey',
+        'forestgreen',
+        'navy',
+        'gold',
+        'darkgreen',
+        'crimson'
     ]
 
-    if highlight_df is None:
+    # cluster assignment number = color list index
+    if highlight is None:
         for i in t_df.index.to_list():
+            temp = t_df.loc[i]
             ax.scatter(
-                t_df.loc[i, 0], t_df.loc[i, 1], alpha=1, color=c[int(i.split("_")[1]) - 1], label=i
+                temp[0], temp[1], alpha=1, color=c[int(temp[num_clusters + 1])], label=i
             )
     else:
         for (
             i
         ) in t_df.index.to_list():  # for increasing opacity of specific catalysts (like exemplars)
-            if i in highlight_df.index.to_list():
+            if i in highlight:
                 a = 1
                 style = "*"
             else:
                 a = 0.5
                 style = "o"
+
+            temp = t_df.loc[i]
             ax.scatter(
-                t_df.loc[i, 0],
-                t_df.loc[i, 1],
+                temp[0],
+                temp[1],
                 alpha=a,
                 marker=style,
-                color=c[int(i.split("_")[1]) - 1],
+                color=c[int(temp[num_clusters + 1])],
                 label=i,
             )
 
@@ -218,11 +230,11 @@ def tsne_plot(
 
 def pca_plot(
     t_df: pd.DataFrame,
-    pca_test: PCA,
-    highlight_df: pd.DataFrame,
+    highlight: list,
     dimensions: int,
     name: str,
     save_path,
+    num_clusters: int
 ):
     fig = plt.figure()
     # make PCA projection for 2D
@@ -233,48 +245,56 @@ def pca_plot(
     plt.ylabel("PCA2")
     plt.title(f"PCA {dimensions}D: {name}")
 
-    print(f"Explained variance in PCA plot: {np.sum(pca_test.explained_variance_ratio_)}")
+    # print(f"Explained variance in PCA plot: {np.sum(pca_test.explained_variance_ratio_)}")
 
     # plot the whole in silico library
     c = [
-        "red",
-        "red",
-        "red",
-        "red",
-        "red",
-        "darkolivegreen",
-        "darkolivegreen",
-        "darkolivegreen",
-        "darkolivegreen",
-        "darkolivegreen",
-        "navy",
-        "navy",
-        "navy",
-        "navy",
-        "navy",
+        'yellow',
+        'mediumturquoise',
+        'firebrick',
+        'purple',
+        'orange',
+        'darkcyan',
+        'red',
+        'fuchsia',
+        'lawngreen',
+        'deeppink',
+        'saddlebrown',
+        'black',
+        'lightcoral',
+        'dodgerblue',
+        'grey',
+        'forestgreen',
+        'navy',
+        'gold',
+        'darkgreen',
+        'crimson'
     ]
 
-    if highlight_df is None:
+    if highlight is None:
         for i in t_df.index.to_list():
+            temp = t_df.loc[i]
             ax.scatter(
-                t_df.loc[i, 0], t_df.loc[i, 1], alpha=1, color=c[int(i.split("_")[1]) - 1], label=i
+                temp[0], temp[1], alpha=1, color=c[int(temp[num_clusters + 1])], label=i
             )
     else:
         for (
             i
         ) in t_df.index.to_list():  # for increasing opacity of specific catalysts (like exemplars)
-            if i in highlight_df.index.to_list():
+            if i in highlight:
                 a = 1
                 style = "*"
             else:
                 a = 0.5
                 style = "o"
+
+            temp = t_df.loc[i]
             ax.scatter(
-                t_df.loc[i, 0],
-                t_df.loc[i, 1],
+                temp[0],
+                temp[1],
                 alpha=a,
                 marker=style,
-                color=c[int(i.split("_")[1]) - 1],
+                color=c[int(temp[num_clusters + 1])],
                 label=i,
             )
 
