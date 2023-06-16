@@ -35,9 +35,6 @@ COPY examples-scripts /molli/examples-scripts
 COPY optional-deps.txt /molli/optional-deps.txt
 RUN mamba install --file /molli/optional-deps.txt -y -n molli && mamba clean -afy
 
-# TEMP: Add missing dependencies
-RUN mamba install -y -n molli statsmodels kneed && mamba clean -afy
-
 # DEBUG: Install Jupyter for testing only
 EXPOSE 8888
 COPY examples-jupyter /molli/examples-jupyter
