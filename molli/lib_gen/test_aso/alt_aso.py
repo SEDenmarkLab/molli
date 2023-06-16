@@ -5,7 +5,7 @@ import numpy as np
 import h5py
 from pathlib import Path
 import warnings
-import os
+# import os
 # This is a bypass for DASK (to be abandoned in future molli development)
 
 # lib = ml.ConformerLibrary("../../../out_conformers1/conformers-cmd-test2-nolink.mlib")

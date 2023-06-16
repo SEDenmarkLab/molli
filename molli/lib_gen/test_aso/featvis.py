@@ -3,7 +3,7 @@ import numpy as np
 import molli as ml
 import molli.visual.backend_pyvista as mlvis
 from tqdm import tqdm
-import yaml
+# import yaml
 from pathlib import Path
 import h5py
 

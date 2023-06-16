@@ -4,11 +4,11 @@ os.environ["OMP_NUM_THREADS"] = "8"
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
-import scipy.stats as st
-import h5py
-from tqdm import tqdm
+# import scipy.stats as st
+# import h5py
+# from tqdm import tqdm
 
-import statsmodels.graphics.gofplots as sm
+# import statsmodels.graphics.gofplots as sm
 from matplotlib import pyplot as plt
 from sklearn.metrics import pairwise_distances_argmin_min
 from sklearn.cluster import KMeans

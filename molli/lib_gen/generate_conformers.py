@@ -1,6 +1,6 @@
 import molli as ml  # from Ethan
 from molli.external import _rdkit
-from openbabel import openbabel as ob
+# from openbabel import openbabel as ob
 import openbabel.pybel as pb
 from pathlib import Path
 import warnings
@@ -14,12 +14,12 @@ from rdkit.Chem.rdForceFieldHelpers import UFFGetMoleculeForceField
 
 # from rdkit.Chem import Draw,PyMol
 # from rdkit.Chem.Draw import IPythonConsole
-import random
-import os
+# import random
+# import os
 from tqdm import tqdm
 from multiprocessing import Pool
 from multiprocessing import Value
-import shutil
+# import shutil
 
 # in_dir = '../main_library/in_silico_library_uff_min_checked1/'
 in_dir = "in_combinatorial/combinatorial_lib.mlib"
@@ -27,58 +27,6 @@ in_dir = "in_combinatorial/combinatorial_lib.mlib"
 out_dir = "out_conformers1/"  #'out1/out_conformers1_separated/'
 # out_dir_mxyz = 'out1/out_conformers1_mxyz/'
 # reference_structure_file = 'alignment_core.mol'
-
-
-catalysts_used_in_modelling = [
-    "6_1_1_1",
-    "1_1_1_1",
-    "aa_1",
-    "5_1_1_2",
-    "6_1_1_21",
-    "1_1_1_3",
-    "190_1_1_2",
-    "3_1_1_21",
-    "1_1_1_22",
-    "1_1_1_26",
-    "1_1_1_24",
-    "1_1_1_7",
-    "11_1_1_30",
-    "1_1_1_30",
-    "1_1_1_27",
-    "6_1_1_14",
-    "1_1_1_29",
-    "1_1_1_15",
-    "1_1_1_20",
-    "1_1_1_18",
-    "aa_18",
-    "171_2_2_17",
-    "90_1_1_17",
-    "7_1_2_2",
-    "14_1_1_13",
-    "281_4_4_2",
-    "22_4_4_28",
-    "249_4_4_3",
-    "227_2_2_2",
-    "254_2_2_11",
-    "16_3_1_9",
-    "200_3_1_21",
-    "73_3_1_29",
-    "14_1_2_14",
-    "56_2_1_1",
-    "7_2_1_2",
-    "1_4_1_2",
-    "187_1_4_30",
-    "187_1_4_2",
-    "185_2_1_10",
-    "185_1_2_2",
-    "154_1_2_15",
-    "3_1_2_18",
-    "250_1_3_12",
-    "252_1_1_8",
-    "225_1_1_13",
-    "225_1_1_2",
-]
-
 
 def get_oxazaline_alignment_atoms(mol):
     """Function that takes in a free bisoxazoline ligand and identifies and returns the atom indices of the nitrogen in one ring, C2 of that ring,
