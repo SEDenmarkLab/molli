@@ -6,7 +6,9 @@ services:
 
   molli:
     image: ghcr.io/moleculemaker/molli:ncsa-workflow
-    stdin_open: true
-    tty: true
     build:
       context: .
+    ports:
+    - "8888:8888"
+    volumes:
+    - "./ncsa-testing/ncsa-testing-output:/molli/ncsa-testing/ncsa-testing-output"
