@@ -88,12 +88,6 @@ parser.add_argument(
     help='Integer for inclusive upper bound of number of clusters for k-means cluster analysis. Defaults to 20.'
 )
 
-parser.add_argument(
-    '--plot',
-    action='store_true',
-    help='Boolean to display matplotlib visualization of your analysis. Defaults to False'
-)
-
 
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = parser.parse_args(args)
@@ -124,9 +118,9 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     match parsed.mode:  # where to check output filepath validity? in data_processing.processed_json right now
         case 'tsne':
-            dp.tsne_processing(df, parsed.output, parsed.perplexity, parsed.k_clusters, parsed.plot)
+            dp.tsne_processing(df, parsed.output, parsed.perplexity, parsed.k_clusters)
         case 'pca':
-            dp.pca_processing(df, parsed.output, parsed.k_clusters, parsed.plot)
+            dp.pca_processing(df, parsed.output, parsed.k_clusters)
         case _:
             warnings.warn(f'Unknown mode: {parsed.mode}')
 
