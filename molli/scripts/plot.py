@@ -1,7 +1,7 @@
 import argparse
 import warnings
-import molli.lib_gen.test_aso.data_processing as dp
-import molli.lib_gen.test_aso.helpers as helpers
+import molli.ncsa_workflow.clustering.visualization as viz
+import molli.ncsa_workflow.clustering.helpers as helpers
 
 parser = argparse.ArgumentParser(
     'molli plot',
@@ -76,7 +76,7 @@ def molli_main(args, config=None, output=None, **kwargs):
     color = parsed.color_scheme
 
     try:
-        scores, exemp = dp.unpack_json(input_scores, input_exemp)
+        scores, exemp = helpers.unpack_json(input_scores, input_exemp)
     except Exception as exp:
         warnings.warn(f"Error with JSON input files: {exp!s}")
 
@@ -98,8 +98,8 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     match method:
         case 'tsne':
-            helpers.tsne_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
+            viz.tsne_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
         case 'pca':
-            helpers.pca_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
+            viz.pca_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
         case _:
             raise ValueError(f"Unsupported mode: {method}")

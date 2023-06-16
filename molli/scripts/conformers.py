@@ -1,5 +1,5 @@
 import argparse
-import molli.lib_gen.generate_conformers as gc
+import molli.ncsa_workflow.generate_conformers as gc
 from os import cpu_count
 
 parser = argparse.ArgumentParser(
