@@ -3,8 +3,7 @@
 .gitattributes
 .gitignore
 .vscode/
-examples-jupyter/
-examples-scripts
 Dockerfile*
 Dockerfile
 **/README*
+ncsa-testing/ncsa-testing-output/*

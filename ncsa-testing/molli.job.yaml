@@ -1,0 +1,12 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: molli
+spec:
+  template:
+    spec:
+      containers:
+      - name: molli
+        image: ghcr.io/moleculemaker/molli:ncsa-workflow
+      restartPolicy: Never
+  backoffLimit: 4

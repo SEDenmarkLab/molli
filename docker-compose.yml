@@ -5,7 +5,7 @@ version: '3.9'
 services:
 
   molli:
-    image: hub.ncsa.illinois.edu/mmli/molli
+    image: ghcr.io/moleculemaker/molli:ncsa-workflow
     stdin_open: true
     tty: true
     build:

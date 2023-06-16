@@ -20,3 +20,5 @@ molli_xt.*.so
 **/_temp_*
 
 /.vscode/c_cpp_properties.json
+ncsa-testing/ncsa-testing-output/*
+Dockerfile.*
