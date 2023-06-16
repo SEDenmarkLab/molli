@@ -1,6 +1,6 @@
-notebook
-py3dmol
-openbabel
-rdkit
-scikit-learn
-pandas
+notebook==6.5.4
+py3dmol==2.0.1.post1
+openbabel==3.1.1
+rdkit==2023.03.1
+scikit-learn==1.2.2
+pandas==2.0.2

@@ -32,7 +32,6 @@ RUN mamba install molli -c local -n molli -y
 COPY examples-scripts /molli/examples-scripts
 
 # Include additional dependences for the Docker + Jupyter environment
-COPY docker-conda-env.yaml /molli/
 COPY optional-deps.txt /molli/optional-deps.txt
 RUN mamba install --file /molli/optional-deps.txt -y -n molli && mamba clean -afy
 
