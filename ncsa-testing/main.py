@@ -38,7 +38,7 @@ cores = ml.files.box_cores_test_1
 subs = ml.files.box_substituents_test_1
 
 # OUTPUT FILES: output directory
-out_dir = './ncsa-testing-output/'
+out_dir = '/molli/ncsa-testing/ncsa-testing-output/'
 
 def parse_chemdraw():
     logging.info("=== Parsing ChemDraw Files ===")
