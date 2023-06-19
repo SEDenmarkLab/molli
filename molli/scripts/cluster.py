@@ -5,7 +5,7 @@ Run projection and kmeans cluster analysis on descriptor data
 import argparse
 import warnings
 
-import molli.ncsa_workflow.clustering.helpers as helpers
+import molli.ncsa_workflow.clustering.helpers as help
 import molli.ncsa_workflow.clustering.post_processing as pp
 import molli.ncsa_workflow.clustering.dimension_reduction as dr    # check this out later
 
@@ -93,10 +93,10 @@ def molli_main(args, config=None, output=None, **kwargs):
     parsed = parser.parse_args(args)
 
     try:
-        df = helpers.unpack_h5py(parsed.input)
+        df = help.unpack_h5py(parsed.input)
     except Exception as exp:
-        warnings.warn(f'Issue with descriptor file input: {exp!s}') # how should warning work?
-
+        warnings.warn(f'Issue with descriptor file input: {exp!s}')
+        
     try:
         if parsed.variance != 'false':
             if float(parsed.variance) >= 0 and float(parsed.variance) <= 1:

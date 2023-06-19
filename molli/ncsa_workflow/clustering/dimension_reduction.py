@@ -9,7 +9,7 @@ from sklearn.decomposition import PCA
 import warnings
 
 
-def tsne_processing(
+def tsne_processing(    # figure out how 'name' should work
     input: pd.DataFrame | str | Path,
     output: str | Path,
     perplex: int = 5,
@@ -32,7 +32,7 @@ def tsne_processing(
         except Exception as exp:
             warnings.warn(f"Invalid filepath: {exp!s}")
 
-    df = tsne_score(input, perplexity=perplex, save_path=output)
+    df = tsne_score(input, perplexity=perplex)
 
     all_exemplars = []
     distortions = []
@@ -49,7 +49,7 @@ def tsne_processing(
     helpers.processed_json(output, df, all_exemplars, knee)
 
 
-def pca_processing(
+def pca_processing(     # figure out how 'name' should work
     input: pd.DataFrame | str | Path, output: str | Path, upper_k: int = 20
 ):
     """
@@ -62,7 +62,7 @@ def pca_processing(
         except Exception as exp:
             warnings.warn(f"Invalid filepath: {exp!s}")
 
-    df = pca_score(input, save_path=output)
+    df = pca_score(input)
 
     all_exemplars = []
     distortions = []

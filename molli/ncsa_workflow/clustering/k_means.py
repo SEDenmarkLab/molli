@@ -16,8 +16,6 @@ def get_kmeans(df: pd.DataFrame, n_clusters: int) -> KMeans:
 # generates kmeans elbow plot, with red line corresponding to kneed calculation of knee location
 # returns a tuple of list of distortion values per number of clusters, and integer corresponding to knee location
 def kmeans_elbow(max_clusters: int, distortions: list) -> int:
-    max_clusters += 1  # makes maximum inclusive
-
     kl = KneeLocator(
         list(range(1, max_clusters + 1)),
         distortions,
