@@ -7,8 +7,8 @@ spec:
     spec:
       containers:
       - name: molli
-        image: ghcr.io/moleculemaker/molli:ncsa-workflow
+        image: ghcr.io/moleculemaker/molli:ncsa-k8s-job
       restartPolicy: Never
       imagePullSecrets:
-      - name: molliregcred
+      - name: regcred
   backoffLimit: 4
