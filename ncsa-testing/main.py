@@ -13,7 +13,31 @@ import time
 import logging
 
 # This is a failsafe in case openbabel aint installed
-import openbabel
+#import openbabel
+from molli.external import openbabel
+
+def obsvg(mol: ml.Molecule, *, display_name: bool = False, alias: bool = True, color_by_element: bool = True, fgcolor: str = "black", bgcolor: str = "white",):
+    from openbabel import openbabel as ob
+    obmol = openbabel.to_obmol(mol)
+    conv = ob.OBConversion()
+    conv.SetOutFormat("svg")
+
+    obmol.DeleteHydrogens()
+
+    if not color_by_element:
+        conv.AddOption("u", ob.OBConversion.OUTOPTIONS)
+
+    if alias:
+        conv.AddOption("A", ob.OBConversion.OUTOPTIONS)
+
+    if not display_name:
+        conv.AddOption("d", ob.OBConversion.OUTOPTIONS)
+
+    conv.AddOption("b", ob.OBConversion.OUTOPTIONS, bgcolor)
+    conv.AddOption("B", ob.OBConversion.OUTOPTIONS, fgcolor)
+
+
+    return conv.WriteString(obmol)
 
 # Set up logging
 logging.basicConfig(
@@ -85,7 +109,7 @@ def combinatorial_expansion():
     combined = ml.MoleculeLibrary(f'{out_dir}test_combine_new_env.mlib')
     logging.debug(len(combined))
     with open(f'{out_dir}test_combine_new_env_library.json', 'w') as f:
-        json.dump({item.name: item.dumps_mol2() for item in combined}, f)
+        json.dump({item.name: {'mol2': item.dumps_mol2(), 'svg': obsvg(item)} for item in combined}, f)
 
 # Conformers step (takes ~4 minutes)
 def generate_conformers():
