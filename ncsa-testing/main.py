@@ -42,8 +42,6 @@ out_dir = os.getenv('JOB_OUTPUT_DIR', '/molli/ncsa-testing-output/')
 
 def parse_chemdraw():
     logging.info("=== Parsing ChemDraw Files ===")
-    logging.info(f"Using cores: {cores}")
-    logging.info(f"Using substituents: {subs}")
 
     # parse the files
     subprocess.run(['molli', 'parse', '--hadd', f'{cores}', '-o', f'{out_dir}/BOX_cores_new_env.mlib', "--overwrite"])
@@ -174,6 +172,10 @@ def post_processing():
 def main():
     logging.info('=== Starting Job ===')
     start_time = time.time()
+
+    logging.info(f"INPUT cores: {cores}")
+    logging.info(f"INPUT substituents: {subs}")
+    logging.info(f"OUTPUT folder: {out_dir}")
 
     # create output directory if it doesn't exist
     if not os.path.exists(out_dir):
