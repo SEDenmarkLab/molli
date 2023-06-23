@@ -35,7 +35,7 @@ clustering_cutoff = 0.8
 
 # INPUT FILES: chemdraw files that the user passes in
 cores = os.getenv('CORES_INPUT_FILE', ml.files.box_cores_test_1)
-subs = os.getenv('SUBS_INPUT_FILE' ml.files.box_substituents_test_1)
+subs = os.getenv('SUBS_INPUT_FILE', ml.files.box_substituents_test_1)
 
 # OUTPUT FILES: output directory
 out_dir = os.getenv('JOB_OUTPUT_DIR', '/molli/ncsa-testing-output/')
