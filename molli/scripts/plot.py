@@ -9,20 +9,11 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument(
-    'scores',
+    'input',
     action='store',
     type=str,
     metavar='<fpath>',
-    help='Path to JSON file of dimensionality reduction scores and cluster assignments'
-)
-
-parser.add_argument(
-    'exemplars',
-    action='store',
-    type=str,
-    metavar='<fpath>',
-    help=('Path to JSON file of list of list of exemplars,'
-    ' s.t. index 1 coresponds to list of exemplars with k=2 clusters')
+    help='Path to JSON file of dimensionality reduction output'
 )
 
 parser.add_argument(
@@ -46,16 +37,6 @@ parser.add_argument(
     help='Output filepath of plot as a png file'
 )
 
-parser.add_argument(
-    '-m',
-    '--method',
-    action='store',
-    type=str,
-    default='tsne',
-    help=('The type of dimensionality reduction that was performed.'
-          ' Accepted options are tsne and pca, currently.')
-)
-
 # TO-DO
 parser.add_argument(
     '-c',
@@ -68,38 +49,36 @@ parser.add_argument(
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = parser.parse_args(args)
 
-    input_scores = parsed.scores
-    input_exemp = parsed.exemplars
+    input = parsed.input
     clusters = parsed.clusters
     output = parsed.output
-    method = parsed.method
     color = parsed.color_scheme
 
     try:
-        scores, exemp = helpers.unpack_json(input_scores, input_exemp)
+        scores, assignments, exemplars, knee, method, _ = helpers.unpack_json(input)
     except Exception as exp:
         warnings.warn(f"Error with JSON input files: {exp!s}")
 
     if clusters is None:
-        clusters = exemp[-1]
+        clusters = knee
     else:
         try:
             temp = int(clusters)
         except ValueError: # not an int
             match clusters:
                 case 'elbow':
-                    clusters = exemp[-1]
+                    clusters = knee
                 case _:
-                    raise ValueError(f"Invalid cluster value: {method}")
+                    raise ValueError(f"Invalid cluster value: {clusters}")
         else:   # is an str representation of an int. Must check within bounds
             clusters = temp
-            if clusters < 1 or clusters > (len(scores) - 2):    # specific to formatting of JSON file
-                raise ValueError(f"Invalid cluster value: {method}")
-
+            if clusters < 1 or clusters > (len(assignments)):    # specific to formatting of JSON file
+                raise ValueError(f"Invalid cluster value: {clusters}")
+    print(knee)
     match method:
         case 'tsne':
-            viz.tsne_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
+            viz.tsne_plot(scores, assignments[str(clusters)], exemplars[clusters - 1], 2, 'test', output, clusters)
         case 'pca':
-            viz.pca_plot(scores, exemp[clusters - 1], 2, 'test', output, clusters)
+            viz.pca_plot(scores, assignments[str(clusters)], exemplars[clusters - 1], 2, 'test', output, clusters)
         case _:
             raise ValueError(f"Unsupported mode: {method}")

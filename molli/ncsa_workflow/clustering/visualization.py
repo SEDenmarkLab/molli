@@ -9,7 +9,7 @@ def sorting_legend(label):
 
 
 def tsne_plot(  # functionality to be changed. Meant to be called on fully processed tsne dataframe, with all cluster assignment columns
-    t_df: pd.DataFrame, highlight: list, dimensions: int, name: str, save_path, num_clusters: int
+    scores: dict, assignments: dict, highlight: list, dimensions: int, name: str, save_path, num_clusters: int
 ):
     fig = plt.figure()
     # make 2D projection
@@ -47,15 +47,13 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
 
     # cluster assignment number = color list index
     if highlight is None:
-        for i in t_df.index.to_list():
-            temp = t_df.loc[i]
+        for i in scores['0']:
+            color_index = int(assignments[i])
             ax.scatter(
-                temp[0], temp[1], alpha=1, color=c[int(temp[num_clusters + 1])], label=i
+                scores['0'][i], scores['1'][i], alpha=1, color=c[color_index], label=i
             )
     else:
-        for (
-            i
-        ) in t_df.index.to_list():  # for increasing opacity of specific catalysts (like exemplars)
+        for i in scores['0']:  # for increasing opacity of specific catalysts (like exemplars)
             if i in highlight:
                 a = 1
                 style = "*"
@@ -65,15 +63,9 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
                 style = "o"
                 zorder = 1
 
-            temp = t_df.loc[i]
+            color_index = int(assignments[i])
             ax.scatter(
-                temp[0],
-                temp[1],
-                alpha=a,
-                marker=style,
-                color=c[int(temp[num_clusters + 1])],
-                label=i,
-                zorder=zorder
+                scores['0'][i], scores['1'][i], alpha=a, marker=style, color=c[color_index], label=i, zorder=zorder
             )
 
     # Can adjust bbox_to_anchor to move legend
@@ -91,7 +83,8 @@ def tsne_plot(  # functionality to be changed. Meant to be called on fully proce
 
 
 def pca_plot(
-    t_df: pd.DataFrame,
+    scores: dict,
+    assignments: dict,
     highlight: list,
     dimensions: int,
     name: str,
@@ -134,15 +127,13 @@ def pca_plot(
     ]
 
     if highlight is None:
-        for i in t_df.index.to_list():
-            temp = t_df.loc[i]
+        for i in scores['0']:
+            color_index = int(assignments[i])
             ax.scatter(
-                temp[0], temp[1], alpha=1, color=c[int(temp[num_clusters + 1])], label=i
+                scores['0'][i], scores['1'][i], alpha=1, color=c[color_index], label=i
             )
     else:
-        for (
-            i
-        ) in t_df.index.to_list():  # for increasing opacity of specific catalysts (like exemplars)
+        for i in scores['0']:  # for increasing opacity of specific catalysts (like exemplars)
             if i in highlight:
                 a = 1
                 style = "*"
@@ -152,15 +143,9 @@ def pca_plot(
                 style = "o"
                 zorder = 1
 
-            temp = t_df.loc[i]
+            color_index = int(assignments[i])
             ax.scatter(
-                temp[0],
-                temp[1],
-                alpha=a,
-                marker=style,
-                color=c[int(temp[num_clusters + 1])],
-                label=i,
-                zorder=zorder
+                scores['0'][i], scores['1'][i], alpha=a, marker=style, color=c[color_index], label=i, zorder=zorder
             )
 
     # Can adjust bbox_to_anchor to move legend

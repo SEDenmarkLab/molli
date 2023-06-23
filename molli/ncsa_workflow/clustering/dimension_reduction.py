@@ -18,11 +18,11 @@ def tsne_processing(    # figure out how 'name' should work
     """
     intakes aso.h5 file or dataframe, converts to dataframe, does kmeans clustering and automatically selects
     optimal number of clusters. Then generates tsne values, and optionally writes data as JSON dataframe to given output filepath.
-    format of output is output + '_exemplars.json' and output + '_values_and_clusters.json'
+    format of output is output + '_exemplars.json', output + '_values_and_clusters.json', and output + '_distortions.json'
     optional parameter for perplexity of tsne, defaults to 5, and inclusive upper bound of k clusters, defaults to 20.
     returns data as dataframe in following format:
-    catalyst_id as string | tSNE1 value as float | tSNE2 value as float | (1 -> k columns of cluster assignments)
-    and a list of lists of exemplar catalysts. Saves plot as a .png to file path if plot=True
+    catalyst_id as string | tSNE1 value as float | tSNE2 value as float | (1 -> k columns of cluster assignments),
+    list of lists of exemplar catalysts for number of clusters, and list of distortions
     """
 
     if not isinstance(input, pd.DataFrame):
@@ -40,13 +40,13 @@ def tsne_processing(    # figure out how 'name' should work
         kmeans = k_means.get_kmeans(input, i)
         exemplars = k_means.exemplar_selector(kmeans, input)
         all_exemplars.append(exemplars)
-        df["cluster assignments (k=" + str(i) + ")"] = k_means.assignments(exemplars, input)
+        df[str(i)] = k_means.assignments(exemplars, input)
         _, distort = k_means.distortion_calculation(input, pd.DataFrame(kmeans.cluster_centers_)) # for knee calculation
         distortions.append(distort)
 
     knee = k_means.kmeans_elbow(upper_k, distortions)
     
-    helpers.processed_json(output, df, all_exemplars, knee)
+    helpers.processed_json(output, df, all_exemplars, distortions, knee, 'tsne')
 
 
 def pca_processing(     # figure out how 'name' should work
@@ -70,18 +70,15 @@ def pca_processing(     # figure out how 'name' should work
         kmeans = k_means.get_kmeans(input, i)
         exemplars = k_means.exemplar_selector(kmeans, input)
         all_exemplars.append(exemplars)
-        df["cluster assignments (k=" + str(i) + ")"] = k_means.assignments(exemplars, input)
+        df[str(i)] = k_means.assignments(exemplars, input)
         _, distort = k_means.distortion_calculation(input, pd.DataFrame(kmeans.cluster_centers_))  # for knee calculation
         distortions.append(distort)
 
     knee = k_means.kmeans_elbow(upper_k, distortions)
 
-    helpers.processed_json(output, df, all_exemplars, knee)
+    helpers.processed_json(output, df, all_exemplars, distortions, knee, 'pca')
 
 
-# subsets is a dict. The keys are labels for the data subset. The value is a 3-tuple. The first element is a subset of index
-# labels that should appear in full_df. The second is the alpha value in pyplot to plot these with. The third is the pyplot color.
-#  Returns the transformed data.
 def tsne_score(
     full_df: pd.DataFrame,
     dimensions=2,
@@ -100,8 +97,6 @@ def tsne_score(
     return full_df
 
 
-# subsets give label:list of catalyst handles value pairs for each subset
-# return transformed dataset
 def pca_score(
     full_df: pd.DataFrame,
     dimensions=2,
