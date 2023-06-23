@@ -34,14 +34,17 @@ clustering_removed_variance_columns = 0
 clustering_cutoff = 0.8
 
 # INPUT FILES: chemdraw files that the user passes in
-cores = ml.files.box_cores_test_1
-subs = ml.files.box_substituents_test_1
+cores = os.getenv('CORES_INPUT_FILE', ml.files.box_cores_test_1)
+subs = os.getenv('SUBS_INPUT_FILE' ml.files.box_substituents_test_1)
 
 # OUTPUT FILES: output directory
 out_dir = os.getenv('JOB_OUTPUT_DIR', '/molli/ncsa-testing-output/')
 
 def parse_chemdraw():
     logging.info("=== Parsing ChemDraw Files ===")
+    logging.info(f"Using cores: {cores}")
+    logging.info(f"Using substituents: {subs}")
+
     # parse the files
     subprocess.run(['molli', 'parse', '--hadd', f'{cores}', '-o', f'{out_dir}/BOX_cores_new_env.mlib', "--overwrite"])
     subprocess.run(['molli', 'parse', '--hadd', f'{subs}', '-o', f'{out_dir}/BOX_subs_new_env.mlib', "--overwrite"])
