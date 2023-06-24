@@ -194,7 +194,6 @@ def generate_conformers():
 def aso_descriptor():
     logging.info("=== Generating ASO Descriptor ===")
     # first we make a grid for calculating aso
-    
     logpipe = LogPipe(logging.INFO)
     with subprocess.Popen(['molli', 
                     'grid', 
@@ -231,6 +230,10 @@ def post_processing():
              'tsne',
              '-o',
              f'{out_dir}/new_env_data3_tsne',
+             '-v', # variance threshold before doing clustering
+             f'{clustering_removed_variance_columns}', # remove 0 variance columns
+             '-c', # correlation cutoff before clustering
+             f'{clustering_cutoff}', # 0.8 by default
          ], stdout=logpipe, stderr=logpipe
      ) as s:
         logpipe.close()
