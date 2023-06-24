@@ -4,8 +4,6 @@ os.environ['OMP_NUM_THREADS'] = '8'
 import pandas as pd
 from sklearn.feature_selection import VarianceThreshold
 import numpy as np
-import h5py
-from tqdm import tqdm
 # the output from molli aso calculation
 
 # use these lines for the full in silico library (without focused analogues)
@@ -20,16 +18,6 @@ out_folder = f'postprocessed_aso_full_lib_with_commercial_and_fa/'
 
 corr_coefs = [0.95, 0.90, 0.80, 0.70, 0.60, 0.50]
 
-
-# reads in the h5 file in a nice way for pandas
-def unpack_h5py(file):
-    df = {}
-    with h5py.File(file, 'r') as f:
-        # print(f.keys())
-        # exit()
-        for x in tqdm(f.keys()):
-            df[x] =np.array(f[x])
-    return pd.DataFrame.from_dict(df).transpose()
 
 # this function calculates the total variance of the ASO vector space, defined as trace of covariance sample matrix.
 def calc_total_variance(data):
@@ -51,6 +39,7 @@ def variance_feature_selection(data: pd.DataFrame, thld: float = 0) -> pd.DataFr
 
 # if no correlation coeffecient threshold is given, outputs list of tuples containing shape and variance of data after removing columns for
 # [0.95, 0.90, 0.80, 0.70, 0.60, 0.50] correlation thresholds. If threshold is given then returns dataframe after column dropping
+# remove this functionality? Only dataframe from given correlation threshold
 def correlated_columns(data: pd.DataFrame, coef : float = None) -> list | pd.DataFrame:
     corr_matrix = data.corr().abs()
     upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))

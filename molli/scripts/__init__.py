@@ -13,6 +13,7 @@ __all__ = [
     "conformers",
     "descriptors",
     "combine",
+    "plot",
 ]
 
 __all__.sort()

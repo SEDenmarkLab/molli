@@ -7,13 +7,10 @@ from argparse import ArgumentParser
 
 # from pprint import pprint
 import os
-import molli as ml
-from tqdm import tqdm
 
 # from dask import distributed, delayed
 import numpy as np
-import h5py
-import molli.lib_gen.test_aso.alt_aso as aa
+import molli.ncsa_workflow.alt_aso as aa
 
 DESCRIPTOR_CHOICES = ["ASO", "AEIF", "ADIF", "AESP", "ASR"]
 

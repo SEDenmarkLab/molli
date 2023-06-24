@@ -5,9 +5,9 @@ Run projection and kmeans cluster analysis on descriptor data
 import argparse
 import warnings
 
-import molli as ml
-import molli.lib_gen.test_aso.post_processing as pp
-import molli.lib_gen.test_aso.data_processing as dp    # check this out later
+import molli.ncsa_workflow.clustering.helpers as help
+import molli.ncsa_workflow.clustering.post_processing as pp
+import molli.ncsa_workflow.clustering.dimension_reduction as dr    # check this out later
 
 parser = argparse.ArgumentParser(
     'molli cluster',
@@ -88,21 +88,15 @@ parser.add_argument(
     help='Integer for inclusive upper bound of number of clusters for k-means cluster analysis. Defaults to 20.'
 )
 
-parser.add_argument(
-    '--plot',
-    action='store_true',
-    help='Boolean to display matplotlib visualization of your analysis. Defaults to False'
-)
-
 
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = parser.parse_args(args)
 
     try:
-        df = pp.unpack_h5py(parsed.input)
+        df = help.unpack_h5py(parsed.input)
     except Exception as exp:
-        warnings.warn(f'Issue with descriptor file input: {exp!s}') # how should warning work?
-
+        warnings.warn(f'Issue with descriptor file input: {exp!s}')
+        
     try:
         if parsed.variance != 'false':
             if float(parsed.variance) >= 0 and float(parsed.variance) <= 1:
@@ -124,9 +118,9 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     match parsed.mode:  # where to check output filepath validity? in data_processing.processed_json right now
         case 'tsne':
-            dp.tsne_processing(df, parsed.output, parsed.perplexity, parsed.k_clusters, parsed.plot)
+            dr.tsne_processing(df, parsed.output, parsed.perplexity, parsed.k_clusters)
         case 'pca':
-            dp.pca_processing(df, parsed.output, parsed.k_clusters, parsed.plot)
+            dr.pca_processing(df, parsed.output, parsed.k_clusters)
         case _:
             warnings.warn(f'Unknown mode: {parsed.mode}')
 
