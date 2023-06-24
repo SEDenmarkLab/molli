@@ -60,23 +60,24 @@ clustering_removed_variance_columns = 0
 clustering_cutoff = 0.8
 
 # INPUT FILES: chemdraw files that the user passes in
-cores = ml.files.box_cores_test_1
-subs = ml.files.box_substituents_test_1
+cores = os.getenv('CORES_INPUT_FILE', ml.files.box_cores_test_1)
+subs = os.getenv('SUBS_INPUT_FILE', ml.files.box_substituents_test_1)
 
 # OUTPUT FILES: output directory
-out_dir = './ncsa-testing-output/'
+out_dir = os.getenv('JOB_OUTPUT_DIR', '/molli/ncsa-testing-output/')
 
 def parse_chemdraw():
     logging.info("=== Parsing ChemDraw Files ===")
-    # parse the files
-    subprocess.run(['molli', 'parse', '--hadd', f'{cores}', '-o', f'{out_dir}BOX_cores_new_env.mlib', "--overwrite"])
-    subprocess.run(['molli', 'parse', '--hadd', f'{subs}', '-o', f'{out_dir}BOX_subs_new_env.mlib', "--overwrite"])
 
-    m_core = ml.MoleculeLibrary(f'{out_dir}BOX_cores_new_env.mlib')
+    # parse the files
+    subprocess.run(['molli', 'parse', '--hadd', f'{cores}', '-o', f'{out_dir}/BOX_cores_new_env.mlib', "--overwrite"])
+    subprocess.run(['molli', 'parse', '--hadd', f'{subs}', '-o', f'{out_dir}/BOX_subs_new_env.mlib', "--overwrite"])
+
+    m_core = ml.MoleculeLibrary(f'{out_dir}/BOX_cores_new_env.mlib')
     logging.debug(len(m_core))
     # TODO enforce maximum number of cores?
 
-    m_subs = ml.MoleculeLibrary(f'{out_dir}BOX_subs_new_env.mlib')
+    m_subs = ml.MoleculeLibrary(f'{out_dir}/BOX_subs_new_env.mlib')
     logging.debug(len(m_subs))
     # TODO enforce maximum number of substituents?
 
@@ -88,13 +89,13 @@ def combinatorial_expansion():
         [
             'molli',
             'combine',
-            f'{out_dir}BOX_cores_new_env.mlib',
+            f'{out_dir}/BOX_cores_new_env.mlib',
             '-s',
-            f'{out_dir}BOX_subs_new_env.mlib',
+            f'{out_dir}/BOX_subs_new_env.mlib',
             '-j',
             f'{thread_concurrency}',
             '-o',
-            f'{out_dir}test_combine_new_env.mlib',
+            f'{out_dir}/test_combine_new_env.mlib',
             '-a',
             'A1',
             '--obopt',
@@ -106,7 +107,7 @@ def combinatorial_expansion():
     )
 
 
-    combined = ml.MoleculeLibrary(f'{out_dir}test_combine_new_env.mlib')
+    combined = ml.MoleculeLibrary(f'{out_dir}/test_combine_new_env.mlib')
     logging.debug(len(combined))
     with open(f'{out_dir}test_combine_new_env_library.json', 'w') as f:
         json.dump({item.name: {'mol2': item.dumps_mol2(), 'svg': obsvg(item)} for item in combined}, f)
@@ -116,11 +117,11 @@ def generate_conformers():
     logging.info("=== Generating Conformers ===")
     subprocess.run(['molli',
                     'conformers',
-                    f'{out_dir}test_combine_new_env.mlib',
+                    f'{out_dir}/test_combine_new_env.mlib',
                     '-n',
                     f'{job_concurrency}',
                     '-o',
-                    f'{out_dir}test_conformers_new_env.mlib',
+                    f'{out_dir}/test_conformers_new_env.mlib',
                     '-t',
                     '-j', ### !!!!!! Number of jobs. Please scale down if host system has fewer cores. defaults to os.cpu_count()//2  !!!!! ###
                     f'{thread_concurrency}',
@@ -128,7 +129,7 @@ def generate_conformers():
                     ])
 
 
-    clib = ml.ConformerLibrary(f'{out_dir}test_conformers_new_env.mlib')
+    clib = ml.ConformerLibrary(f'{out_dir}/test_conformers_new_env.mlib')
     logging.debug(len(clib))
 
     i = 0
@@ -153,19 +154,19 @@ def aso_descriptor():
     subprocess.run(['molli',
                     'grid',
                     '--mlib',
-                    f'{out_dir}test_conformers_new_env.mlib',
+                    f'{out_dir}/test_conformers_new_env.mlib',
                     '-o',
-                    f'{out_dir}grid_new_env.npy'
+                    f'{out_dir}/grid_new_env.npy'
                     ])
     # calculate aso
     subprocess.run(['molli',
                     'gbca',
                     'aso',
-                    f'{out_dir}test_conformers_new_env.mlib',
+                    f'{out_dir}/test_conformers_new_env.mlib',
                     '-g',
-                    f'{out_dir}grid_new_env.npy',
+                    f'{out_dir}/grid_new_env.npy',
                     '-o',
-                    f'{out_dir}aso_new_env.h5'
+                    f'{out_dir}/aso_new_env.h5'
                     ])
     # tqdm looks messed up
 
@@ -176,11 +177,11 @@ def post_processing():
          [                   # should be better way to implement post_processing stuff
              'molli',
              'cluster',
-             f'{out_dir}aso_new_env.h5',
+             f'{out_dir}/aso_new_env.h5',
              '-m',
              'tsne',
              '-o',
-             f'{out_dir}new_env_data3_tsne',
+             f'{out_dir}/new_env_data3_tsne',
              '-v', # variance threshold before doing clustering
              f'{clustering_removed_variance_columns}', # remove 0 variance columns
              '-c', # correlation cutoff before clustering
@@ -191,11 +192,11 @@ def post_processing():
          [                   # should be better way to implement post_processing stuff
              'molli',
              'cluster',
-             f'{out_dir}aso_new_env.h5',
+             f'{out_dir}/aso_new_env.h5',
              '-m',
              'pca',
              '-o',
-             f'{out_dir}new_env_data3_pca',
+             f'{out_dir}/new_env_data3_pca',
              '-v', # variance threshold before doing clustering
              f'{clustering_removed_variance_columns}', # remove 0 variance columns
              '-c', # correlation cutoff before clustering
@@ -207,6 +208,10 @@ def post_processing():
 def main():
     logging.info('=== Starting Job ===')
     start_time = time.time()
+
+    logging.info(f"INPUT cores: {cores}")
+    logging.info(f"INPUT substituents: {subs}")
+    logging.info(f"OUTPUT folder: {out_dir}")
 
     # create output directory if it doesn't exist
     if not os.path.exists(out_dir):

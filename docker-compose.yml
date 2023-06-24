@@ -5,7 +5,7 @@ version: '3.9'
 services:
 
   molli:
-    image: ghcr.io/moleculemaker/molli:ncsa-workflow
+    image: ghcr.io/moleculemaker/molli:ncsa-k8s-job
     build:
       context: .
     ports:
