@@ -3,6 +3,7 @@
 .gitattributes
 .gitignore
 .vscode/
+docker-compose.yml
 Dockerfile*
 Dockerfile
 **/README*
