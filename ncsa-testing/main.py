@@ -219,7 +219,7 @@ def aso_descriptor():
 
 
 def post_processing():
-    logging.info('=== Running Post-Processing ===')
+    logging.info('=== Generating TSNE Cluster Data ===')
     logpipe = LogPipe(logging.INFO)
     with subprocess.Popen(         # check functionality for plotting and pca
          [                   # should be better way to implement post_processing stuff
@@ -238,6 +238,7 @@ def post_processing():
      ) as s:
         logpipe.close()
 
+    logging.info('=== Generating PCA Cluster Data ===')
     logpipe = LogPipe(logging.INFO)
     with subprocess.Popen(         # check functionality for plotting and pca
          [                   # should be better way to implement post_processing stuff
