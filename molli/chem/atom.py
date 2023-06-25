@@ -136,7 +136,6 @@ class Element(IntEnum):
 
         Returns:
             float: A float representing the covalent radius of a double bond
-
         """        
         return self.get_property_value("covalent_radius_2")
 
@@ -156,7 +155,6 @@ class Element(IntEnum):
         This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
         
-        
         Returns:
             float: A float representing the covalent radius of a single bond
 
@@ -169,6 +167,7 @@ class Element(IntEnum):
 
         Returns:
             float: A float representing the Van der Waals radius
+    
         """ 
         return self.get_property_value("vdw_radius")
 
@@ -339,9 +338,10 @@ class Element(IntEnum):
 
 ElementLike = Element | str | int
 """
-*ElementLike*
 A type alias for anything that can be resolved as an element 
-`str`is interpreted as element symbol 
+
+`str` is interpreted as element symbol 
+
 `int` is interpreted as atomic number
 """
 # class Atom:
@@ -456,7 +456,6 @@ class AtomGeom(IntEnum):
     
         >>> planar = AtomGeom(31) # Planar
         >>> planar == AtomGeom.R3_Planar # True 
-
     """
     Unknown = 0
     R1 = 10
@@ -653,7 +652,6 @@ class Atom:
         This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
         
-        
         Returns:
             float: A float representing the covalent radius of a single bond
         """
@@ -821,6 +819,12 @@ class Atom:
 
 AtomLike = Atom | int
 
+"""
+A type alias for anything that can be resolved as an Atom,
+
+`int` is interpreted as an index of an atom
+"""
+
 RE_MOL_NAME = re.compile(r"[_a-zA-Z0-9]+")
 RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
@@ -848,6 +852,7 @@ class Promolecule:
     ):
         """
         Initialization of promolecule pre-allocates storage space.
+        
         n_atoms is ignored in cas
         """
         self._atom_index_cache = bidict()
