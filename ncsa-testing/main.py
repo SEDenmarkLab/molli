@@ -54,7 +54,7 @@ cores = os.getenv('CORES_INPUT_FILE', ml.files.box_cores_test_1)
 subs = os.getenv('SUBS_INPUT_FILE', ml.files.box_substituents_test_1)
 
 # OUTPUT FILES: output directory
-out_dir = os.getenv('JOB_OUTPUT_DIR', '/molli/ncsa-testing-output/')
+out_dir = os.getenv('JOB_OUTPUT_DIR', '/molli/ncsa-testing/ncsa-testing-output/')
 
 # Set up logging
 logging.basicConfig(
