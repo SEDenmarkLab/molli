@@ -7,8 +7,13 @@ spec:
     spec:
       containers:
       - name: molli
-        image: ghcr.io/moleculemaker/molli:ncsa-k8s-job
+        image: ghcr.io/moleculemaker/molli:ncsa-workflow
       restartPolicy: Never
+
+      # Image is private, and requires credentials to pull
+      # See https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+      # kubectl create secret docker-registry regcred --docker-server=ghcr.io --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
       imagePullSecrets:
       - name: regcred
+
   backoffLimit: 4

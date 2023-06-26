@@ -39,12 +39,14 @@ which is a shorthand for:
 $ docker run -it --rm ghcr.io/moleculemaker/molli:ncsa-workflow
 ```
 
-The image will be pulled automatically if it is not present:
+The image will be pulled automatically if it is not present.
+
+If the image is not present and can't be pulled, Docker will attempt to build it from source.
 
 ## Run image (Jupyter: interactive mode)
 Pass `jupyter` as command to the container to override the default command:
 ```
-$ docker compose run molli jupyter
+$ docker compose up
 ```
 which is a shorthand for:
 ```
