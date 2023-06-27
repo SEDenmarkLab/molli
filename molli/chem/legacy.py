@@ -50,7 +50,7 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO, mol_lib=False) -> Conform
     ## Returns
 
     `ConformerEnsemble` or `Molecule`
-        Ensemble of conformers as written in the xml file or collection of molecules
+        Ensemble of conformers as written in the xml file or molecule
         Note: if no conformer geometries are given, default geometry will be imported as 0th conformer.
 
     """
