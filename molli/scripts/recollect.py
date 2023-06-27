@@ -60,11 +60,11 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "-bg",
-    "--base_geom",
+    "-mlib",
+    "--mol_library",
     action="store_true",
     default=False,
-    help="This will include the base geometry when reading in old collections."
+    help="This will parse the geometry into a ml.MoleculeLibrary rather than a ml.ConformerLibrary."
 )
 
 def molli_main(args, config=None, output=None, **kwargs):
@@ -101,16 +101,22 @@ def molli_main(args, config=None, output=None, **kwargs):
         print("This does not appear to be a valid collection")
         exit(3)
 
+    lib_type = ml.chem.ConformerLibrary
+
+    if parsed.mol_library:
+        lib_type = ml.chem.MoleculeLibrary
+
     with (
         ml.aux.catch_interrupt(),
-        ml.chem.ConformerLibrary.new(out) as lib,
-    ):
+        lib_type.new(out) as lib
+        ):
+
         tnm = 0
         tnc = 0
         for f in tqdm(zf.filelist, f"Reading data from {inp.name}", dynamic_ncols=True):
             if f.filename != "__molli__":
                 try:
-                    ens = ml.chem.ensemble_from_molli_old_xml(zf.open(f), bg=parsed.base_geom)
+                    ens = ml.chem.ensemble_from_molli_old_xml(zf.open(f), mol_lib=parsed.mol_library)
                 except SyntaxError:
                     tqdm.write(f"File {f} in source collection cannot be read.")
                     if parsed.skip:
@@ -119,7 +125,10 @@ def molli_main(args, config=None, output=None, **kwargs):
                 ens.mult = mult
 
                 tnm += 1
-                tnc += ens.n_conformers
+                if parsed.mol_library:
+                    tnc = 1
+                else:
+                    tnc += ens.n_conformers
 
                 lib.append(ens.name, ens)
 

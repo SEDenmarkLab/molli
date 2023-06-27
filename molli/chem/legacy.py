@@ -22,14 +22,15 @@ def read_geom(k, g, ens):
     assert D == 3, "Only 3d coordinates supported for now"
 
     coord = []
-
     for a, xyz in enumerate(G.split(";")):
         x, y, z = map(float, xyz.split(","))
-        ens._coords[(k, a)] = (x, y, z)
-    
+        if isinstance(ens,ConformerEnsemble):
+            ens._coords[(k, a)] = (x, y, z)
+        elif isinstance(ens, Molecule):
+            ens._coords[a] = (x, y, z)
     return ens
 
-def ensemble_from_molli_old_xml(f: StringIO | BytesIO, bg=False) -> ConformerEnsemble:
+def ensemble_from_molli_old_xml(f: StringIO | BytesIO, mol_lib=False) -> ConformerEnsemble | Molecule:
     # This auxiliary function parses an old molli collection
     """
 
@@ -43,11 +44,15 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO, bg=False) -> ConformerEns
     `f : StringIO`
         xml file stream
 
+    `mol_lib: bool`
+        Returns `ConformerEnsemble` by default, if False returns `Molecule`
+
     ## Returns
 
-    `ConformerEnsemble`
-        Ensemble of conformers as written in the xml file.
+    `ConformerEnsemble` or `Molecule`
+        Ensemble of conformers as written in the xml file or collection of molecules
         Note: if no conformer geometries are given, default geometry will be imported as 0th conformer.
+
     """
     tree = cET.parse(f)
     mol = tree.getroot()
@@ -63,12 +68,16 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO, bg=False) -> ConformerEns
     conformers = []
 
     n_atoms = len(xatoms)
-    n_conformers = len(xconfs)
-    
-    if bg:
-        n_conformers += len(xgeom)
 
-    ens = ConformerEnsemble(n_conformers=n_conformers, n_atoms=n_atoms, name=name)
+    if len(xconfs) == 0:
+        n_conformers = len(xgeom)
+    else:
+        n_conformers = len(xconfs)
+
+    if mol_lib:
+        ens = Molecule(n_atoms=n_atoms, name=name)
+    else:
+        ens = ConformerEnsemble(n_conformers=n_conformers, n_atoms=n_atoms, name=name)
 
     for i, a in enumerate(xatoms):
         aid, s, l, at = a.attrib["id"], a.attrib["s"], a.attrib["l"], a.attrib["t"]
@@ -81,13 +90,11 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO, bg=False) -> ConformerEns
         ens.append_bond(_b := Bond(ens.atoms[ia1 - 1], ens.atoms[ia2 - 1]))
         _b.set_mol2_type(b.attrib["t"])
 
-    if bg:
+    if len(xconfs) == 0:
         for k,g in enumerate(xgeom):
             ens = read_geom(k,g,ens)
+    else:
         for k,g in enumerate(xconfs):
             ens = read_geom(k+1,g,ens)
-
-    for k, g in enumerate(xconfs):
-        ens = read_geom(k,g,ens)
 
     return ens
