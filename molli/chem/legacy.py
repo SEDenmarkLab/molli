@@ -16,20 +16,15 @@ from . import ConformerEnsemble, Molecule, Atom, Bond, Element
 
 def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
     """
-    # `ensemble_from_molli_old_xml`
     Parse an old version of the collection
 
     This function is intended for backwards compatibility reasons with the old molli version
 
-    ## Parameters
+    Args:
+        f (StringIO | BytesIO): The file-like object to parse from
 
-    `f : StringIO | BytesIO`
-        xml file stream
-
-    ## Returns
-
-    `ConformerEnsemble`
-        Ensemble of conformers as written in the xml file.
+    Returns:
+        ConformerEnsemble: The parsed conformer ensemble
         Note: if no conformer geometries are given, default geometry will be imported as 0th conformer.
     """
     tree = cET.parse(f)

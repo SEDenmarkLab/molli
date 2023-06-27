@@ -29,13 +29,7 @@ import attrs
 
 class Element(IntEnum):
     """
-    Enumerates through elements
-
-    *Example Usage*:
-        
-        >>> o = Element(8) # oxygen
-        >>> f = Element["F"] # fluorine
-        >>> f == Element.F # True
+    Enumerates through elements of the periodic table
     """
     @classmethod
     @cache
@@ -50,6 +44,11 @@ class Element(IntEnum):
         
         Returns:
             Element: Element instance
+        
+        Example Usage:
+            >>> o = Element(8) # oxygen
+            >>> f = Element["F"] # fluorine
+            >>> f == Element.F # True
         """        
         match elt:
             case Element() | int():
@@ -66,6 +65,9 @@ class Element(IntEnum):
 
         Returns:
             str: A string representing the symbol of the element
+        Example Usage:
+            >>> my_element = Element(6) # carbon
+            >>> print(my_element.symbol) # C
         """        
         return self.name
 
@@ -76,6 +78,10 @@ class Element(IntEnum):
         
         Returns:
             int: An interger representing the atomic number of the element
+        
+        Example Usage:
+            >>> my_element = Element(C) # carbon
+            >>> print(my_element.z) # 6
         """        
         return self.value
 
@@ -94,6 +100,9 @@ class Element(IntEnum):
             *str* when asked for CPK coloring 
 
             *int* when group value is requested 
+        
+        Example Usage:
+            >>> get_property_value("symbol") # C
         """        
         prop_val = data.get("element", property_name, self.name, noexcept=True)
 
@@ -105,7 +114,10 @@ class Element(IntEnum):
 
         Returns:
             str: Name of the element
-
+        
+        Example Usage:
+            >>> my_element = Element("C") # carbon
+            >>> my_element # carbon
         """
         return self.name
 
@@ -116,6 +128,10 @@ class Element(IntEnum):
         
         Returns:
             float: A float representing the atomic weight of the element
+        
+        Example Usage:
+            >>> my_element = Element("C") # carbon
+            >>> print(my_element.atomic_weight) # 12.011
         """ 
         return self.get_property_value("atomic_weight")
 
@@ -126,6 +142,9 @@ class Element(IntEnum):
         
         Returns:
             float: A float representing the covalent radius of a single bond
+        
+        Example Usage:
+            >>> my_element = Element("C") # carbon
         """
         return self.get_property_value("covalent_radius_1")
 
@@ -167,7 +186,10 @@ class Element(IntEnum):
 
         Returns:
             float: A float representing the Van der Waals radius
-    
+        
+        Example Usage:
+            >>> my_element = Element("C") # carbon
+            >>> print(my_element.vdw_radius) # 170 pm
         """ 
         return self.get_property_value("vdw_radius")
 
@@ -178,6 +200,10 @@ class Element(IntEnum):
         
         Returns:
             float: A float representing the element's Pauling electronegativity
+        
+        Example Usage:
+            >>> my_element = Element("C") # carbon
+            >>> print(my_element.en_pauling) # 2.55
         """ 
         return self.get_property_value("en_pauling")
 
@@ -188,6 +214,10 @@ class Element(IntEnum):
 
         Returns:    
             str: A string representing the color of the element
+        
+        Example Usage:
+            >>> my_element = Element("C") # carbon
+            >>> print(my_element.color_cpk) # black
         """ 
         return self.get_property_value("color_cpk")
 
@@ -201,12 +231,16 @@ class Element(IntEnum):
         
             **int** when group number is requested
             **str** when group name is requested
+        
+        Example Usage:
+            >>> my_element = Element("C") # carbon
+            >>> print(my_element.group) # 14
         """        
         return self.get_property_value("group")
 
     def _serialize(self) -> int:
         """
-        Serializes the element
+        Serializes the element, allowing for it to be stored in a database more efficiently 
         
         Returns:
             int: An integer representing the element
@@ -396,7 +430,7 @@ class AtomType(IntEnum):
     """
     Enumerates through atom groups, hybridizations, and classifications. 
 
-    *Example Usage*:
+    Example Usage:
 
         >>> ring = AtomType(2)  # Aromatic
         >>> ring == AtomType.Aromatic # True 
@@ -433,8 +467,7 @@ class AtomStereo(IntEnum):
     """
     Enumerates through stereogenic categories
 
-    *Example Usage*:
-
+    Example Usage:
         >>> r = AtomStereo(10) # R
         >>> r == AtomStereo.R # True
     """
@@ -452,8 +485,7 @@ class AtomGeom(IntEnum):
     """
     Enumerates through atom geometries
 
-    *Example Usage*:
-    
+    Example Usage:
         >>> planar = AtomGeom(31) # Planar
         >>> planar == AtomGeom.R3_Planar # True 
     """
@@ -531,6 +563,12 @@ class Atom:
         
         Returns:
             Atom: a new Atom instance with the changes specified in the `changes` dictionary.
+        
+        Example Usage:
+            >>> my_atom = Atom(atupe = 1) 
+            >>> print(my_atom.atype) # Regular
+            >>> my_atom = Atom.evolve(atype = 2) 
+            >>> print(my_atom.atype) # Aromatic 
         """        
         return attrs.evolve(self, **changes)
 
@@ -540,6 +578,10 @@ class Atom:
         
         Returns:
             dict: a dictionary of the atom
+
+        Example Usage:
+            >>> my_atom = Atom(1) # hydrogen 
+            >>> print(my_atom.as_dict()) # {'H': 1}
         """        
         return attrs.asdict(self)
 
@@ -549,6 +591,10 @@ class Atom:
         
         Returns:
             tuple: a tuple of the atom
+        
+        Example Usage:
+            >>> my_atom = Atom(1) # hydrogen
+            >>> print(my_atom.as_tuple()) # ("H", 1)
         """        
         return attrs.astuple(self)
 
@@ -559,6 +605,10 @@ class Atom:
         
         Returns:
             bool: TRUE or FALSE
+        
+        Example Usage:
+            >>> my_atom = Atom.atype(100) # Dummy 
+            >>> print(my_atom.is_dummy) # TRUE 
         """        
         return self.atype == AtomType.Dummy
 
@@ -589,6 +639,20 @@ class Atom:
     #     return f"Atom([{self.isotope or ''}{self.element!r}], label={self.label!r}, atype={self.atype!r})"
 
     def __eq__(self, other: AtomLike) -> bool:
+        """
+        Checks if two atoms are equal
+
+        Args:
+            other (AtomLike): an atom or an index of an atom
+        
+        Returns:
+            bool: TRUE or FALSE
+        
+        Example Usage:
+            >>> atom_1 = Atom(1) # hydrogen
+            >>> atom_2 = Atom(5) # boron
+            >>> atom_1 = atom_2 # FALSE
+        """
         return self is other
 
     # This is a default version of hash function for objects
@@ -602,6 +666,10 @@ class Atom:
         
         Returns:
             int: An interger representing the atomic number of the element
+        
+        Example Usage:
+            >>> my_atom = Element(C) # carbon
+            >>> print(my_element.Z) # 6
         """        
         return self.element.z
 
@@ -612,6 +680,10 @@ class Atom:
 
         Returns:
             float: A float representing the Van der Waals radius
+        
+        Example Usage:
+            >>> my_atom = Element("H") # hydrogen
+            >>> print(my_atom.vdw_radius) # 120 pm
         """ 
         return self.element.vdw_radius
 
@@ -664,10 +736,20 @@ class Atom:
         
         Returns:
             str: A string representing the color of the element
+        
+        Example Usage:
+            >>> my_atom = Element("C") # carbon
+            >>> print(my_atom.color_cpk) # black
         """ 
         return self.element.color_cpk
 
     def set_mol2_type(self, m2t: str):
+        """
+        Sets the mol2 type of the atom, allowing for compatiblitiy with Mol2 file formatting 
+
+        Args:
+            m2t (str): mol2 type of the atom
+        """
 
         if "." in m2t:
             mol2_elt, mol2_type = m2t.split(".", maxsplit=1)
@@ -745,7 +827,13 @@ class Atom:
             case _:
                 raise NotImplementedError(f"Cannot interpret mol2 type {m2t!r}")
 
-    def get_mol2_type(self):
+    def get_mol2_type(self) -> str:
+        """
+        Uses the mol2 type and converts it to a elemental symbol for Molli to interpret
+
+        Returns:
+            str: A string representing the type of atom
+        """
 
         match self.element, self.atype, self.geom:
             case _, AtomType.Regular, _:
@@ -903,6 +991,10 @@ class Promolecule:
         
         Returns:
             List[Atom]: a list containing all atoms with attachment points
+
+        Example Usage:
+            >>> my_molecule = Promolecule("methylamine") # CH3NH2
+            >>> print(my_molecule.attachment_points) # [Atom("N"), Atom("H"), Atom("H")]
         """        
         return [a for a in self.atoms if a.atype == AtomType.AttachmentPoint]
 
@@ -913,16 +1005,24 @@ class Promolecule:
         
         Returns:
             int: an integer representing the total number of attachment points
+        
+        Example Usage:
+            >>> my_molecule = Promolecule("methylamine") # CH3NH2
+            >>> print(my_molecule.n_attachment_points) # 3
         """      
         return len(self.attachment_points)
 
     @property
     def name(self) -> str:
         """
-        Atom's name
+        Promolecule name
         
         Returns:
             str: a string representing the name of the atom
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2) 
+            >>> print(my_molecule.name) # methylamine
         """        
         return self._name
 
@@ -945,6 +1045,10 @@ class Promolecule:
         
         Returns:
             List[Atom]: a list containing all Atom instances in the promolecule
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.atoms) # [Atom("C"), Atom("H"), Atom("H"), Atom("H"), Atom("N"), Atom("H"), Atom("H")]
         """        
         return self._atoms
 
@@ -955,6 +1059,10 @@ class Promolecule:
         
         Returns:
             List[Element]: a list containing all Element instances in the promolecule
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.elements) # [Element("C"), Element("H"), Element("H"), Element("H"), Element("N"), Element("H"), Element("H")]
         """       
         return [a.element for a in self.atoms]
 
@@ -964,7 +1072,11 @@ class Promolecule:
         Total number of atoms in the promolecule
 
         Returns:
-            int: an integer representing the total number of atoms in the promolecule      
+            int: an integer representing the total number of atoms in the promolecule  
+
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.n_atoms) # 7    
         """        
         return len(self.atoms)
 
@@ -981,6 +1093,10 @@ class Promolecule:
         Raises:
             ValueError: if the atom is not found
             ValueError: if the atom type is not found
+
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.get_atom(0)) # Atom("C")
         """ 
         match _a:
             case Atom():
@@ -1004,6 +1120,10 @@ class Promolecule:
         
         Returns:
             tuple[Atom]: a tuple of Atom instances
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.get_atoms(0, 1, 2)) # (Atom("C"), Atom("H"), Atom("H"))
         """        
         return tuple(map(self.get_atom, _atoms))
 
@@ -1020,6 +1140,10 @@ class Promolecule:
         Raises:
             ValueError: if the atom is not found
             ValueError: if the atom type is not found
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.get_atom_index(Atom("C"))) # 0
         """     
         match _a:
             case Atom():
@@ -1046,6 +1170,10 @@ class Promolecule:
         
         Returns:
             tuple[int]: a tuple of integers representing the indices of the atoms
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.get_atom_indices(Atom("C"), Atom("H"), Atom("H"))) # (0, 1, 2)
         """        
         return tuple(map(self.get_atom_index, _atoms))
 
@@ -1055,6 +1183,11 @@ class Promolecule:
 
         Args:
             _a (AtomLike): an atom or an index of an atom
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> my_molecule = my_molecule.del_atom(0) # Atom("C")
+            >>> print(my_molecule.get_atoms) # [Atom("H"), Atom("H"), Atom("H"), Atom("N"), Atom("H"), Atom("H")]
         """     
         self._atoms.remove(_a)
 
@@ -1064,6 +1197,11 @@ class Promolecule:
         
         Args:
             a (Atom): an Atom instance
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> my_molecule = my_molecule.append_atom(Atom("H"))
+            >>> print(my_molecule.get_atoms) # [Atom("C"), Atom("H"), Atom("H"), Atom("H"), Atom("N"), Atom("H"), Atom("H"), Atom("H")]
         """
         self._atoms.append(a)
 
@@ -1076,6 +1214,10 @@ class Promolecule:
         
         Returns:
             int: an integer representing the index of the atom
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.index_atom(Atom("C"))) # 0
         """        
         return self._atoms.index(_a)
 
@@ -1105,6 +1247,10 @@ class Promolecule:
 
         Yield:
             Generator[Atom, None, None]: a generator of Atom instances
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.yield_atoms_by_element("H")) # [Atom("H"), Atom("H"), Atom("H"), Atom("H"), Atom("H")]
         """
         for a in self.atoms:
             if a.element == Element.get(elt):
@@ -1116,12 +1262,26 @@ class Promolecule:
 
         Yield:
             Generator[Atom, None, None]: a generator of Atom instances
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.yield_attachment_points()) # [Atom("N"), Atom("H"), Atom("H")]
         """       
         for a in self.atoms:
             if a.atype == AtomType.AttachmentPoint:
                 yield a
 
     def get_attachment_points(self) -> tuple[Atom]:
+        """
+        Yields atoms that contain attachment points
+
+        Yield:
+            Generator[Atom, None, None]: a generator of Atom instances
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.yield_attachment_points()) # (Atom("N"), Atom("H"), Atom("H"))
+        """
         return tuple(self.yield_attachment_points(self))
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
@@ -1133,6 +1293,10 @@ class Promolecule:
         
         Yield:
             Generator[Atom, None, None]: a generator of Atom instances
+        
+        Example Usage:
+            >>> my_molecule = Promolecule(CH3NH2)
+            >>> print(my_molecule.yield_atoms_by_label(Regular)) # [Atom("C"), Atom("H"), Atom("H"), Atom("H"), Atom("N"), Atom("H"), Atom("H")]
         """ 
         for a in self.atoms:
             if a.label == lbl:
@@ -1152,6 +1316,10 @@ class Promolecule:
 
         Returns:
             str: a string representing the molecular formula
+        
+        Example Usage:
+            >>> my_molecule = Promolecule("methylamine")
+            >>> print(my_molecule.formula) # CH3NH2
         """
         if self.n_atoms > 0:
             ctr = Counter(x.element.symbol for x in self.atoms)
@@ -1177,6 +1345,10 @@ class Promolecule:
 
         Returns:
             float: a float representing the molecular weight
+        
+        Example Usage:
+            >>> my_molecule = Promolecule("methylamine")
+            >>> print(my_molecule.molecular_weight) # 31.057   
         """
         _mw = 0.0
         for a in self.atoms:

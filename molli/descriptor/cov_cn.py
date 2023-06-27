@@ -7,11 +7,13 @@ def dftd_coordination_number(mol: Molecule, a: AtomLike):
     All covalent radii for metals will be scaled down by 10%, and is built to error if the element used is not 1-94.
 
     This defines a coordination number for individual atoms based on the location of all atoms
+
+    Args:
+        mol (Molecule): Molecule to calculate coordination number for
+        a (AtomLike): Atom to calculate coordination number for
     
-    :param mol: Molecule to calculate coordination number for
-    :param a: Atom to calculate coordination number for
-    :returns: Coordination number for atom a
-    :rtype: float
+    Returns:
+        float: Coordination number for atom a
     """
 
     k1 = 16

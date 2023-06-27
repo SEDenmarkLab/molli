@@ -61,6 +61,10 @@ class Molecule(Structure):
         
         Returns:
             np.ndarray: The atomic charges of the molecule.
+        
+        Example Usage:
+            >>> mol = Molecule(H20)
+            >>> print(mol.atomic_charges) # [1,1,-2]
         """        
         return self._atomic_charges
 

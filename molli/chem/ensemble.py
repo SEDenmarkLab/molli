@@ -76,6 +76,10 @@ class ConformerEnsemble(Connectivity):
        
         Returns:
             np.ndarray: The coordinates
+
+        Examples:
+            >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
+            >>> print(conformer.coords) # [[0, 0, 0], [0, 0, 1.4], ...]
         """
         return self._coords
 
@@ -84,12 +88,16 @@ class ConformerEnsemble(Connectivity):
         self._coords[:] = other
 
     @property
-    def weights(self):
+    def weights(self) -> np.ndarray:
         """
         weights of the conformers in the ensemble.
 
         Returns:
             np.ndarray: The weights
+        
+        Examples Usage: 
+            >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
+            >>> print(conformer.weights) # [12.01, 1, 1, 1, 1, 1, 1, ...]
         """
         return self._weights
 
@@ -104,6 +112,10 @@ class ConformerEnsemble(Connectivity):
 
         Returns:
             np.ndarray: The atomic charges
+        
+        Examples Usage:
+            >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
+            >>> print(conformer.atomic_charges) # [6, 1, 1, 1, 1, ...]
         """
         return self._atomic_charges
 
@@ -183,7 +195,17 @@ class ConformerEnsemble(Connectivity):
         return res
 
     @property
-    def n_conformers(self):
+    def n_conformers(self) -> int:
+        """
+        The number of conformers in the ensemble
+
+        Returns:
+            int: The number of conformers
+        
+        Examples Usage:
+            >>> conformer = ConformerEnsemble("Cyclohexane") # C6H12
+            >>> print(conformer.n_conformers) # 1
+        """
         return self._coords.shape[0]
 
     def __iter__(self):
@@ -301,8 +323,17 @@ class ConformerEnsemble(Connectivity):
 
     def scale(self, factor: float, allow_inversion=False):
         """
-        Simple multiplication of all coordinates by a factor.
-        Useful for unit conversion.
+        Scale the coordinates by a factor. This also scales the atomic charges
+
+        Args:
+            factor (float): The scaling factor
+            allow_inversion (bool, optional): Allow inversion of the coordinates. Defaults to False.
+        
+        
+        Examples Usage:
+            >>> conformer = ConformerEnsemble("Benzyl Alcohol") # C6H5CH2OH
+            >>> conformer.scale(2) # C12H10C2H4O2
+            >>> print(conformer.coords) # [[0, 0, 0], [0, 0, 2.8], ...]
         """
         if factor < 0 and not allow_inversion:
             raise ValueError(
@@ -337,6 +368,10 @@ class Conformer(Molecule):
 
         Returns:
             str: The name
+        
+        Examples Usage:
+            >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
+            >>> print(conformer.name) # Benzyl alcohol
         """
         return self._parent.name
 

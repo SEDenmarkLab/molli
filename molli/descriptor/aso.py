@@ -9,14 +9,14 @@ def _where_distance(p, g: np.ndarray, r: float) -> np.ndarray:
     """
     Function to return a numpy array of where a point is within radius from gridpoints
 
-    :param p: Point to check
-    :param g: Gridpoints to check against
-    :param r: Radius to check
-
-    :returns: Numpy array of where the point is within radius from gridpoints
-    :rtype: np.ndarray
+    Args:
+        p (np.ndarray): Point to check
+        g (np.ndarray): Gridpoints to check against
+        r (float): Radius to check
+    
+    Returns:
+        np.ndarray: Numpy array of where the point is within radius from gridpoints
     """
-
     diff = g - p
     dists = np.sum(diff**2, axis=-1)
 
@@ -28,12 +28,13 @@ def aso1(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.nd
     """
     Iterates over conformers in the ensemble with time complextiy O(n_confs * n_gpts)
 
-    :param ens: ConformerEnsemble to calculate ASO for
-    :param g: Gridpoints to calculate ASO for
-    :param dtype: Data type of the ASO array
+    Args:
+        ens (ConformerEnsemble): ConformerEnsemble to calculate ASO for
+        g (np.ndarray): Gridpoints to calculate ASO for
+        dtype (str, optional): Data type of the ASO array. Defaults to "float32".
 
-    :returns: ASO array
-    :rtype: np.ndarray
+    Returns:
+        np.ndarray: ASO array
     """
     for i, c in enumerate(ens):
         # Iterate over atoms

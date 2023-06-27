@@ -52,7 +52,7 @@ class BondStereo(IntEnum):
     """
     Enumerates through different classifications for bond stereochemistry 
 
-    *Example Usage*:
+    Example Usage:
     
         >>> trans = BondStereo(10) # E
         >>> trans == BondStereo.E # True 
@@ -120,7 +120,20 @@ class Bond:
         converter=float,
     )
 
-    def evolve(self, **changes):
+    def evolve(self, **changes) -> Bond:
+        """
+        Creates a new bond with the same atoms, but with the specified changes
+
+        Args:
+            **changes: the changes to make to the bond class
+        
+        Returns:
+            Bond: the new bond with the specified changes
+        
+        Example Usage: 
+            >>> bond = Bond(a1, a2, order=2)
+            >>> bond.evolve(order=3) # Bond(a1, a2, order=3)
+        """
         return attrs.evolve(self, **changes)
 
     @property
@@ -130,6 +143,10 @@ class Bond:
 
         Returns:
             float: the order of the bond
+        
+        Example Usage:
+            >>> bond = Bond(a1 = "C", a2 = "H")
+            >>> print(bond.order) # 1.0
         """        
         # if self.btype == BondType.FractionalOrder:
         #     return self._order
@@ -157,14 +174,41 @@ class Bond:
             case _:
                 return 1.0
 
-    def as_dict(self, atom_id_map: dict = None):
+    def as_dict(self, atom_id_map: dict = None) -> dict:
+        """
+        Converts the bond to a dictionary
+    
+        Args:
+            atom_id_map (dict): a dictionary mapping atom ids to atom indices
+        
+        Returns:
+            dict: the bond as a dictionary
+        
+        Example Usage:
+            >>> bond = Bond(a1 = "C", a2 = "H")
+            >>> bond.as_dict({0: 'C', 1: 'H'}) 
+            >>> print(bond) # {0: 'C', 1: 'H'}
+        """
         res = attrs.asdict(self)
         if atom_id_map is not None:
             res["a1"] = atom_id_map[self.a1]
             res["a2"] = atom_id_map[self.a2]
         return res
 
-    def as_tuple(self, atom_id_map: dict = None):
+    def as_tuple(self, atom_id_map: dict = None) -> tuple:
+        """
+        Converts the bond to a tuple
+    
+        Args:
+            atom_id_map (dict): a tuple mapping atom ids to atom indices
+        
+        Returns:
+            tuple: the bond as a tuple
+        
+        Example Usage:
+            >>> bond.as_tuple({0: "C", 1:"H"}) 
+            >>> print(bond) # ('C', 'H')
+        """
         res = attrs.astuple(self)
 
         if atom_id_map is not None:
@@ -173,10 +217,37 @@ class Bond:
 
         return res
 
-    def __contains__(self, other: Atom):
+    def __contains__(self, other: Atom) -> bool:
+        """
+        boolean check if an atom is in the bond
+        
+        Args:
+            other (Atom): the atom to check
+        
+        Returns:
+            bool: True if the atom is in the bond, False otherwise
+        
+        Example Usage:
+            >>> bond = Bond(a1 = "C", a2 = "H")
+            >>> bond.__contains__("C") # TRUE 
+        """
         return other in {self.a1, self.a2}
 
     def __eq__(self, other: Bond | set):
+        """
+        Boolean check if two bonds are equal
+        
+        Args: 
+            other (Bond | set): the bond to check
+        
+        Returns:
+            bool: True if the bonds are equal, False otherwise
+        
+        Example Usage:
+            >>> bond_1 = Bond(a1 = "C", a2 = "H")
+            >>> bond_2 = Bond(a1 = "C", a2 = "H")
+            >>> bond_1 == bond_2 # True
+        """
         # return self is other
         match other:
             case Bond():
@@ -188,6 +259,16 @@ class Bond:
                 raise ValueError(f"Cannot equate <{type(other)}: {other}>, {self}")
 
     def __repr__(self):
+        """
+        Prints the bond
+
+        Returns:
+            str: the string representation of the bond
+        
+        Example Usage:
+            >>> bond = Bond(a1 = "C", a2 = "H")
+            >>> bond # Bond(C, H, order=1.0)
+        """
         return f"Bond({self.a1}, {self.a2}, order={self.order})"
 
     # This mimics the default behavior of object instances in python
@@ -210,8 +291,9 @@ class Bond:
         Returns:
             float: the expected bond length in Angstroms
         
-        *Example Usage*:
-            >>> bond.expected_length == 1.54 # True
+        Example Usage:
+            >>> bond = Bond(a1 = "H", a2 = "C")
+            >>> print(bond.expected_length) # 1.09
         """        
         return self.a1.cov_radius_1 + self.a2.cov_radius_1
 
@@ -291,6 +373,10 @@ class Connectivity(Promolecule):
 
         Returns:
             List[Bond]: list of all bonds in the molecule
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> print(molecule.bonds) # [Bond(C, H, order=1.0), Bond(C, C, order=1.0), Bond(C, O, order=2.0), Bond(C, Cl, order=1.0)]
         """
         return self._bonds
 
@@ -301,6 +387,10 @@ class Connectivity(Promolecule):
         
         Returns:
             int: the total number of bonds in the molecule
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> print(molecule.n_bonds) # 7
         """        
         return len(self._bonds)
 
@@ -314,6 +404,10 @@ class Connectivity(Promolecule):
         
         Returns:
             Bond | None: the bond that connects the two atoms, or None if the bond does not exist
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> print(molecule.lookup_bond("C", "H")) # Bond(C, H, order=1.0)
         """        
         _a1 = self.get_atom(a1)
         _a2 = self.get_atom(a2)
@@ -331,6 +425,10 @@ class Connectivity(Promolecule):
             b (Bond): the bond to find the index of
         Returns:
             int: the index of the bond
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> print(molecule.index_bond(Bond("C", "H"))) # 0
         """        
         return self._bonds.index(b)
 
@@ -349,18 +447,73 @@ class Connectivity(Promolecule):
                 raise ValueError(f"Unable to fetch a bond with {type(b)}: {b}")
 
     def append_bond(self, bond: Bond):
+        """
+        Adds a bond to the molecule
+
+        Args:
+            bond (Bond): the bond to add to the molecule
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule.append_bond(Bond("C", "H"))
+            >>> print(molecule.n_bonds) # 8
+        """
         self._bonds.append(bond)
 
     def append_bonds(self, *bonds: Bond):
+        """
+        Adds multiple bonds to the molecule
+
+        Args: 
+            *bonds (Bond): the bonds to add to the molecule
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule.append_bonds(Bond("C", "H"), Bond("C", "H"))
+            >>> print(molecule.n_bonds) # 9
+        """
         self._bonds.extend(bonds)
 
     def extend_bonds(self, bonds: Iterable[Bond]):
+        """
+        Adds multiple bonds to the molecule
+
+        Args: 
+            *bonds (Bond): the bonds to add to the molecule
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule.append_bonds(Bond("C", "H"), Bond("C", "H"))
+            >>> print(molecule.n_bonds) # 9
+        """
         self._bonds.extend(bonds)
 
     def del_bond(self, b: Bond):
+        """
+        Deletes a bond from the molecule
+
+        Args:
+            b (Bond): the bond to delete from the molecule
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule.del_bond(Bond("C", "H"))
+            >>> print(molecule.n_bonds) # 6
+        """
         self._bonds.remove(b)
 
     def del_atom(self, _a: AtomLike):
+        """
+        Deletes an atom from the molecule
+
+        Args:
+            _a (AtomLike): the atom to delete from the molecule
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule.del_atom("C")
+            >>> print(molecule.get_atom("C")) # [Atom(H), Atom(O), Atom(Cl)]
+        """
         tbd = list(self.bonds_with_atom(_a))
         for b in tbd:
             self.del_bond(b)
@@ -375,6 +528,10 @@ class Connectivity(Promolecule):
         
         Yields:
             Generator[Bond, None, None]: the bonds on the atom
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> print(molecule.bonds_with_atom("C")) # [Bond(C, H, order=1.0), Bond(C, C, order=1.0), Bond(C, O, order=2.0), Bond(C, Cl, order=1.0)]
         """        
         _a = self.get_atom(a)
         for b in self._bonds:
@@ -390,6 +547,10 @@ class Connectivity(Promolecule):
         
         Yields:
             Generator[Atom, None, None]: the atoms connected to the atom
+
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> print(molecule.connected_atoms("C")) # [Atom(C), Atom(H), Atom(C), Atom(O), Atom(Cl)]
         """
         _a = self.get_atom(a)
         for b in self.bonds_with_atom(_a):
@@ -404,6 +565,10 @@ class Connectivity(Promolecule):
         
         Returns:
             float: the sum of valences of all atoms bonded to the atom
+        
+        Example Usage:
+            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> print(molecule.bonded_valence("C")) # 4.0
         """
         _a_bonds = self.bonds_with_atom(a)
 
@@ -425,7 +590,7 @@ class Connectivity(Promolecule):
         """        
         return sum(1 for _ in self.connected_atoms(a))
 
-    def _bfs_single(self, q: deque, visited: set):
+    def _bfs_single(self, q: deque, visited: set) -> Generator[Tuple[Atom, int], None, None]:
         start, dist = q.pop()
         for a in self.connected_atoms(start):
             if a not in visited:
