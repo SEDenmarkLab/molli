@@ -113,7 +113,7 @@ class ConformerEnsemble(Connectivity):
         """ """
         mol2io = StringIO(input) if isinstance(input, str) else input
         mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
-        print(mols)
+        
         res = cls(
             mols[0],
             n_conformers=len(mols),
@@ -123,11 +123,8 @@ class ConformerEnsemble(Connectivity):
             mult=mult,
             atomic_charges=mols[0].atomic_charges,
         )
-        # print(len(mols))
-        # print(res)
+
         for i, m in enumerate(mols):
-            # print(res._coords)
-            print(m)
             res._coords[i] = m.coords
 
         return res
