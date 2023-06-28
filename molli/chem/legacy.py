@@ -13,8 +13,24 @@ from warnings import warn
 from io import StringIO, BytesIO
 from . import ConformerEnsemble, Molecule, Atom, Bond, Element
 
+def read_geom(k, g, ens):
+    m = re.match(r"#(?P<L>[0-9]+),(?P<D>[0-9]+):(?P<G>.+);", g.text)
+    L = int(m.group("L"))
+    D = int(m.group("D"))
+    G = m.group("G")
 
-def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
+    assert D == 3, "Only 3d coordinates supported for now"
+
+    coord = []
+    for a, xyz in enumerate(G.split(";")):
+        x, y, z = map(float, xyz.split(","))
+        if isinstance(ens,ConformerEnsemble):
+            ens._coords[(k, a)] = (x, y, z)
+        elif isinstance(ens, Molecule):
+            ens._coords[a] = (x, y, z)
+    return ens
+
+def ensemble_from_molli_old_xml(f: StringIO | BytesIO, mol_lib=False) -> ConformerEnsemble | Molecule:
     # This auxiliary function parses an old molli collection
     """
 
@@ -28,11 +44,15 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
     `f : StringIO`
         xml file stream
 
+    `mol_lib: bool`
+        Returns `ConformerEnsemble` by default, if False returns `Molecule`
+
     ## Returns
 
-    `ConformerEnsemble`
-        Ensemble of conformers as written in the xml file.
+    `ConformerEnsemble` or `Molecule`
+        Ensemble of conformers as written in the xml file or molecule
         Note: if no conformer geometries are given, default geometry will be imported as 0th conformer.
+
     """
     tree = cET.parse(f)
     mol = tree.getroot()
@@ -40,7 +60,7 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
 
     xatoms = mol.findall("./atoms/a")
     xbonds = mol.findall("./bonds/b")
-    xgeom = mol.find("./geometry/g")
+    xgeom = mol.findall("./geometry/g")
     xconfs = mol.findall("./conformers/g")
 
     atoms = []
@@ -48,9 +68,16 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
     conformers = []
 
     n_atoms = len(xatoms)
-    n_conformers = len(xconfs)
 
-    ens = ConformerEnsemble(n_conformers=len(xconfs), n_atoms=len(xatoms), name=name)
+    if len(xconfs) == 0:
+        n_conformers = len(xgeom)
+    else:
+        n_conformers = len(xconfs)
+
+    if mol_lib:
+        ens = Molecule(n_atoms=n_atoms, name=name)
+    else:
+        ens = ConformerEnsemble(n_conformers=n_conformers, n_atoms=n_atoms, name=name)
 
     for i, a in enumerate(xatoms):
         aid, s, l, at = a.attrib["id"], a.attrib["s"], a.attrib["l"], a.attrib["t"]
@@ -63,20 +90,11 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO) -> ConformerEnsemble:
         ens.append_bond(_b := Bond(ens.atoms[ia1 - 1], ens.atoms[ia2 - 1]))
         _b.set_mol2_type(b.attrib["t"])
 
-    for k, g in enumerate(xconfs):
-        m = re.match(r"#(?P<L>[0-9]+),(?P<D>[0-9]+):(?P<G>.+);", g.text)
-
-        L = int(m.group("L"))
-        D = int(m.group("D"))
-        G = m.group("G")
-
-        assert D == 3, "Only 3d coordinates supported for now"
-
-        coord = []
-
-        for a, xyz in enumerate(G.split(";")):
-            x, y, z = map(float, xyz.split(","))
-
-            ens._coords[(k, a)] = (x, y, z)
+    if len(xconfs) == 0:
+        for k,g in enumerate(xgeom):
+            ens = read_geom(k,g,ens)
+    else:
+        for k,g in enumerate(xconfs):
+            ens = read_geom(k+1,g,ens)
 
     return ens
