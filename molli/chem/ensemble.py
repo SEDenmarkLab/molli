@@ -51,7 +51,12 @@ class ConformerEnsemble(Connectivity):
             **kwds,
         )
 
-        self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+        if isinstance(other, Molecule) & (n_conformers == 0):
+            self._coords = np.full((1, self.n_atoms, 3), np.nan)
+            self.coords = other.coords
+        else:
+            self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+            
         self._atomic_charges = np.zeros((self.n_atoms,))
         self._weights = np.ones((n_conformers,))
 
@@ -59,6 +64,7 @@ class ConformerEnsemble(Connectivity):
             self.atomic_charges = atomic_charges
             self.coords = other.coords
             self.weights = other.weights
+
         else:
             if coords is not None:
                 self.coords = coords
@@ -107,7 +113,7 @@ class ConformerEnsemble(Connectivity):
         """ """
         mol2io = StringIO(input) if isinstance(input, str) else input
         mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
-
+        print(mols)
         res = cls(
             mols[0],
             n_conformers=len(mols),
@@ -117,8 +123,11 @@ class ConformerEnsemble(Connectivity):
             mult=mult,
             atomic_charges=mols[0].atomic_charges,
         )
-
+        # print(len(mols))
+        # print(res)
         for i, m in enumerate(mols):
+            # print(res._coords)
+            print(m)
             res._coords[i] = m.coords
 
         return res
