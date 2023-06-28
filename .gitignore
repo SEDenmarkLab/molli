@@ -18,3 +18,4 @@ molli_xt.*.so
 
 # Files not to be uploaded to repo
 **/_temp_*
+molli_test/test_conformer.py

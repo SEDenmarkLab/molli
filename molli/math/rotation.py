@@ -22,11 +22,16 @@ def rotation_matrix_from_vectors(
     https://en.wikipedia.org/wiki/Rotation_matrix
     https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
 
-    :param _v1: Vector 1
-    :param _v2: Vector 2
-    :param tol: Tolerance for detecting nearly opposite vectors
-    :returns: Rotation matrix
-    :rtype: np.ndarray
+    Args:
+        _v1 (ArrayLike): Vector 1
+        _v2 (ArrayLike): Vector 2
+        tol (float, optional): Tolerance for detecting nearly opposite vectors. Defaults to 1.0e-8.
+    
+    Returns:
+        np.ndarray: Rotation matrix
+
+    Raises:
+        ValueError: If the vectors are not of shape (3,)
     """
     v1 = np.array(_v1)
     v2 = np.array(_v2)
@@ -47,11 +52,20 @@ def rotation_matrix_from_vectors(
         return I + Ux + Ux @ Ux / (1 + c)
 
 
-def rotation_matrix_from_axis(_axis: ArrayLike, angle: float):
+def rotation_matrix_from_axis(_axis: ArrayLike, angle: float) -> np.ndarray:
     """
+    Rotation Matrix (axis-angle definition)
+
     refs
     https://mathworld.wolfram.com/RodriguesRotationFormula.html
     https://math.stackexchange.com/questions/142821/matrix-for-rotation-around-a-vector
+
+    Args:
+        _axis (ArrayLike): Axis of rotation
+        angle (float): Angle of rotation (in radians)
+    
+    Returns:
+        np.ndarray: Rotation matrix
     """
     ax, ay, az = np.array(_axis) / np.linalg.norm(_axis)
 

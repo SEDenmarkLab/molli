@@ -89,6 +89,12 @@ class Molecule(Structure):
                 raise ValueError("Inappropriate shape of atomic charge array")
 
     def dump_mol2(self, stream: StringIO = None):
+        """
+        Writes the molecule to a mol2 file.
+
+        Args:
+            stream (StringIO, optional): The stream to write to. Defaults to None.
+        """
         if stream is None:
             stream = StringIO()
             
