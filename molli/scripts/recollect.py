@@ -59,12 +59,22 @@ arg_parser.add_argument(
     help="This option enables skipping malformed files within old collections. Warnings will be printed.",
 )
 
-arg_parser.add_argument(
-    "-mlib",
-    "--mol_library",
+mol_conf = arg_parser.add_mutually_exclusive_group()
+
+mol_conf.add_argument(
+    "-mol",
+    "--molecules",
     action="store_true",
     default=False,
-    help="This will parse the geometry into a ml.MoleculeLibrary rather than a ml.ConformerLibrary."
+    help="This will parse the geometry into a ml.MoleculeLibrary"
+)
+
+mol_conf.add_argument(
+    "-conf",
+    "--conformers",
+    action="store_true",
+    default=True,
+    help="This will parse the geometry into a ml.ConformerEnsemble"
 )
 
 def molli_main(args, config=None, output=None, **kwargs):
@@ -103,7 +113,7 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     lib_type = ml.chem.ConformerLibrary
 
-    if parsed.mol_library:
+    if parsed.molecules:
         lib_type = ml.chem.MoleculeLibrary
 
     with (
@@ -116,7 +126,7 @@ def molli_main(args, config=None, output=None, **kwargs):
         for f in tqdm(zf.filelist, f"Reading data from {inp.name}", dynamic_ncols=True):
             if f.filename != "__molli__":
                 try:
-                    ens = ml.chem.ensemble_from_molli_old_xml(zf.open(f), mol_lib=parsed.mol_library)
+                    ens = ml.chem.ensemble_from_molli_old_xml(zf.open(f), mol_lib=parsed.molecules)
                 except SyntaxError:
                     tqdm.write(f"File {f} in source collection cannot be read.")
                     if parsed.skip:
@@ -125,7 +135,7 @@ def molli_main(args, config=None, output=None, **kwargs):
                 ens.mult = mult
 
                 tnm += 1
-                if parsed.mol_library:
+                if parsed.molecules:
                     tnc = 1
                 else:
                     tnc += ens.n_conformers
