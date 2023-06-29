@@ -328,7 +328,7 @@ class Bond:
 
 class Connectivity(Promolecule):
     """
-    Connectivity us a graph-like structure that connects the nodes(atoms) with edges(bonds).
+    Connectivity is a graph-like structure that connects the nodes(atoms) with edges(bonds).
 
     Args:
         Promolecule (cls): inherited class for molecules
