@@ -17,6 +17,7 @@ class Substituent(Structure):
         attachment_point (AtomLike): The predefined attachment point of the substituent.
         kwds: Additional keyword arguments to pass to the parent class.
     """
+
     def __init__(
         self,
         other: Structure = None,

@@ -73,7 +73,7 @@ class ConformerEnsemble(Connectivity):
     def coords(self):
         """
         Set of atomic positions in shape (n_atoms, 3)
-       
+
         Returns:
             np.ndarray: The coordinates
 
@@ -94,8 +94,8 @@ class ConformerEnsemble(Connectivity):
 
         Returns:
             np.ndarray: The weights
-        
-        Examples Usage: 
+
+        Examples Usage:
             >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
             >>> print(conformer.weights) # [12.01, 1, 1, 1, 1, 1, 1, ...]
         """
@@ -112,7 +112,7 @@ class ConformerEnsemble(Connectivity):
 
         Returns:
             np.ndarray: The atomic charges
-        
+
         Examples Usage:
             >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
             >>> print(conformer.atomic_charges) # [6, 1, 1, 1, 1, ...]
@@ -201,7 +201,7 @@ class ConformerEnsemble(Connectivity):
 
         Returns:
             int: The number of conformers
-        
+
         Examples Usage:
             >>> conformer = ConformerEnsemble("Cyclohexane") # C6H12
             >>> print(conformer.n_conformers) # 1
@@ -328,8 +328,8 @@ class ConformerEnsemble(Connectivity):
         Args:
             factor (float): The scaling factor
             allow_inversion (bool, optional): Allow inversion of the coordinates. Defaults to False.
-        
-        
+
+
         Examples Usage:
             >>> conformer = ConformerEnsemble("Benzyl Alcohol") # C6H5CH2OH
             >>> conformer.scale(2) # C12H10C2H4O2
@@ -357,6 +357,7 @@ class Conformer(Molecule):
     Conformer class is a virtual instance that behaves like a molecule,
     yet is completely virtual.
     """
+
     def __init__(self, parent: ConformerEnsemble, conf_id: int):
         self._parent = parent
         self._conf_id = conf_id
@@ -368,7 +369,7 @@ class Conformer(Molecule):
 
         Returns:
             str: The name
-        
+
         Examples Usage:
             >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
             >>> print(conformer.name) # Benzyl alcohol

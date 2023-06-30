@@ -66,7 +66,6 @@ def load_cdxml(
     structs = []
 
     for nf, frag in enumerate(fragments):
-
         l, t, r, b = parse_pos(frag.attrib["BoundingBox"])
         frag_centroid = [(r + l) / 2, (b + t) / 2]
 

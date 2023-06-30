@@ -22,6 +22,7 @@ from . import (
 
 class Molecule(Structure):
     """Fundamental class of the MOLLI Package."""
+
     __slots__ = Structure.__slots__ + ("_atomic_charges",)
 
     def __init__(
@@ -58,14 +59,14 @@ class Molecule(Structure):
     def atomic_charges(self) -> np.ndarray:
         """
         The atomic charges of the molecule.
-        
+
         Returns:
             np.ndarray: The atomic charges of the molecule.
-        
+
         Example Usage:
             >>> mol = Molecule(H20)
             >>> print(mol.atomic_charges) # [1,1,-2]
-        """        
+        """
         return self._atomic_charges
 
     @atomic_charges.setter
@@ -75,10 +76,10 @@ class Molecule(Structure):
 
         Args:
             other (ArrayLike): The atomic charges of the molecule.
-        
+
         Raises:
             ValueError: Inappropriate shape of atomic charge array
-        """        
+        """
         if other is Ellipsis:
             self._atomic_charges = np.zeros(self.n_atoms)
         else:
@@ -97,7 +98,7 @@ class Molecule(Structure):
         """
         if stream is None:
             stream = StringIO()
-            
+
         stream.write(f"# Produced with molli package\n")
         stream.write(
             f"@<TRIPOS>MOLECULE\n{self.name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
@@ -106,7 +107,7 @@ class Molecule(Structure):
         stream.write("@<TRIPOS>ATOM\n")
         for i, a in enumerate(self.atoms):
             x, y, z = self.coords[i]
-            c = 0.0 #Currently needs to be updated to be inherited within the structure or even individual atoms
+            c = 0.0  # Currently needs to be updated to be inherited within the structure or even individual atoms
             label = a.label or a.element.symbol
             atype = a.get_mol2_type() or a.element.symbol
             stream.write(
@@ -116,19 +117,19 @@ class Molecule(Structure):
         stream.write("@<TRIPOS>BOND\n")
         for i, b in enumerate(self.bonds):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
-            btype = b.get_mol2_type()            
+            btype = b.get_mol2_type()
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {btype:>10}\n")
-        
+
     def dumps_mol2(self) -> str:
         """
         Returns a mol2 file as a string.
-        
+
         Returns:
             str: The mol2 file as a string.
-        """        
+        """
         stream = StringIO()
-        self.dump_mol2(stream)        
+        self.dump_mol2(stream)
         return stream.getvalue()
 
-StructureLike = Molecule | Structure | Substructure
 
+StructureLike = Molecule | Structure | Substructure

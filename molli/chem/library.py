@@ -26,5 +26,4 @@ class ConformerLibrary(_Library[ConformerEnsemble]):
         path: Path | str,
         overwrite: bool = False,
     ) -> ConformerLibrary:
-
         return super().new(path, overwrite=overwrite)
