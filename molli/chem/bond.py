@@ -613,6 +613,13 @@ class Connectivity(Promolecule):
 
         Yields:
             Generator[Tuple[Atom, int], None, None]: the atoms in breadth-first search, in traversal order
+
+            Yields atoms and their distances from start
+            
+        Example Usage:
+
+            >>> for atom, distance in connectivity.yield_bfsd(a):
+        
         """
         _sa = self.get_atom(start)
         visited = set((_sa,))
