@@ -409,6 +409,11 @@ class Atom:
         # repr=lambda x: x.name,
     )
 
+    mdata = attrs.field(
+        default=attrs.Factory(dict),
+        repr=False
+    )
+
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
 
@@ -442,6 +447,12 @@ class Atom:
     # This is a default version of hash function for objects
     def __hash__(self) -> int:
         return id(self)
+
+    def __getitem__(self, key):
+        return self.mdata[key]
+
+    def __setitem__(self, key, val):
+        self.mdata[key] = val
 
     @property
     def implicit_valence(self) -> int:
@@ -648,7 +659,7 @@ class Promolecule:
     for API compatibility reasons.
     """
 
-    __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
+    __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult", "mdata")
 
     def __init__(
         self,
@@ -660,6 +671,7 @@ class Promolecule:
         copy_atoms: bool = False,
         charge: int = None,
         mult: int = None,
+        mdata: dict = None,
         **kwds,  # mostly just for subclassing compatibility
     ):
         """
@@ -671,6 +683,7 @@ class Promolecule:
         self.name = name
         self.charge = charge or 0
         self.mult = mult or 1
+        self.mdata = mdata
 
         match other:
             case None:
