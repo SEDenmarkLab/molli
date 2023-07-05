@@ -94,6 +94,11 @@ class Bond:
         converter=float,
     )
 
+    mdata: dict = attrs.field(
+        default=attrs.Factory(dict),
+        repr=False
+    )
+
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
 
@@ -169,6 +174,12 @@ class Bond:
             return self.a1
         else:
             raise ValueError("Atom is not a part of this bond")
+
+    def __getitem__(self, key):
+        return self.mdata[key]
+
+    def __setitem__(self, key, val):
+        self.mdata[key] = val
 
     @property
     def expected_length(self) -> float:
