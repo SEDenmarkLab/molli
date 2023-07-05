@@ -72,5 +72,36 @@ class MoleculeTC(ut.TestCase):
         self.assertEqual(mol.n_bonds, nb - 3) # atom 0 is connected to 3 bonds
         self.assertEqual(mol._atomic_charges.shape, (na - 1,))
 
+    def test_mdata_instance(self):
 
-            
+        mol = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+        a1 = mol.atoms[0]
+        b1 = mol.atoms[0]
+
+        a1['str'] = '5'
+        a1['int'] = 1
+        a1['float'] = 1.1
+        a1['tuple'] = (1,1)
+        a1['list'] = [2,3]
+        a1['dict'] = {2: 'a', 3: 'b'}
+
+        self.assertIsInstance(a1['str'], str)
+        self.assertIsInstance(a1['int'], int)
+        self.assertIsInstance(a1['float'], float)
+        self.assertIsInstance(a1['tuple'], tuple)
+        self.assertIsInstance(a1['list'], list)
+        self.assertIsInstance(a1['dict'], dict)
+
+        b1['str'] = '5'
+        b1['int'] = 1
+        b1['float'] = 1.1
+        b1['tuple'] = (1,1)
+        b1['list'] = [2,3]
+        b1['dict'] = {2: 'a', 3: 'b'}
+
+        self.assertIsInstance(b1['str'], str)
+        self.assertIsInstance(b1['int'], int)
+        self.assertIsInstance(b1['float'], float)
+        self.assertIsInstance(b1['tuple'], tuple)
+        self.assertIsInstance(b1['list'], list)
+        self.assertIsInstance(b1['dict'], dict)
