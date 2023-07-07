@@ -339,7 +339,7 @@ class Structure(CartesianGeometry, Connectivity):
             Substructure: The substructure containing only heavy atoms.
 
         Example Usage:
-            >>> my_compound = Structure("Ethyl Aceate") # CH3COOCH2CH3
+            >>> my_compound = ml.Structure("Ethyl Aceate") # CH3COOCH2CH3
             >>> print(my_compound.heavy) # Substructure(Molecule(C2O2C2), [Atom(C), Atom(O), Atom(O), Atom(C), Atom(C), Atom(C), Atom(C)]
 
         """
@@ -356,7 +356,7 @@ class Structure(CartesianGeometry, Connectivity):
             float: The length of the bond.
 
         Example Usage:
-            >>> my_compound = Structure(H2O)
+            >>> my_compound = ml.Structure(H2O)
             >>> print(my_compound.bond_length(mol.bonds[0])) # 0.9572
         """
         return self.distance(b.a1, b.a2)
@@ -372,7 +372,7 @@ class Structure(CartesianGeometry, Connectivity):
             np.ndarray: The vector between the two atoms in the bond.
 
         Example Usage:
-            >>> my_compound = Structure(H2O)
+            >>> my_compound = ml.Structure(H2O)
             >>> print(my_compound.bond_vector(mol.bonds[0])) # array([0.9572, 0., 0.])
         """
         i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
@@ -389,7 +389,7 @@ class Structure(CartesianGeometry, Connectivity):
             tuple[np.ndarray]: The coordinates of the two atoms in the bond.
 
         Example Usage:
-            >>> my_compound = Structure(H2O)
+            >>> my_compound = ml.Structure(H2O)
             >>> print(my_compound.bond_coords(mol.bonds[0])) # (array([0., 0., 0.]), array([0.9572, 0., 0.]))
         """
         return self.coord_subset((b.a1, b.a2))
@@ -405,8 +405,8 @@ class Structure(CartesianGeometry, Connectivity):
             Structure: The concatenated structure.
 
         Example Usage:
-            >>> compound_1 = Structure(H2)
-            >>> compound_2 = Structure(Cl2)
+            >>> compound_1 = ml.Structure(H2)
+            >>> compound_2 = ml.Structure(Cl2)
             >>> print(compound_1 | compound_2) # Structure(2HCl)
         """
         return Structure.concatenate(self, other)
@@ -437,7 +437,7 @@ class Structure(CartesianGeometry, Connectivity):
             _a (AtomLike): The atom to delete.
 
         Example Usage:
-            >>> my_compound = Structure(H2O)
+            >>> my_compound = ml.Structure(H2O)
             >>> my_compound.del_atom(O)
             >>> print(my_compound) # Structure(2H)
         """
@@ -504,7 +504,7 @@ class Substructure(Structure):
             np.ndarray: The coordinates of the atoms in the substructure.
 
         Example Usage:
-            >>> compound_hydrogens = Substructure(H2)
+            >>> compound_hydrogens = ml.Substructure(H2)
             >>> print(compound_hydrogens.coords) # [[0., 0., 0.], [0.9572, 0., 0.]]
         """
         return self._parent.coords[self.parent_atom_indices]
@@ -530,8 +530,8 @@ class Substructure(Structure):
             Substructure | Structure: The concatenated structure.
 
         Example Usage:
-            >>> compound_1 = Structure(H2)
-            >>> compound_2 = Structure(Cl2)
+            >>> compound_1 = ml.Structure(H2)
+            >>> compound_2 = ml.Structure(Cl2)
             >>> print(compound_1 | compound_2) # Structure(2HCl)
         """
         if isinstance(other, Substructure) and other.parent == self._parent:

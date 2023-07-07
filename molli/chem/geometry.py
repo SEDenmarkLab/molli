@@ -166,7 +166,7 @@ class CartesianGeometry(Promolecule):
             ArrayLike: The coordinates of the geometry
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> print(geom.coords) # [[0, 0, 0], [1, 0, 0]]
@@ -192,7 +192,7 @@ class CartesianGeometry(Promolecule):
             List[float]: The coordinates as a list of floats
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> print(geom.coords_as_list) # [0, 0, 0, 1, 0, 0]
@@ -220,7 +220,7 @@ class CartesianGeometry(Promolecule):
             write_header (bool, optional): Whether to write the header, defaults to True
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> print(geom.dump_xyz()) # [0,0,0]
         """
@@ -249,7 +249,7 @@ class CartesianGeometry(Promolecule):
             str: String representation of the xyz file
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> print(geom.dumps_xyz()) # [0,0,0],[1,0,0]
@@ -423,7 +423,7 @@ class CartesianGeometry(Promolecule):
             ValueError: If the factor is 0
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> geom.scale(2)
@@ -458,7 +458,7 @@ class CartesianGeometry(Promolecule):
             float: Distance between the two atoms
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.O), [0, 2, 0])
             >>> geom.add_atom(Atom(Element.C), [2, 0, 0])
             >>> print(geom.distance(0, 1)) # 2.8284271247461903
@@ -477,7 +477,7 @@ class CartesianGeometry(Promolecule):
             np.ndarray: Coordinates of the atom
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> print(geom.get_atom_coord(0)) # [0, 0, 0]
@@ -496,7 +496,7 @@ class CartesianGeometry(Promolecule):
             np.ndarray: Vector between the two atoms
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.N), [0, 3, 5])
             >>> geom.add_atom(Atom(Element.H), [2, 4, 2])
             >>> print(geom.vector(0, 1)) # [2, 1, -3]
@@ -518,7 +518,7 @@ class CartesianGeometry(Promolecule):
             float: Distance between the atom and the point
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> print(geom.distance_to_point(0, [3, 4, 0])) # 5.0
         """
@@ -537,7 +537,7 @@ class CartesianGeometry(Promolecule):
             float: Angle between the three atoms in radians
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [0, 1, 0])
@@ -564,7 +564,7 @@ class CartesianGeometry(Promolecule):
             np.ndarray: Coordinates of the subset of atoms
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [0, 1, 0])
@@ -593,7 +593,7 @@ class CartesianGeometry(Promolecule):
             float: Dihedral angle between the four atoms in radians
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [0, 1, 0])
@@ -621,7 +621,7 @@ class CartesianGeometry(Promolecule):
         :type vector: ArrayLike
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> geom.translate([1, 1, 1])
@@ -639,7 +639,7 @@ class CartesianGeometry(Promolecule):
             np.ndarray: Centroid of the molecule
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> print(geom.centroid()) # [0.5, 0, 0]
@@ -677,7 +677,7 @@ class CartesianGeometry(Promolecule):
             validate (bool, optional): Whether to validate the transformation matrix, defaults to False
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [2, 3, 4])
             >>> geom.transform([[2, 0, 0], [0, 2, 0], [0, 0, 1]])
@@ -694,7 +694,7 @@ class CartesianGeometry(Promolecule):
             _a (AtomLike): Atom to delete
 
         Example Usage:
-            >>> geom = CartesianGeometry()
+            >>> geom = ml.CartesianGeometry()
             >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
             >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
             >>> geom.del_atom(0)

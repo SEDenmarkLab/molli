@@ -408,7 +408,7 @@ class Connectivity(Promolecule):
             Bond | None: the bond that connects the two atoms, or None if the bond does not exist
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> print(molecule.lookup_bond("C", "H")) # Bond(C, H, order=1.0)
         """
         _a1 = self.get_atom(a1)
@@ -429,7 +429,7 @@ class Connectivity(Promolecule):
             int: the index of the bond
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> print(molecule.index_bond(Bond("C", "H"))) # 0
         """
         return self._bonds.index(b)
@@ -456,7 +456,7 @@ class Connectivity(Promolecule):
             bond (Bond): the bond to add to the molecule
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> molecule.append_bond(Bond("C", "H"))
             >>> print(molecule.n_bonds) # 8
         """
@@ -470,7 +470,7 @@ class Connectivity(Promolecule):
             *bonds (Bond): the bonds to add to the molecule
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> molecule.append_bonds(Bond("C", "H"), Bond("C", "H"))
             >>> print(molecule.n_bonds) # 9
         """
@@ -484,7 +484,7 @@ class Connectivity(Promolecule):
             *bonds (Bond): the bonds to add to the molecule
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> molecule.append_bonds(Bond("C", "H"), Bond("C", "H"))
             >>> print(molecule.n_bonds) # 9
         """
@@ -498,7 +498,7 @@ class Connectivity(Promolecule):
             b (Bond): the bond to delete from the molecule
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> molecule.del_bond(Bond("C", "H"))
             >>> print(molecule.n_bonds) # 6
         """
@@ -512,7 +512,7 @@ class Connectivity(Promolecule):
             _a (AtomLike): the atom to delete from the molecule
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> molecule.del_atom("C")
             >>> print(molecule.get_atom("C")) # [Atom(H), Atom(O), Atom(Cl)]
         """
@@ -532,7 +532,7 @@ class Connectivity(Promolecule):
             Generator[Bond, None, None]: the bonds on the atom
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> print(molecule.bonds_with_atom("C")) # [Bond(C, H, order=1.0), Bond(C, C, order=1.0), Bond(C, O, order=2.0), Bond(C, Cl, order=1.0)]
         """
         _a = self.get_atom(a)
@@ -551,7 +551,7 @@ class Connectivity(Promolecule):
             Generator[Atom, None, None]: the atoms connected to the atom
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> print(molecule.connected_atoms("C")) # [Atom(C), Atom(H), Atom(C), Atom(O), Atom(Cl)]
         """
         _a = self.get_atom(a)
@@ -569,7 +569,7 @@ class Connectivity(Promolecule):
             float: the sum of valences of all atoms bonded to the atom
 
         Example Usage:
-            >>> molecule = Connectivity('Acetyl Chloride') # CH3COCl
+            >>> molecule = ml.Connectivity('Acetyl Chloride') # CH3COCl
             >>> print(molecule.bonded_valence("C")) # 4.0
         """
         _a_bonds = self.bonds_with_atom(a)
@@ -615,7 +615,7 @@ class Connectivity(Promolecule):
             Generator[Tuple[Atom, int], None, None]: the atoms in breadth-first search, in traversal order
 
             Yields atoms and their distances from start
-            
+
         Example Usage:
 
             >>> for atom, distance in connectivity.yield_bfsd(a):

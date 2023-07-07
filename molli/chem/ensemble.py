@@ -114,7 +114,7 @@ class ConformerEnsemble(Connectivity):
             np.ndarray: The atomic charges
 
         Examples Usage:
-            >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
+            >>> conformer = ml.ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
             >>> print(conformer.atomic_charges) # [6, 1, 1, 1, 1, ...]
         """
         return self._atomic_charges
@@ -331,7 +331,7 @@ class ConformerEnsemble(Connectivity):
 
 
         Examples Usage:
-            >>> conformer = ConformerEnsemble("Benzyl Alcohol") # C6H5CH2OH
+            >>> conformer = ml.ConformerEnsemble("Benzyl Alcohol") # C6H5CH2OH
             >>> conformer.scale(2) # C12H10C2H4O2
             >>> print(conformer.coords) # [[0, 0, 0], [0, 0, 2.8], ...]
         """
@@ -371,7 +371,7 @@ class Conformer(Molecule):
             str: The name
 
         Examples Usage:
-            >>> conformer = ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
+            >>> conformer = ml.ConformerEnsemble("Benzyl alcohol") # C6H5CH2OH
             >>> print(conformer.name) # Benzyl alcohol
         """
         return self._parent.name

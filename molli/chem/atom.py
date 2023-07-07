@@ -80,7 +80,7 @@ class Element(IntEnum):
             int: An interger representing the atomic number of the element
 
         Example Usage:
-            >>> my_element = Element(C) # carbon
+            >>> my_element = Element('C') # carbon
             >>> print(my_element.z) # 6
         """
         return self.value
@@ -145,6 +145,7 @@ class Element(IntEnum):
 
         Example Usage:
             >>> my_element = Element("C") # carbon
+
         """
         return self.get_property_value("covalent_radius_1")
 
@@ -489,8 +490,9 @@ class AtomGeom(IntEnum):
     Enumerates through atom geometries
 
     Example Usage:
-        >>> planar = AtomGeom(31) # Planar
-        >>> planar == AtomGeom.R3_Planar # True
+        >>> a = ml.Atom("Si", isotope=29, geom=ml.AtomGeom.R4_Tetrahedral)
+        >>> print(a.geom) # AtomGeom.R4_Tetrahedral
+
     """
 
     Unknown = 0
@@ -570,9 +572,9 @@ class Atom:
             Atom: a new Atom instance with the changes specified in the `changes` dictionary.
 
         Example Usage:
-            >>> my_atom = Atom(atupe = 1)
+            >>> my_atom = ml.Atom(element = "C", atype = 1)
             >>> print(my_atom.atype) # Regular
-            >>> my_atom = Atom.evolve(atype = 2)
+            >>> my_atom = ml.Atom.evolve(atype = 2)
             >>> print(my_atom.atype) # Aromatic
         """
         return attrs.evolve(self, **changes)
@@ -585,7 +587,7 @@ class Atom:
             dict: a dictionary of the atom
 
         Example Usage:
-            >>> my_atom = Atom(1) # hydrogen
+            >>> my_atom = ml.Atom(element = 'H') # hydrogen
             >>> print(my_atom.as_dict()) # {'H': 1}
         """
         return attrs.asdict(self)
@@ -598,7 +600,7 @@ class Atom:
             tuple: a tuple of the atom
 
         Example Usage:
-            >>> my_atom = Atom(1) # hydrogen
+            >>> my_atom = ml.Atom(element = "H") # hydrogen
             >>> print(my_atom.as_tuple()) # ("H", 1)
         """
         return attrs.astuple(self)
@@ -612,7 +614,7 @@ class Atom:
             bool: TRUE or FALSE
 
         Example Usage:
-            >>> my_atom = Atom.atype(100) # Dummy
+            >>> my_atom = ml.Atom.atype(100) # Dummy
             >>> print(my_atom.is_dummy) # TRUE
         """
         return self.atype == AtomType.Dummy
@@ -624,6 +626,7 @@ class Atom:
 
         Returns:
             bool: TRUE or FALSE
+        
         """
         return self.atype == AtomType.AttachmentPoint
 
@@ -673,7 +676,7 @@ class Atom:
             int: An interger representing the atomic number of the element
 
         Example Usage:
-            >>> my_atom = Element(C) # carbon
+            >>> my_atom = ml.Element(C) # carbon
             >>> print(my_element.Z) # 6
         """
         return self.element.z
