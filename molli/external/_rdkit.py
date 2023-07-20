@@ -11,13 +11,10 @@ try:
     from rdkit import DataStructs
     from rdkit.Chem import rdCIPLabeler
     from rdkit.Chem import rdMolDescriptors
+    from rdkit.Chem.Draw import IPythonConsole
     from rdkit.Chem.Draw import rdMolDraw2D
 except:
     raise ImportError("RDKit is not installed in this environment")
-try:
-    from rdkit.Chem.Draw import IPythonConsole
-except:
-    raise ImportError("IPython is not installed in this environment")
 
 def visualize_mols(name: str, rdkit_mol_list: list, molsPerRow=5, prop:str='_Name', svg=True, png=False):
     '''
