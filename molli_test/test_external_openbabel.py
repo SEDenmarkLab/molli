@@ -34,7 +34,7 @@ class OpenbabelTC(ut.TestCase):
 
         old_coords = deepcopy(mlmol.coords)
 
-        opt_mlmol = _ob.opt_w_ob(mlmol,'UFF')
+        opt_mlmol = _ob.obabel_optimize(mlmol,ff='UFF')
 
         opt_coords = opt_mlmol.coords
         self.assertTupleEqual(old_coords.shape, opt_coords.shape)
