@@ -6,7 +6,7 @@
 /misc
 
 # Python residues
-**/.vscode/
+# **/.vscode/ # This allows easier sharing of black formatter settings
 **/__pycache__
 **/*.pyd
 **/*.pyc
