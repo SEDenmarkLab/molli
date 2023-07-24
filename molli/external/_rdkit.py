@@ -197,7 +197,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         sp2_atoms = chemq.HybridizationEqualsQueryAtom(Chem.HybridizationType.SP2)
-        sp2 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(sp2_atoms)])
+        sp2 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(sp2_atoms)])
         sp2_bool = np.in1d(self.atoms_array, sp2)
         return sp2_bool
 
@@ -207,7 +207,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         sp3_atoms = chemq.HybridizationEqualsQueryAtom(Chem.HybridizationType.SP3)
-        sp3 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(sp3_atoms)])
+        sp3 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(sp3_atoms)])
         sp3_bool = np.in1d(self.atoms_array, sp3)
         return sp3_bool
 
@@ -218,7 +218,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         aromatic_atoms = chemq.IsAromaticQueryAtom()
-        aromatic = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(aromatic_atoms)])
+        aromatic = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(aromatic_atoms)])
         aromatic_bool = np.in1d(self.atoms_array, aromatic)
         return aromatic_bool
 
@@ -228,7 +228,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         ring_atoms = chemq.IsInRingQueryAtom()
-        ring = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(ring_atoms)])
+        ring = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_atoms)])
         ring_bool = np.in1d(self.atoms_array, ring)
         return ring_bool
 
@@ -238,7 +238,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         carbon_atoms = chemq.AtomNumEqualsQueryAtom(6)
-        carbon = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(carbon_atoms)])
+        carbon = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(carbon_atoms)])
         carbon_bool = np.in1d(self.atoms_array, carbon)
         return carbon_bool
 
@@ -248,7 +248,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         nitrogen_atoms = chemq.AtomNumEqualsQueryAtom(7)
-        nitrogen = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(nitrogen_atoms)])
+        nitrogen = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(nitrogen_atoms)])
         nitrogen_bool = np.in1d(self.atoms_array, nitrogen)
         return nitrogen_bool
 
@@ -258,7 +258,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         oxygen_atoms = chemq.AtomNumEqualsQueryAtom(8)
-        oxygen = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(oxygen_atoms)])
+        oxygen = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(oxygen_atoms)])
         oxygen_bool = np.in1d(self.atoms_array, oxygen)
         return oxygen_bool
 
@@ -268,7 +268,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         num_light_atoms = chemq.AtomNumLessQueryAtom(number)
-        num_light_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(num_light_atoms)])
+        num_light_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_light_atoms)])
         num_light_atom_bool = np.in1d(self.atoms_array, num_light_atom)
         return num_light_atom_bool
 
@@ -278,7 +278,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         num_equals_atoms = chemq.AtomNumEqualsQueryAtom(number)
-        num_equal_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(num_equals_atoms)])
+        num_equal_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_equals_atoms)])
         num_equal_atom_bool = np.in1d(self.atoms_array, num_equal_atom)
         return num_equal_atom_bool
 
@@ -288,7 +288,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         num_heavy_atoms = chemq.AtomNumGreaterQueryAtom(number)
-        num_heavy_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(num_heavy_atoms)])
+        num_heavy_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_heavy_atoms)])
         num_heavy_atom_bool = np.in1d(self.atoms_array, num_heavy_atom)
         return num_heavy_atom_bool
 
@@ -298,7 +298,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         isotope_atoms = chemq.IsotopeEqualsQueryAtom(number)
-        isotope_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(isotope_atoms)])
+        isotope_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(isotope_atoms)])
         isotope_atom_bool = np.in1d(self.atoms_array, isotope_atom)
         return isotope_atom_bool
 
@@ -308,7 +308,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         charge_less_atoms = chemq.FormalChargeLessQueryAtom(number)
-        charge_less_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(charge_less_atoms)])
+        charge_less_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_less_atoms)])
         charge_less_atom_bool = np.in1d(self.atoms_array, charge_less_atom)
         return charge_less_atom_bool
 
@@ -318,7 +318,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         charge_equals_atoms = chemq.FormalChargeEqualsQueryAtom(number)
-        charge_equals_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(charge_equals_atoms)])
+        charge_equals_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_equals_atoms)])
         charge_equals_atom_bool = np.in1d(self.atoms_array, charge_equals_atom)
         return charge_equals_atom_bool
 
@@ -328,7 +328,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         charge_greater_atoms = chemq.FormalChargeGreaterQueryAtom(number)
-        charge_greater_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(charge_greater_atoms)])
+        charge_greater_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_greater_atoms)])
         charge_greater_atom_bool = np.in1d(self.atoms_array, charge_greater_atom)
         return charge_greater_atom_bool
 
@@ -338,7 +338,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         hcount_less_atoms = chemq.HCountLessQueryAtom(number)
-        hcount_less_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(hcount_less_atoms)])
+        hcount_less_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_less_atoms)])
         hcount_less_atom_bool = np.in1d(self.atoms_array, hcount_less_atom)
         return hcount_less_atom_bool
 
@@ -348,7 +348,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         hcount_equals_atoms = chemq.HCountEqualsQueryAtom(number)
-        hcount_equals_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(hcount_equals_atoms)])
+        hcount_equals_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_equals_atoms)])
         hcount_equals_atom_bool = np.in1d(self.atoms_array, hcount_equals_atom)
         return hcount_equals_atom_bool
 
@@ -358,7 +358,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.       
         '''
         hcount_greater_atoms = chemq.HCountGreaterQueryAtom(number)
-        hcount_greater_atom = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(hcount_greater_atoms)])
+        hcount_greater_atom = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_greater_atoms)])
         hcount_greater_atom_bool = np.in1d(self.atoms_array, hcount_greater_atom)
         return hcount_greater_atom_bool
 
@@ -368,7 +368,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.       
         '''
         has_chiraltags = chemq.HasChiralTagQueryAtom()
-        has_chiraltag = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(has_chiraltags)])
+        has_chiraltag = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(has_chiraltags)])
         has_chiraltag_bool = np.in1d(self.atoms_array, has_chiraltag)
         return has_chiraltag_bool
 
@@ -378,7 +378,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         ring_atoms = chemq.IsInRingQueryAtom()
-        ring = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(ring_atoms)])
+        ring = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_atoms)])
         ring_bool = np.in1d(self.atoms_array, ring)
         return ring_bool
 
@@ -388,7 +388,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         ring_6 = chemq.MinRingSizeEqualsQueryAtom(6)
-        size6 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(ring_6)])
+        size6 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_6)])
         size6_bool = np.in1d(self.atoms_array, size6)
         return size6_bool
 
@@ -398,7 +398,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         ring_5 = chemq.MinRingSizeEqualsQueryAtom(5)
-        size5 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(ring_5)])
+        size5 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_5)])
         size5_bool = np.in1d(self.atoms_array, size5)
         return size5_bool
 
@@ -408,7 +408,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         ring_2 = chemq.InNRingsEqualsQueryAtom(2)
-        ring2 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(ring_2)])
+        ring2 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_2)])
         ring2_bool = np.in1d(self.atoms_array, ring2)
         return ring2_bool
 
@@ -418,7 +418,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         ring_1 = chemq.InNRingsEqualsQueryAtom(1)
-        ring1 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(ring_1)])
+        ring1 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_1)])
         ring1_bool = np.in1d(self.atoms_array, ring1)
         return ring1_bool
     
@@ -428,7 +428,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         het_a_3 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(3)
-        heta3 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(het_a_3)])
+        heta3 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_3)])
         heta3_bool = np.in1d(self.atoms_array, heta3)
         return heta3_bool
 
@@ -438,7 +438,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         het_a_2 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(2)
-        heta2 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(het_a_2)])
+        heta2 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_2)])
         heta2_bool = np.in1d(self.atoms_array, heta2)
         return heta2_bool
 
@@ -448,7 +448,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         het_a_1 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(1)
-        heta1 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(het_a_1)])
+        heta1 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_1)])
         heta1_bool = np.in1d(self.atoms_array, heta1)
         return heta1_bool
 
@@ -458,7 +458,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         het_a_0 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(0)
-        heta0 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(het_a_0)])
+        heta0 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_0)])
         heta0_bool = np.in1d(self.atoms_array, heta0)
         return heta0_bool
 
@@ -468,7 +468,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         het_a_g1 = chemq.NumHeteroatomNeighborsGreaterQueryAtom(0)
-        hetag1 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(het_a_g1)])
+        hetag1 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_g1)])
         hetag1_bool = np.in1d(self.atoms_array, hetag1)
         return hetag1_bool
 
@@ -478,7 +478,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         het_a_g0 = chemq.NumHeteroatomNeighborsGreaterQueryAtom(0)
-        hetag0 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(het_a_g0)])
+        hetag0 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_g0)])
         hetag0_bool = np.in1d(self.atoms_array, hetag0)
         return hetag0_bool
 
@@ -488,7 +488,7 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         a_het_a_2 = chemq.NumAliphaticHeteroatomNeighborsEqualsQueryAtom(2)
-        aheta2 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(a_het_a_2)])
+        aheta2 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(a_het_a_2)])
         aheta2_bool = np.in1d(self.atoms_array, aheta2)
         return aheta2_bool
 
@@ -498,13 +498,13 @@ class rdkit_atom_filter(Chem.Mol):
         Inputs to this function are built for an ORDERED LIST OF ALL ATOM IDs from LEAST TO GREATEST.
         '''
         a_het_a_1 = chemq.NumAliphaticHeteroatomNeighborsEqualsQueryAtom(1)
-        aheta1 = np.array([x.GetIdx() for x in self.mol.GetAtomsMatchingQuery(a_het_a_1)])
+        aheta1 = np.array([x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(a_het_a_1)])
         aheta1_bool = np.in1d(self.atoms_array, aheta1)
         return aheta1_bool
 
     def smarts_query(self, smarts: str):
         query = Chem.MolFromSmarts(smarts)
-        substructs = self.mol.GetSubstructMatches(query)
+        substructs = self.rdkit_mol.GetSubstructMatches(query)
 
         idx = np.zeros(len(self.atoms), dtype=bool)
         for s in substructs:
