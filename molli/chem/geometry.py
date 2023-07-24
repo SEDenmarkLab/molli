@@ -59,7 +59,6 @@ class CartesianGeometry(Promolecule):
     """
 
     _coords_dtype = np.float64
-    __slots__ = "_atoms", "_coords", "_name", "charge", "mult"
 
     def __init_subclass__(cls, coords_dtype=np.float64, **kwds) -> None:
         super().__init_subclass__(**kwds)
@@ -101,9 +100,7 @@ class CartesianGeometry(Promolecule):
         super().append_atom(a)
         _coord = np.array(coord, dtype=self._coords_dtype)
         if not _coord.shape == (3,):
-            raise ValueError(
-                "Inappropriate coordinates for atom (interpreted as {_coord})"
-            )
+            raise ValueError("Inappropriate coordinates for atom (interpreted as {_coord})")
         self._coords = np.append(self._coords, [coord], axis=0)
 
     def new_atom(
@@ -371,9 +368,7 @@ class CartesianGeometry(Promolecule):
             raise ValueError("Cannot compare geometries with different number of atoms")
 
         if validate_elements == True and self.elements != other.elements:
-            raise ValueError(
-                "Cannot compare two molecules with different lists of elements"
-            )
+            raise ValueError("Cannot compare two molecules with different lists of elements")
 
         raise NotImplementedError
 
