@@ -87,6 +87,16 @@ arg_parser.add_argument(
     help="Selects the locations of grid points.",
 )
 
+#Potentially useful function depending on what needs to be written
+# arg_parser.add_argument(
+#     '-o',
+#     '--output',
+#     action='store',
+#     type=str,
+#     default=None,
+#     metavar='<fpath>',  # ?
+#     help='File path for directory to write to. Defaults to "aso.h5" in same directory as alt_aso.py'
+# )
 
 def molli_main(args, config=None, output=None, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -97,6 +107,11 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     grid: np.ndarray = np.load(parsed.grid)
     print(f"Grid shape: {grid.shape}")
+
+    # This could be the spot to implement instead of aa.aso_description, using ml.descriptor.aso2
+    # Since ASO2 returns the np.average rather than the aa.aso_description that automatically writes the h5py file
+    # if parsed.descriptor == 'ASO':
+        # aa.aso_description(parsed.conflib, grid, parsed.output, parsed.nprocs, parsed.batchsize, parsed.chunksize)
 
     cluster = distributed.LocalCluster(n_workers=parsed.nprocs, processes=False)
     client = distributed.Client(cluster)
@@ -109,6 +124,8 @@ def molli_main(args, config=None, output=None, **kwargs):
     strdt = h5py.special_dtype(vlen=str)
 
     with h5py.File("test_descriptor.h5", "w") as f:
+    #Potential output use
+    # with h5py.File(parsed.output, "w") as f:
         handles = f.create_dataset("handles", dtype=strdt, shape=(len(lib),))
         handles[:] = lib._block_keys
 
@@ -136,6 +153,8 @@ def molli_main(args, config=None, output=None, **kwargs):
 
 
         with h5py.File("test_descriptor.h5", "r+") as f:
+        #Potential Output use
+        # with h5py.File(parsed.output, "r+") as f:
             f["descriptor"][_start:_end] = asos
             
     
