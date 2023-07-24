@@ -2,7 +2,6 @@ import unittest as ut
 
 import molli as ml
 import numpy as np
-import molli.external.openbabel as _ob
 from copy import deepcopy
 
 try:
@@ -10,7 +9,7 @@ try:
 except:
     _OPENBABEL_INSTALLED = False
 else:
-    from molli.external import _rdkit
+    from molli.external import openbabel as _ob
     _OPENBABEL_INSTALLED = True
 
 class OpenbabelTC(ut.TestCase):
