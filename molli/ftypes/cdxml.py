@@ -8,6 +8,7 @@ from warnings import warn
 from ..chem import *
 from ..math import rotate_2dvec_outa_plane, mean_plane
 from math import radians
+from scipy.spatial import KDTree
 
 
 def position(elt: et.Element):
@@ -43,9 +44,7 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
         if s.is_bond_in_ring(b):
             # Fun stuff happens here
             # this is under a few assumptions
-            s.substructure((a1, a2)).coords += sign * np.array(
-                [[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]]
-            )
+            s.substructure((a1, a2)).coords += sign * np.array([[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]])
 
             for _b in s.bonds_with_atom(a1):
                 if not s.is_bond_in_ring(_b):
@@ -62,9 +61,7 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
         else:
             # We need to define the rotation matrix first.
             normal = mean_plane(s.coord_subset(s.connected_atoms(a1)))
-            angle = sign * (
-                radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60)
-            )
+            angle = sign * (radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60))
             rotation = rotate_2dvec_outa_plane(s.vector(i1, i2), angle, normal)
             substruct = s.substructure(s.yield_bfs(a1, a2))
             v = s.get_atom_coord(a1)
@@ -88,59 +85,98 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
                 )
 
 
+def validate_fragment(frag: et.Element):
+    """
+    This is validator that removes invalid CDXML fragments
+    right now it is fairly crude (at least one bond must be present)
+    """
+    return any(x.tag == "b" for x in frag)
+
+
 @define(repr=True)
 class CDXMLFile:
     path: str | Path = field(repr=True)
     tree: et.ElementTree = field(repr=False, init=False, kw_only=True)
     bond_length: float = field(default=1.0, repr=False, init=False, converter=float)
-    labels: Dict[str, et.Element] = field(factory=dict, repr=False, init=False)
-    fragments: List[et.Element] = field(factory=list, repr=False, init=False)
-    fragment_coords: np.ndarray = field(default=None, repr=False, init=False)
+    xlabels: Dict[str, et.Element] = field(factory=dict, repr=False, init=False)
+    xfrags: List[et.Element] = field(factory=list, repr=False, init=False)
+    xfrag_cache: Dict[str, et.Element] = field(factory=dict, repr=False, init=False)
+    xfrag_kd: KDTree = field(init=False, repr=False)
 
     def __attrs_post_init__(self):
+        # TODO: generalize to text
         self.tree = et.parse(self.path)
         self.bond_length = self.tree.getroot().attrib["BondLength"]
 
         # this finds all textboxes that fit under the definition
-        for t in self.tree.findall(".//t/s[@face='1']..."):
-            if (lbl := t[0].text) in self.labels:
+        # of face=1 (bold face, not chemically interpreted)
+        for xt in self.tree.findall(".//t/s[@face='1']..."):
+            if (lbl := xt[0].text) in self.xlabels:
                 warn(
-                    f"CDXML file {self.path} contains redundant label {lbl!r} "
-                    "Only the first occurrence will be kept.",
+                    (
+                        f"CDXML file {self.path} contains redundant label {lbl!r} "
+                        "Only the first occurrence will be kept."
+                    ),
                     CDXMLSyntaxWarning,
                 )
             else:
-                self.labels[lbl] = t
+                self.xlabels[lbl] = xt
 
-        self.fragments.extend(self.tree.findall("./page/fragment"))
-        self.fragments.extend(self.tree.findall("./page/group/fragment"))
+        # this lists all fragments that are validated
+        # (can have chemical interpretation)
         # note: this avoids placing items that match ".//fragment/fragment" in this list.
-        # this is unwanted: those are unexpanded substituents!
+        # those are unexpanded substituents!
+        self.xfrags.extend(
+            filter(
+                validate_fragment,
+                self.tree.findall("./page/fragment") + self.tree.findall("./page/group/fragment"),
+            )
+        )
 
-        self.fragment_coords = np.array(list(map(position, self.fragments)))
-
-        if len(self.fragments) != len(self.labels):
+        if len(self.xfrags) != len(self.xlabels):
             warn(
-                f"CDXML file {self.path} contains mismatched number of labels ({len(self.fragments)}) and fragments ({len(self.labels)}). "
-                "Please make sure this is intentional.",
+                (
+                    f"CDXML file {self.path} contains mismatched number of labels"
+                    f" ({len(self.xfrags)}) and fragments ({len(self.xlabels)}). Please make sure"
+                    " this is intentional."
+                ),
                 CDXMLSyntaxWarning,
             )
 
+        # KDTree makes locating geometrically close things significantly eaiser
+        xfrag_coords = np.array(list(map(position, self.xfrags)))
+        self.xfrag_kd = KDTree(xfrag_coords, balanced_tree=True)  # optional args?
+
     def keys(self):
-        return self.labels.keys()
+        return self.xlabels.keys()
+
+    def __len__(self):
+        return len(self.keys())
 
     def __getitem__(self, key: str) -> Molecule:
-        if (grpf := self.labels[key].find("../fragment")) in self.fragments:
+        # TEMPORARY. DO A BETTER REWRITE.
+        if isinstance(key, int):
+            key = list(self.keys())[key]
+
+        if key in self.xfrag_cache:
+            frag = self.xfrag_cache[key]
+        elif (grpf := self.xlabels[key].find("../fragment")) in self.xfrags:
             frag = grpf
+            self.xfrag_cache[key] = frag
         else:
-            frag = self.fragments[
-                np.argmin(
-                    np.sum(
-                        np.abs(self.fragment_coords - position(self.labels[key])),
-                        axis=1,
-                    )
-                )
-            ]
+            lpos = position(self.xlabels[key])
+            frag = None
+            _, indices = self.xfrag_kd.query(lpos, k=5, p=1)
+            for i in indices:
+                fpos = position(self.xfrags[i])
+                if fpos[1] < lpos[1]:  # if the label is below the fragment, which is what we want
+                    frag = self.xfrags[i]
+                    break
+
+            if frag is None:  # If nothing was found
+                raise KeyError(f"Could not locate a viable candidate for label {key}")
+            else:
+                self.xfrag_cache[key] = frag
 
         return self._parse_fragment(frag, Molecule, name=key)
 
@@ -174,6 +210,13 @@ class CDXMLFile:
                 elt = Element.Unknown
                 atyp = AtomType.AttachmentPoint
                 lbl = node.get("id")
+            case "GenericNickname":
+                elt = Element.Unknown
+                atyp = AtomType.AttachmentPoint
+                lbl = node.get("GenericNickname")
+
+            case "Unspecified":
+                return None
             case _:
                 atyp = AtomType.Regular
                 # Potentially add because Casey requests.
@@ -193,9 +236,7 @@ class CDXMLFile:
                 btype = BondType.Single
 
             case "1.5":
-                btype = (
-                    BondType.Aromatic
-                )  # Unclear if this is correct, but for now let it be
+                btype = BondType.Aromatic  # Unclear if this is correct, but for now let it be
 
             case _:
                 btype = BondType(int(_order))
@@ -214,9 +255,10 @@ class CDXMLFile:
         # iterate over all nodes
         for node in frag.findall("./n"):
             atom = self._parse_atom_node(node)
-            atoms.append(atom)
-            atom_idx[node.get("id")] = atom
-            coords.append(position(node))
+            if atom is not None:
+                atoms.append(atom)
+                atom_idx[node.get("id")] = atom
+                coords.append(position(node))
 
         result = cls(atoms, name=name, copy_atoms=False)
         result.coords[:, 2] = 0
