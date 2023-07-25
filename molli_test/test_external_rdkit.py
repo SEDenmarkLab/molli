@@ -61,9 +61,8 @@ class RDKitTC(ut.TestCase):
                         can_rdkit_atom_elem, new_molli_elem
                     )
 
-    @ut.skipUnless(
-        _RDKIT_INSTALLED, "RDKit is not installed in current environment."
-    )
+    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
+    @ut.skipUnless(_IPYTHON_INSTALLED, "IPython is not installed in current environment.")
     def test_rdkit_atom_filter(self):
         m1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2, name="dendrobine")
 
