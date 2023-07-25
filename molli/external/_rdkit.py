@@ -11,10 +11,13 @@ try:
     from rdkit import DataStructs
     from rdkit.Chem import rdCIPLabeler
     from rdkit.Chem import rdMolDescriptors
-    from rdkit.Chem.Draw import IPythonConsole
     from rdkit.Chem.Draw import rdMolDraw2D
 except:
     raise ImportError("RDKit is not installed in this environment")
+try:
+    from rdkit.Chem.Draw import IPythonConsole
+except:
+    raise ImportError("IPython is not installed in this environment")
 
 def visualize_mols(name: str, rdkit_mol_list: list, molsPerRow=5, prop:str='_Name', svg=True, png=False):
     '''
@@ -45,16 +48,48 @@ def create_rdkit_mol(molli_mol:Molecule, removeHs=False) -> Dict[Molecule,Proper
 
     return {molli_mol:rdkit_mol}
 
-def canonicalize_rdkit_mol(rdkit_mol, removeHs=False) -> PropertyMol:
+def visualize_molli_mol(name: str, molli_mol_list: list, removeHs=True, molsPerRow=5, svg=True, png=False):
+    '''
+    This does a basic 2D visualization of the molli_mols
+    '''
+
+    final_visual = list()
+    no_visual = list()
+    for mlmol in molli_mol_list:
+        _entry = create_rdkit_mol(mlmol, removeHs=removeHs)
+        if _entry[mlmol].HasProp("_Kekulize_Issue"):
+            no_visual.append(_entry[mlmol].GetProp("_Name"))
+            continue
+        else:
+            final_visual.append(_entry[mlmol])
+
+    if len(final_visual) == 0:
+        print('No molecules successfully kekulized for visualization')
+        return None
+
+    if len(no_visual) != 0:
+        print(f'\nUnable to visualize the following molecules:\n{no_visual}')
+    
+    if svg:
+        _img = Draw.MolsToGridImage(final_visual, molsPerRow=molsPerRow, subImgSize=(200,200), useSVG=True,returnPNG=False, legends=[i.GetProp('_Name') for i in final_visual], maxMols=1000)
+        with open(f'{name}.svg','w') as f:
+            f.write(_img.data)
+    if png:
+        _img = Draw.MolsToGridImage(final_visual, molsPerRow=molsPerRow, subImgSize=(200,200), useSVG=False,returnPNG=True, legends=[i.GetProp('_Name') for i in final_visual], maxMols=1000)
+        with open(f'{name}.png','wb') as f:
+            f.write(_img.data)
+
+def canonicalize_rdkit_mol(rdkit_mol, sanitize=False) -> PropertyMol:
     '''
     Returns canonicalized RDKit mol generated from a canonicalized RDKit SMILES string. 
     
     Can indicate whether hydrogens should be removed from mol object or not.
+
+    Sanitizing will also remove hydrogens
     '''
     can_smiles = Chem.MolToSmiles(rdkit_mol, canonical=True)
     original_rdkit_props = list(rdkit_mol.GetPropNames(includePrivate=True, includeComputed=True))
-    Chem.SmilesParserParams.removeHs = removeHs
-    can_rdkit_mol = Chem.MolFromSmiles(can_smiles, Chem.SmilesParserParams.removeHs)
+    can_rdkit_mol = Chem.MolFromSmiles(can_smiles, sanitize=sanitize)
 
     for prop in original_rdkit_props:
         can_rdkit_mol.SetProp(prop, rdkit_mol.GetProp(prop))
@@ -83,14 +118,12 @@ def can_mol_order(rdkit_mol):
     Chem.MolToSmiles(new_rdkit_mol, canonical=True)
 
     #The smiles output order is actually a string of the form "[0,1,2,3,...,12,]", so it requires a start at 1 and end at -2!
-    # print(list(new_rdkit_mol.GetPropNames(includePrivate=True, includeComputed=True)))
     can_atom_reorder = list(map(int, new_rdkit_mol.GetProp("_smilesAtomOutputOrder")[1:-2].split(",")))
     canonical_bond_reorder_list = list(map(int, new_rdkit_mol.GetProp("_smilesBondOutputOrder")[1:-2].split(",")))
     can_smiles_w_h = Chem.MolToSmiles(new_rdkit_mol, canonical=True)
 
     # # # #Allows maintaining of hydrogens when Mol object is created
-    Chem.SmilesParserParams.removeHs = False
-    can_mol_w_h = PropertyMol(Chem.MolFromSmiles(can_smiles_w_h, Chem.SmilesParserParams.removeHs))
+    can_mol_w_h = PropertyMol(Chem.MolFromSmiles(can_smiles_w_h, sanitize=False))
     # Certain odd molecules result in some odd calculated properties, so this part is remaining commented out for now
     # can_mol_w_h.UpdatePropertyCache()
     all_props_original_rdkit_mol = list(rdkit_mol.GetPropNames())
@@ -98,8 +131,6 @@ def can_mol_order(rdkit_mol):
     #Helps new rdkit object maintain original properties of rdkit mol put in
     for prop in all_props_original_rdkit_mol:
         if not can_mol_w_h.HasProp(prop):
-            print(prop)
-            print(rdkit_mol.GetProp(prop))
             can_mol_w_h.SetProp(prop, rdkit_mol.GetProp(prop))
 
     can_mol_w_h.SetProp("_Canonical_SMILES_w_H", f'{can_smiles_w_h}')

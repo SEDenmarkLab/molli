@@ -1,5 +1,3 @@
-# from . import backend_pyvista
-from .primitives import color_cpk, wireframe, test_ballnstick
 from typing import Type, Callable
 from molli import Structure
 from warnings import warn
@@ -7,9 +5,7 @@ from warnings import warn
 try:
     import py3Dmol
 except:
-    warn(
-        "`py3Dmol` must be installed for molecule visualization. Skipping dependent functions."
-    )
+    warn("`py3Dmol` must be installed for molecule visualization. Skipping dependent functions.")
 else:
 
     def view(m: Structure):

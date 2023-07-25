@@ -8,17 +8,21 @@ try:
 except:
     _RDKIT_INSTALLED = False
 else:
-    from molli.external import _rdkit
-
     _RDKIT_INSTALLED = True
+try:
+    from rdkit.Chem.Draw import IPythonConsole
+except:
+    _IPYTHON_INSTALLED = False
+else:
+    from molli.external import _rdkit
+    _IPYTHON_INSTALLED = True
 
 
 class RDKitTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
-    @ut.skipUnless(
-        _RDKIT_INSTALLED, "RDKit is not installed in current environment."
-    )
+    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
+    @ut.skipUnless(_IPYTHON_INSTALLED, "IPython is not installed in current environment.")
     def test_create_rdkit_mol(self):
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
@@ -29,9 +33,8 @@ class RDKitTC(ut.TestCase):
                     molli_mol_rdmol_dict[molli_mol], PropertyMol
                 )
 
-    @ut.skipUnless(
-        _RDKIT_INSTALLED, "RDKit is not installed in current environment."
-    )
+    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
+    @ut.skipUnless(_IPYTHON_INSTALLED, "IPython is not installed in current environment.")
     def test_molli_mol_reorder(self):
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
