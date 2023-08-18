@@ -32,6 +32,8 @@ except:
 else:
     MOLLI_USING_EXTENSIONS = True
 
+from . import config
+
 # Believe it or not, on Windows `aux` is not a valid file/folder name
 from . import _aux as aux
 
