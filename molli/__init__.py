@@ -20,7 +20,7 @@ It also implements a lot of command line tools (run `molli --HELP` or `molli lis
 
 """
 
-__version__ = "1.0.0a7"
+__version__ = "1.0.0a10"
 
 # Determine whether molli C++ extensions are available
 # if not, pure python analogs should be provided
