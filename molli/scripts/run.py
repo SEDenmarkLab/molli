@@ -16,7 +16,7 @@ arg_parser = ArgumentParser(
 arg_parser.add_argument("script", action="store", type=str, metavar="<script.py>")
 
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args,  **kwargs):
     parsed, unknown = arg_parser.parse_known_args(args)
 
     with ml.aux.ForeColor("yellow"):
