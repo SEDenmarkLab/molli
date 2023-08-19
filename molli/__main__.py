@@ -1,19 +1,21 @@
-import molli as ml
 from argparse import ArgumentParser
 from pprint import pprint
 from importlib import import_module
 import yaml
 from . import scripts
+from . import config
 from warnings import warn
-from logging import getLogger
+import logging
+import sys
+import molli as ml
+from uuid import uuid1 # Needed for a lock file
+import os
 
-
-# KNOWN_CMDS = ["info", "split", "optimize", "whatever"]
 KNOWN_CMDS = ["list", *scripts.__all__]
 
 arg_parser = ArgumentParser(
     "molli",
-    description=f"[molli {ml.__version__} description] MOLLI package is an API that intends to create a concise and easy-to-use syntax that encompasses the needs of cheminformatics (especially so, but not limited to the workflows developed and used in the Denmark laboratory.",
+    description=f"MOLLI package is an API that intends to create a concise and easy-to-use syntax that encompasses the needs of cheminformatics (especially so, but not limited to the workflows developed and used in the Denmark laboratory.",
     add_help=False,
 )
 
@@ -34,8 +36,8 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "-O",
-    "--OUTPUT",
+    "-L",
+    "--LOG",
     action="store",
     metavar="<file.log>",
     default=None,
@@ -47,17 +49,9 @@ arg_parser.add_argument(
     "--VERBOSITY",
     action="store",
     metavar="0..5",
-    default=0,
+    default=3,
     type=int,
     help="Sets the level of verbosity for molli output. Negative numbers will remove all output. Defaults to 0.",
-)
-
-arg_parser.add_argument(
-    "-D",
-    "--DEBUG",
-    action="store_true",
-    default=False,
-    help="Output will contain debug information",
 )
 
 arg_parser.add_argument(
@@ -67,15 +61,41 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "--VERSION",
     action="version",
-    version=ml.__version__,
+    version=config.VERSION,
 )
 
 
 def main():
     parsed, unk_args = arg_parser.parse_known_args()
-
     cmd = parsed.COMMAND
 
+    #########################################
+    #TODO Set up the logger HERE!
+    # This will make sure that all molli stuff is now fully captured.
+    logging.basicConfig(level=50-parsed.VERBOSITY*10, handlers=[logging.NullHandler()])
+    logger = logging.getLogger('molli')
+    logger.setLevel(50-parsed.VERBOSITY*10)
+
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(50-parsed.VERBOSITY*10)
+
+    # create formatter
+    formatter = logging.Formatter('%(asctime)s (%(relativeCreated)d) - %(name)s - %(module)s (%(pathname)s) - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+
+    # add ch to logger
+    logger.addHandler(ch)
+    #########################################
+
+    # This thing allows to 
+    if parsed.CONFIG is not None:
+        with open(parsed.CONFIG) as f:
+            _config_f = yaml.safe_load(f)
+    else:
+        _config_f = None
+    ml.config.configure(_config_f)
+ 
     match cmd:
         # cases can override default behavior, which is to import the module from standalone
         case "list":
@@ -103,11 +123,6 @@ def main():
                             print("No documentation available")
 
         case _:
-
-            if parsed.CONFIG is not None:
-                warn(
-                    "CONFIG file option is implemented as EXPERIMENTAL. Do not rely on its results."
-                )
             try:
                 requested_module = import_module(f"molli.scripts.{cmd}")
             except:
@@ -115,12 +130,25 @@ def main():
                     f"Requested module <{cmd}> does not seem to be implemented. Check with the developers!"
                 )
             else:
-                requested_module.molli_main(
-                    unk_args,
-                    config=parsed.CONFIG,
-                    output=parsed.OUTPUT,
-                )
+                # This may need to be revised. Not sure if parent creation is a great idea.
+                ml.config.SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
+                lock_file = ml.config.SHARED_DIR / f"{uuid1().hex}.lock"
+
+                try:                
+                    _code = requested_module.molli_main(
+                        unk_args,
+                        lock_file=lock_file,
+                    )
+                except Exception as xc:
+                    logger.exception(xc)
+                    _code = 1 # Maybe change this later
+                
+                # This should free up that key in case it still exists
+                if lock_file.is_file():
+                    os.remove(lock_file)
+                
+                return _code
 
 if __name__ == "__main__":
-    main()
+    exit(main())
