@@ -97,7 +97,7 @@ class _Library(Generic[T]):
             f.write(_FILE_HEADER.pack(cls.GUARD1, cls.GUARD2))
 
         return cls(_path, readonly=False, encoder=encoder, decoder=decoder)
-
+    
     @classmethod
     def concatenate(
         cls: type[_Library],
@@ -191,6 +191,29 @@ class _Library(Generic[T]):
         key_size, data_size = _BLOCK_HEADER.unpack(self._stream.read(_BLOCK_HEADER.size))
         _key: bytes = self._stream.read(key_size)
         return self._stream.read(data_size)
+    
+    def _read_kv(self) -> bytes:
+        key_size, data_size = _BLOCK_HEADER.unpack(self._stream.read(_BLOCK_HEADER.size))
+        _key = self._stream.read(key_size)
+        _data = self._stream.read(data_size)
+        return _key, _data
+    
+    def _write_kv(self, key: bytes, value: bytes):
+        _eof = self._stream.seek(0, 2)
+        klen = len(key)
+        vlen = len(value)
+        return self._stream.write(_BLOCK_HEADER.pack(klen, vlen) + key + value)
+
+    def copy_chunk(self, _dest: _Library, start: int, chunk_size: int):
+        """
+        This function is essential for copying chunks of data without interpreting it.
+        """
+        assert 0 <= start < start + chunk_size < len(self)
+        self.goto(start)
+        for _ in range(chunk_size):
+            k, v = self._read_kv()
+            _dest._write_kv(k, v)
+
 
     # @check_open
     def append(self, key: str, obj: T):
