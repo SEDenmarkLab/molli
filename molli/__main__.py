@@ -10,6 +10,8 @@ import sys
 import molli as ml
 from uuid import uuid1 # Needed for a lock file
 import os
+from mpi4py import MPI
+from socket import gethostname
 
 KNOWN_CMDS = ["list", *scripts.__all__]
 
@@ -66,6 +68,8 @@ arg_parser.add_argument(
 
 
 def main():
+    comm = MPI.COMM_WORLD
+
     parsed, unk_args = arg_parser.parse_known_args()
     cmd = parsed.COMMAND
 
@@ -81,7 +85,10 @@ def main():
     ch.setLevel(50-parsed.VERBOSITY*10)
 
     # create formatter
-    formatter = logging.Formatter('%(asctime)s (%(relativeCreated)d) - %(name)s - %(module)s (%(pathname)s) - %(levelname)s - %(message)s')
+    # formatter = logging.Formatter('%(asctime)s (%(relativeCreated)d) - %(name)s - %(module)s (%(pathname)s) - %(levelname)s - %(message)s')
+    host = gethostname()
+    rank = comm.Get_rank()
+    formatter = logging.Formatter('{levelname:s}: {message:s} ({name:s}:{lineno} at %s:%d {asctime:s})' % (host, rank), style="{")
     ch.setFormatter(formatter)
 
     # add ch to logger
@@ -131,22 +138,36 @@ def main():
                 )
             else:
                 # This may need to be revised. Not sure if parent creation is a great idea.
-                ml.config.SHARED_DIR.mkdir(parents=True, exist_ok=True)
+                
+                if rank == 0:
+                    ml.config.SHARED_DIR.mkdir(parents=True, exist_ok=True)
+                    ml.config.SCRATCH_DIR.mkdir(parents=True, exist_ok=True)
 
-                lock_file = ml.config.SHARED_DIR / f"{uuid1().hex}.lock"
+                    shared_lkfile = ml.config.SHARED_DIR / f"molli-{uuid1().hex}.lock"
+                    scratch_lkfile = ml.config.SCRATCH_DIR / f"molli-{uuid1().hex}.lock"
+                else:
+                    shared_lkfile = None
+                    scratch_lkfile = None
+                
+                shared_lkfile = comm.bcast(shared_lkfile, 0)
+                scratch_lkfile = comm.bcast(scratch_lkfile, 0)
 
                 try:                
                     _code = requested_module.molli_main(
                         unk_args,
-                        lock_file=lock_file,
+                        shared_lkfile=shared_lkfile,
+                        scratch_lkfile=scratch_lkfile,
                     )
                 except Exception as xc:
                     logger.exception(xc)
                     _code = 1 # Maybe change this later
                 
-                # This should free up that key in case it still exists
-                if lock_file.is_file():
-                    os.remove(lock_file)
+                # This should free up these keys in case it still exists
+                if shared_lkfile.is_file():
+                    os.remove(shared_lkfile)
+                
+                if scratch_lkfile.is_file():
+                    os.remove(scratch_lkfile)
                 
                 return _code
 

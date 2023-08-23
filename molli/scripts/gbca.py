@@ -9,10 +9,11 @@ from argparse import ArgumentParser
 import os
 import molli as ml
 from tqdm import tqdm
-
-from dask import distributed, delayed
+from mpi4py import MPI
 import numpy as np
 import h5py
+from logging import getLogger
+from uuid import uuid1
 
 DESCRIPTOR_CHOICES = ["ASO", "AEIF", "ADIF", "AESP", "ASR"]
 
@@ -41,9 +42,8 @@ arg_parser.add_argument(
     "-w",
     "--weighted",
     action="store_true",
-    help="Print molli configuration",
+    help="Apply the weights specified in the conformer files",
 )
-
 
 arg_parser.add_argument(
     "-n",
@@ -52,7 +52,8 @@ arg_parser.add_argument(
     type=int,
     metavar=OS_NCORES,
     default=OS_NCORES,
-    help="Selects number of processors",
+    help="Selects number of processors for python multiprocessing application. "
+         "If the program is launched via MPI backend, this parameter is ignored.",
 )
 
 arg_parser.add_argument(
@@ -73,7 +74,7 @@ arg_parser.add_argument(
     type=int,
     metavar=128,
     default=128,
-    help="Number of conformer ensembles in one batch",
+    help="Number of conformer ensembles to be processed in one batch.",
 )
 
 
@@ -87,56 +88,33 @@ arg_parser.add_argument(
     help="Selects the locations of grid points.",
 )
 
+def _mpi_worker():
+    ...
 
-def molli_main(args,  **kwargs):
+
+
+def molli_main(args, shared_lkfile=None, scratch_lkfile=None, **kwargs):
     parsed = arg_parser.parse_args(args)
+    logger = getLogger("molli.scripts.gbca")
 
-    print(
-        f"Will compute descriptor {'w' if parsed.weighted else ''}{parsed.descriptor} using {parsed.nprocs} cores."
-    )
-
-    grid: np.ndarray = np.load(parsed.grid)
-    print(f"Grid shape: {grid.shape}")
-
-    cluster = distributed.LocalCluster(n_workers=parsed.nprocs, processes=False)
-    client = distributed.Client(cluster)
-
-    lib = ml.chem.ConformerLibrary(parsed.conflib)
-    nb = len(lib) // parsed.batchsize + 1
-
-    print("Allocating storage for descriptors")
-
-    strdt = h5py.special_dtype(vlen=str)
-
-    with h5py.File("test_descriptor.h5", "w") as f:
-        handles = f.create_dataset("handles", dtype=strdt, shape=(len(lib),))
-        handles[:] = lib._block_keys
-
-        data = f.create_dataset("descriptor", dtype="f4", shape=(len(lib), grid.shape[0]))
-        data[:] = -1.0       
-
-    for bn, batch in enumerate(tqdm(lib.yield_in_batches(parsed.batchsize), total=nb)):
-        # with ml.aux.timeit(f"Processing batch {bn + 1} / {nb}"):
-
-        scattered_chunk = client.scatter(batch)
-
-
-        futures = client.map(
-            lambda x: ml.descriptor.chunky_aso(x, grid, chunksize=parsed.chunksize),
-            scattered_chunk,
-        )
-
-
-        # distributed.progress(futures)
-        asos = client.gather(futures)
-
-
-        _start = bn * parsed.batchsize
-        _end = _start + len(batch)
-
-
-        with h5py.File("test_descriptor.h5", "r+") as f:
-            f["descriptor"][_start:_end] = asos
-            
+    
+    # Test if molli is launched via openmpi
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    if size > 1:
+        # This should only happen if MPI launch detected.
+        if rank == 0:
+            logger.info(f"MPI launch detected: universe size {size}. --nprocs CMD parameter ignored even if specified.")
+            logger.debug(f"Shared  lock file: {shared_lkfile}")
+            logger.debug(f"Scratch lock file: {scratch_lkfile}")
+    else:
+        # Using python multiprocessing now.
+        logger.info(f"Using python multiprocessing with {parsed.nprocs} processes.")
+    # print(
+    #     f"Will compute descriptor {'w' if parsed.weighted else ''}{parsed.descriptor} using {parsed.nprocs} cores."
+    # )
+        
     
         

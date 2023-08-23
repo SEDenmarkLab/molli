@@ -43,10 +43,10 @@ def configure(config_from_file: dict[str, str]=None, **kwds):
         HOME = Path("~/.molli").expanduser()
     
     os.environ["MOLLI_HOME"] = str(HOME)
-    
+    logger.debug(f"MOLLI_HOME = {HOME}")
+        
     # tuple[type, default_value]
     _VAR_DEFAULTS = {
-        "HOME" : (Path, HOME),
         "DATA_DIR" : (Path, HOME / "data"),
         "BACKUP_DIR" : (Path, HOME / "backup"),
         "SCRATCH_DIR" : (Path, HOME / "scratch"),
@@ -64,7 +64,7 @@ def configure(config_from_file: dict[str, str]=None, **kwds):
             value = vartype(vardefault)
 
         # Log something 
-        logger.info(f"{varname} == {value}")
+        logger.debug(f"{varname} = {value}")
         globals()[varname] = value
     
 
