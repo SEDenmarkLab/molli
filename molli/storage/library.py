@@ -231,6 +231,10 @@ class _Library(Generic[T]):
             raise IndexError(f"Index {i} is out of range for len(sequence) = {len(self)}")
         self.goto(i)
         return self.decoder(self._read())
+    
+    def n_batches(self, batchsize: int):
+        d, r = divmod(len(self), batchsize)
+        return d + 1 if r else 0
 
     def batch(self, start: int, batch_size: int):
         for i in range(start, start + batch_size):
