@@ -14,6 +14,8 @@ import numpy as np
 import h5py
 from logging import getLogger
 from uuid import uuid1
+import fasteners
+import tempfile
 
 DESCRIPTOR_CHOICES = ["ASO", "AEIF", "ADIF", "AESP", "ASR"]
 
@@ -109,12 +111,36 @@ def molli_main(args, shared_lkfile=None, scratch_lkfile=None, **kwargs):
             logger.info(f"MPI launch detected: universe size {size}. --nprocs CMD parameter ignored even if specified.")
             logger.debug(f"Shared  lock file: {shared_lkfile}")
             logger.debug(f"Scratch lock file: {scratch_lkfile}")
+
+            lib = ml.ConformerLibrary(parsed.conflib)
+        else:
+            # Not sure if this is an optimal step but sending this data could be faster than parsing every time.
+            # Need a timing comparison!
+            lib = comm.bcast(lib := None)
+        
+        if rank == 0:
+            logger.info(f"Broadcasing of the library is finished")
+
+        # This enables strided access to the batch
+        for batch_idx in range(rank, lib.n_batches(parsed.batchsize), size):
+            with ml.ConformerLibrary.new(ml.config.SCRATCH_DIR / f"molli-gbca-{batch_idx}-{rank}.mlib", overwrite=True) as templib:
+                pos = batch_idx * parsed.batchsize
+                chunksize = min(len(lib) - pos, parsed.batchsize)
+                # This creates a
+                lib.copy_chunk(templib, pos, chunksize)
+                logger.info(f"Batch {batch_idx} was copied into {templib.path}")
+        
+                # main code here
+
+        if rank == 0:
+            logger.info(f"Scattering the library across all workers is finished.")
+
     else:
         # Using python multiprocessing now.
         logger.info(f"Using python multiprocessing with {parsed.nprocs} processes.")
+        
     # print(
     #     f"Will compute descriptor {'w' if parsed.weighted else ''}{parsed.descriptor} using {parsed.nprocs} cores."
     # )
-        
-    
-        
+    #         
+     
