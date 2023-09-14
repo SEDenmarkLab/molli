@@ -53,6 +53,7 @@ class Element(IntEnum):
         match elt:
             case Element() | int():
                 return cls(elt)
+
             case str() as s:
                 return cls[s.capitalize()]
             case _:
@@ -224,20 +225,8 @@ class Element(IntEnum):
         return self.get_property_value("color_cpk")
 
     @property
-    def group(self) -> int | str:
-        """
-        The element's group
-
-        Returns:
-            int | str : An integer representing the element's group
-
-            **int** when group number is requested
-            **str** when group name is requested
-
-        Example Usage:
-            >>> my_element = Element("C") # carbon
-            >>> print(my_element.group) # 14
-        """
+    def group(self) -> int:
+        """element group identifier"""
         return self.get_property_value("group")
 
     def _serialize(self) -> int:
@@ -426,6 +415,29 @@ A type alias for anything that can be resolved as an element
 #     @property
 #     def parent(self):
 #         return self._parent
+
+
+IMPLICIT_VALENCE = {
+    1: 1,
+    2: 2,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 0,
+    8: 0,
+    9: 0,
+    10: 0,
+    11: 0,
+    12: 0,
+    13: 3,
+    14: 4,
+    15: 3,
+    16: 2,
+    17: 1,
+    18: 0,
+}
+"""This is the expected number of bonds for main group elements"""
 
 
 class AtomType(IntEnum):
@@ -668,6 +680,10 @@ class Atom:
         return id(self)
 
     @property
+    def implicit_valence(self) -> int:
+        return IMPLICIT_VALENCE[self.element.group]
+
+    @property
     def Z(self) -> int:
         """
         Atomic number of the element
@@ -680,6 +696,10 @@ class Atom:
             >>> print(my_element.Z) # 6
         """
         return self.element.z
+
+    @property
+    def atomic_weight(self) -> float:
+        return self.element.atomic_weight or 0.0
 
     @property
     def vdw_radius(self) -> float:
@@ -752,13 +772,6 @@ class Atom:
         return self.element.color_cpk
 
     def set_mol2_type(self, m2t: str):
-        """
-        Sets the mol2 type of the atom, allowing for compatiblitiy with Mol2 file formatting
-
-        Args:
-            m2t (str): mol2 type of the atom
-        """
-
         if "." in m2t:
             mol2_elt, mol2_type = m2t.split(".", maxsplit=1)
         else:
@@ -770,9 +783,7 @@ class Atom:
         match mol2_type:
             case "4":
                 if self.element != Element.N:
-                    raise NotImplementedError(
-                        f"{mol2_type} not implemented for {mol2_elt}, only N"
-                    )
+                    raise NotImplementedError(f"{mol2_type} not implemented for {mol2_elt}, only N")
                 else:
                     self.atype = AtomType.N_Ammonium
                     self.geom = AtomGeom.R4_Tetrahedral
@@ -822,9 +833,7 @@ class Atom:
             case _ if mol2_elt == "Du":
                 # This case if to handle Du.X
                 self.element = (
-                    Element[mol2_type]
-                    if mol2_type in Element._member_names_
-                    else Element.Unknown
+                    Element[mol2_type] if mol2_type in Element._member_names_ else Element.Unknown
                 )
                 self.atype = AtomType.Dummy
 
@@ -834,14 +843,7 @@ class Atom:
             case _:
                 raise NotImplementedError(f"Cannot interpret mol2 type {m2t!r}")
 
-    def get_mol2_type(self) -> str:
-        """
-        Uses the mol2 type and converts it to a elemental symbol for Molli to interpret
-
-        Returns:
-            str: A string representing the type of atom
-        """
-
+    def get_mol2_type(self):
         match self.element, self.atype, self.geom:
             case _, AtomType.Regular, _:
                 return f"{self.element.symbol}"
@@ -861,21 +863,15 @@ class Atom:
             case Element.C, _, _:
                 if self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
-                elif (self.atype == AtomType.C_Guanidinium) & (
-                    self.geom == AtomGeom.R3_Planar
-                ):
+                elif (self.atype == AtomType.C_Guanidinium) & (self.geom == AtomGeom.R3_Planar):
                     return f"{self.element.symbol}.cat"
                 else:
                     return f"{self.element.symbol}"
 
             case Element.N, _, _:
-                if (self.atype == AtomType.N_Ammonium) & (
-                    self.geom == AtomGeom.R4_Tetrahedral
-                ):
+                if (self.atype == AtomType.N_Ammonium) & (self.geom == AtomGeom.R4_Tetrahedral):
                     return f"{self.element.symbol}.4"
-                elif (self.atype == AtomType.N_Amide) & (
-                    self.geom == AtomGeom.R3_Planar
-                ):
+                elif (self.atype == AtomType.N_Amide) & (self.geom == AtomGeom.R3_Planar):
                     return f"{self.element.symbol}.am"
                 elif self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
@@ -891,13 +887,9 @@ class Atom:
                     return f"{self.element.symbol}"
 
             case Element.S, _, _:
-                if (self.atype == AtomType.O_Sulfoxide) & (
-                    self.geom == AtomGeom.R3_Pyramidal
-                ):
+                if (self.atype == AtomType.O_Sulfoxide) & (self.geom == AtomGeom.R3_Pyramidal):
                     return f"{self.element.symbol}.O"
-                elif (self.atype == AtomType.O_Sulfone) & (
-                    self.geom == AtomGeom.R4_Tetrahedral
-                ):
+                elif (self.atype == AtomType.O_Sulfone) & (self.geom == AtomGeom.R4_Tetrahedral):
                     return f"{self.element.symbol}.O2"
                 else:
                     return f"{self.element.symbol}"
@@ -912,7 +904,10 @@ class Atom:
                 return f"{self.element.symbol}.th"
 
 
-AtomLike = Atom | int
+AtomLike = Atom | int | str
+"""
+AtomLike can be an atom, its index, or a unique identifier
+"""
 
 """
 A type alias for anything that can be resolved as an Atom,
@@ -932,7 +927,7 @@ class Promolecule:
     for API compatibility reasons.
     """
 
-    __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
+    # __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
 
     def __init__(
         self,
@@ -969,9 +964,12 @@ class Promolecule:
 
             case Promolecule() as pm:
                 self._atoms = list(a.evolve() for a in pm.atoms)
-                self.name = name or pm.name
-                self.charge = charge or pm.charge
-                self.mult = mult or pm.mult
+                if hasattr(pm, "name"):
+                    self.name = name or pm.name
+                if hasattr(pm, "charge"):
+                    self.charge = charge or pm.charge
+                if hasattr(pm, "mult"):
+                    self.mult = mult or pm.mult
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
@@ -983,14 +981,10 @@ class Promolecule:
                 self._atoms = list(Atom(a) for a in atoms)
 
             case _:
-                raise NotImplementedError(
-                    f"Cannot interpret {other} of type {type(other)}"
-                )
+                raise NotImplementedError(f"Cannot interpret {other} of type {type(other)}")
 
     def __repr__(self) -> str:
-        return (
-            f"{type(self).__name__}(name={self.name!r}," f" formula={self.formula!r})"
-        )
+        return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
 
     @property
     def attachment_points(self) -> List[Atom]:
@@ -1044,7 +1038,7 @@ class Promolecule:
         else:
             sub = RE_MOL_ILLEGAL.sub("_", value)
             self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {value} -->" f" {sub}")
+            warn(f"Replaced illegal characters in molecule name: {value} --> {sub}")
 
     @property
     def atoms(self) -> List[Atom]:
@@ -1116,6 +1110,9 @@ class Promolecule:
             case int():
                 return self._atoms[_a]
 
+            case str():
+                return next(self.yield_atoms_by_label(_a))
+
             case _:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
@@ -1165,6 +1162,9 @@ class Promolecule:
                         f"Atom with index {_a} does not exist in a molecule"
                         f" with {self.n_atoms} atoms"
                     )
+
+            case str():
+                return self._atoms.index(next(self.yield_atoms_by_label(_a)))
 
             case _:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
@@ -1240,26 +1240,7 @@ class Promolecule:
     # ) -> Generator[Atom, None, None]:
     #     return map(self.get_atom, atoms)
 
-    def yield_atoms_by_element(
-        self, elt: Element | str | int
-    ) -> Generator[Atom, None, None]:
-        """
-        Yields atoms that are within element of interest
-
-        Args:
-            elt (Element | str | int): an element, element name, or atomic number
-
-            *Element* Instance of element class
-            *str* Name of element
-            *int* Atomic number
-
-        Yield:
-            Generator[Atom, None, None]: a generator of Atom instances
-
-        Example Usage:
-            >>> my_molecule = Promolecule(CH3NH2)
-            >>> print(my_molecule.yield_atoms_by_element("H")) # [Atom("H"), Atom("H"), Atom("H"), Atom("H"), Atom("H")]
-        """
+    def yield_atoms_by_element(self, elt: Element | str | int) -> Generator[Atom, None, None]:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
@@ -1358,10 +1339,7 @@ class Promolecule:
             >>> my_molecule = Promolecule("methylamine")
             >>> print(my_molecule.molecular_weight) # 31.057
         """
-        _mw = 0.0
-        for a in self.atoms:
-            _mw += a.element.atomic_weight
-        return _mw
+        return sum(a.atomic_weight for a in self.atoms)
 
     def label_atoms(self, template: str = "{e}{n0}"):
         """

@@ -8,7 +8,7 @@
 # ================================================================================
 """
 ---------------
-# `MOLLI 1.0.0a6`
+# `MOLLI 1.0.0a7`
 ---------------
 (C) 2022 Alexander S. Shved and the Denmark laboratory  
 University of Illinois at Urbana-Champaign, Department of Chemistry
@@ -20,7 +20,7 @@ It also implements a lot of command line tools (run `molli --HELP` or `molli lis
 
 """
 
-__version__ = "1.0.0a6"
+__version__ = "1.0.0a7"
 
 # Determine whether molli C++ extensions are available
 # if not, pure python analogs should be provided
@@ -47,3 +47,4 @@ from . import files
 from . import storage
 
 from .chem import *
+from .ftypes import *

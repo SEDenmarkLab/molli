@@ -21,7 +21,7 @@ class ConformerEnsembleTC(ut.TestCase):
         self.assertTupleEqual(ens2.coords.shape, (5, 3, 3))
 
     def test_pentane_conformers(self):
-        ens = ml.ConformerEnsemble.load_mol2(ml.files.mol2.pentane_confs.path)
+        ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
         self.assertEqual(ens.n_conformers, 7)
         self.assertEqual(ens.n_atoms, 17)
         self.assertEqual(ens.n_bonds, 16)

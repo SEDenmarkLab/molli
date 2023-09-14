@@ -12,11 +12,13 @@ def _optimize_rotation(
     else:
         import molli_xt as xt
 
-    angles = np.radians(np.arange(9, 369, step=360 // resolution))
+    angles = np.radians(np.arange(0, 360, step=360 // resolution))
     aug_c2 = np.array([c2 @ rotation_matrix_from_axis(ax, ang) for ang in angles])
 
-    dist = xt.cdist32_eu2_f3(aug_c2, c1)
-    mindist = np.min(dist, axis=(1, 2))
+    dist = (
+        xt.cdist32_eu2_f3(aug_c2, c1) + 0.05
+    )  # This latter part is damping to avoid singularities when and if present
+    loss = np.sum(1 / dist, axis=(1, 2))
 
-    best_angle = angles[np.argmax(mindist)]
+    best_angle = angles[np.argmin(loss)]
     return rotation_matrix_from_axis(ax, best_angle)

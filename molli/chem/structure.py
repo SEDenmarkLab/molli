@@ -7,6 +7,8 @@ from numpy.typing import ArrayLike
 from . import (
     Atom,
     AtomLike,
+    AtomType,
+    AtomGeom,
     Bond,
     BondType,
     BondStereo,
@@ -23,6 +25,7 @@ import re
 from io import StringIO, BytesIO
 from warnings import warn
 from itertools import chain
+from math import ceil, floor
 
 # The intent of this regex is that all molecule names must be valid variable and file names.
 # This may be useful later.
@@ -106,16 +109,19 @@ class Structure(CartesianGeometry, Connectivity):
 
             yield res
 
-    def dump_mol2(self, stream: StringIO = None):
-        """
-        Prints the structure in mol2 format to a file stream or file.
-        """
-        if stream is None:
+    def dump_mol2(self, _stream: StringIO = None):
+        if _stream is None:
             stream = StringIO()
+
+        if hasattr(self, "name"):
+            name = self.name
+        else:
+            name = "unknown"
+
 
         stream.write(f"# Produced with molli package\n")
         stream.write(
-            f"@<TRIPOS>MOLECULE\n{self.name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
+            f"@<TRIPOS>MOLECULE\n{name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
         )
 
         stream.write("@<TRIPOS>ATOM\n")
@@ -133,6 +139,9 @@ class Structure(CartesianGeometry, Connectivity):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
             btype = b.get_mol2_type()
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {btype:>10}\n")
+
+        if _stream is None:
+            return stream.getvalue()
 
     @classmethod
     def load_mol2(
@@ -226,6 +235,12 @@ class Structure(CartesianGeometry, Connectivity):
 
         return res
 
+    def dumps_mol2(self) -> str:
+        """
+        This returns a mol2 file as a string
+        """
+        return self.dump_mol2()
+
     @classmethod
     def from_dict(self):
         ...
@@ -293,7 +308,7 @@ class Structure(CartesianGeometry, Connectivity):
         r2 = struct2.get_atom_coord(a2r)
 
         rotation = rotation_matrix_from_vectors(v2, -v1, tol=1e-6)
-        translation = v1 * (dist or nb.expected_length) / np.linalg.norm(v1)
+        translation = v1 * (dist or nb.expected_length or 1.5) / np.linalg.norm(v1)
 
         c1 = struct1.coords[loc1] - r1
         c2 = (struct2.coords[loc2] - r2) @ rotation + translation
@@ -323,8 +338,8 @@ class Structure(CartesianGeometry, Connectivity):
 
         return res
 
-    def extend(seld, other: Structure) -> None:
-        """This extends current structure with the copied atoms from another"""
+    def extend(self, other: Structure) -> None:
+        """This extends current structure with the copied atoms, bonds and coordinates from another"""
         raise NotImplementedError
 
     def substructure(self, atoms: Iterable[AtomLike]) -> Substructure:
@@ -411,14 +426,23 @@ class Structure(CartesianGeometry, Connectivity):
         """
         return Structure.concatenate(self, other)
 
-    def perceive_atom_properties(self) -> None:
-        """
-        This function analyzes atom types
+    def perceive_atom_properties(self, _a: AtomLike) -> None:
+        """# `perceive_atom_properties`
+        This function analyzes atomic types
 
         Raises:
             NotImplementedError: This function is not implemented.
         """
-        raise NotImplementedError
+        a = self.get_atom(_a)
+        n_bonds = self.n_bonds_with_atom(a)
+        max_bond_order = max(b.order for b in self.bonds_with_atom(_a))
+
+        match max_bond_order, n_bonds:
+            case 1 if a.element.group in range(14, 19):
+                a.atype = AtomType.MainGroup_sp3
+
+            case 14, 2:
+                a.atype = AtomType.MainGroup_sp2
 
     def perceive_bond_properties(self) -> None:
         """
@@ -443,6 +467,66 @@ class Structure(CartesianGeometry, Connectivity):
         """
         a = self.get_atom(_a)
         super().del_atom(a)
+
+    def add_implicit_hydrogens(self, *atoms: AtomLike):
+        """
+        This function adds implicit hydrogens to all specified atoms.
+        TODO: rewrite with optimization (!)
+        """
+        from molli.math.polyhedra import TETRAHEDRON
+        from molli.math import rotation_matrix_from_vectors, mean_plane
+
+        if len(atoms) == 0:
+            atoms = [a for a in self.atoms if a.element.group in range(13, 17)]
+
+        for a in atoms:
+            if (diff := a.implicit_valence - int(self.bonded_valence(a))) >= 0:
+                neighbors = list(self.connected_atoms(a))
+                a_coord = self.get_atom_coord(a)
+                if len(neighbors) == 3:
+                    vec = mean_plane(self.coord_subset(neighbors))
+                    cent = np.average(self.coord_subset(neighbors), axis=0)
+                    align = np.dot(vec, cent - a_coord)
+                    if (
+                        abs(align) > 0.05
+                    ):  # Note that this threshold is completely arbitrary.
+                        vec *= align
+                else:
+                    vec = np.average(self.coord_subset(neighbors) - a_coord, axis=0)
+                vec /= np.linalg.norm(vec)
+                L = a.cov_radius_1 + Element.H.cov_radius_1
+
+                if diff == 1:
+                    newh = Atom("H")
+                    newbond = Bond(a, newh)
+                    self.add_atom(newh, a_coord - vec * L)
+                    self.append_bond(newbond)
+
+                elif diff == 2:
+                    if len(neighbors) == 2:
+                        r1, r2 = self.coord_subset(neighbors) - a_coord
+                        z = np.cross(
+                            r1, r2
+                        )  # this is a vector that is orthogonal to neighbors
+                        z /= np.linalg.norm(z)
+                    else:
+                        z = np.cross(vec, [0.0, 0.0, 1.0])
+                        z /= np.linalg.norm(z)
+
+                    c1 = a_coord - (vec * 0.5736 + z * 0.8192) * L
+                    c2 = a_coord - (vec * 0.5736 - z * 0.8192) * L
+                    self.add_atom(h1 := Atom("H"), c1)
+                    self.add_atom(h2 := Atom("H"), c2)
+                    self.append_bond(Bond(a, h1))
+                    self.append_bond(Bond(a, h2))
+
+                elif diff == 3:
+                    R = rotation_matrix_from_vectors(TETRAHEDRON[0], vec)
+                    tet_rot = TETRAHEDRON @ R * L + a_coord
+
+                    for c in tet_rot[1:]:
+                        self.add_atom(h := Atom("H"), c)
+                        self.append_bond(Bond(a, h))
 
 
 class Substructure(Structure):

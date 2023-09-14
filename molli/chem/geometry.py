@@ -73,7 +73,6 @@ class CartesianGeometry(Promolecule):
     """
 
     _coords_dtype = np.float64
-    __slots__ = "_atoms", "_coords", "_name", "charge", "mult"
 
     def __init_subclass__(cls, coords_dtype=np.float64, **kwds) -> None:
         super().__init_subclass__(**kwds)
@@ -105,34 +104,17 @@ class CartesianGeometry(Promolecule):
         self._coords = np.empty((self.n_atoms, 3), self._coords_dtype)
 
         if isinstance(other, CartesianGeometry):
-            self.coords = other.coords
+            self.coords = coords if coords is not None else other.coords
         else:
-            self.coords = coords or np.nan
+            self.coords = coords if coords is not None else np.nan
 
     # ADD METHODS TO OVERRIDE ADDING ATOMS!
 
     def add_atom(self, a: Atom, coord: ArrayLike):
-        """
-        Adds an atom to the geometry
-
-        Args:
-            a (Atom): Atom to be added
-            coord (ArrayLike): Coordinates of the atom
-
-        Raises:
-            ValueError: Inappropriate coordinates for atom (interpreted as {_coord})
-
-        Example Usage:
-            >>> geom = CartesianGeometry()
-            >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
-            >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
-        """
-        _a = super().add_atom(a)
+        super().append_atom(a)
         _coord = np.array(coord, dtype=self._coords_dtype)
         if not _coord.shape == (3,):
-            raise ValueError(
-                "Inappropriate coordinates for atom (interpreted as {_coord})"
-            )
+            raise ValueError("Inappropriate coordinates for atom (interpreted as {_coord})")
         self._coords = np.append(self._coords, [coord], axis=0)
 
     def new_atom(
@@ -662,9 +644,7 @@ class CartesianGeometry(Promolecule):
             raise ValueError("Cannot compare geometries with different number of atoms")
 
         if validate_elements == True and self.elements != other.elements:
-            raise ValueError(
-                "Cannot compare two molecules with different lists of elements"
-            )
+            raise ValueError("Cannot compare two molecules with different lists of elements")
 
         raise NotImplementedError
 
@@ -684,22 +664,9 @@ class CartesianGeometry(Promolecule):
             >>> print(geom.coords) # [[0, 0, 0], [4, 6, 4]]
         """
         t_matrix = np.array(_t_matrix)
-        self.coords = t_matrix @ self.coords
+        self.coords = self.coords @ t_matrix
 
     def del_atom(self, _a: AtomLike):
-        """
-        Delete an atom from the geometry
-
-        Args:
-            _a (AtomLike): Atom to delete
-
-        Example Usage:
-            >>> geom = ml.CartesianGeometry()
-            >>> geom.add_atom(Atom(Element.C), [0, 0, 0])
-            >>> geom.add_atom(Atom(Element.H), [1, 0, 0])
-            >>> geom.del_atom(0)
-            >>> print(geom.coords) # [[1, 0, 0]]
-        """
-        ai = self.index_atom(_a)
-        self._coords = np.delete(self._coords, ai, 0)
+        ai = self.get_atom_index(_a)
+        self._coords = np.delete(self._coords, ai, axis=0)
         super().del_atom(_a)

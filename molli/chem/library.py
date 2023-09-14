@@ -8,7 +8,22 @@ import msgpack
 
 
 class MoleculeLibrary(_Library[Molecule]):
-    ...
+    @staticmethod
+    def default_encoder(mol: Molecule) -> bytes:
+        return msgpack.dumps(mol.serialize(), use_single_float=True)
+
+    @staticmethod
+    def default_decoder(bts: bytes) -> Molecule:
+        return Molecule.deserialize(msgpack.loads(bts, use_list=False))
+
+    @classmethod
+    def new(
+        cls: type[_Library],
+        path: Path | str,
+        overwrite: bool = False,
+    ) -> MoleculeLibrary:
+
+        return super().new(path, overwrite=overwrite)
 
 
 class ConformerLibrary(_Library[ConformerEnsemble]):
