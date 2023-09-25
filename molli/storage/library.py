@@ -208,7 +208,7 @@ class _Library(Generic[T]):
         """
         This function is essential for copying chunks of data without interpreting it.
         """
-        assert 0 <= start < start + chunk_size < len(self)
+        assert 0 <= start < start + chunk_size <= len(self)
         self.goto(start)
         for _ in range(chunk_size):
             k, v = self._read_kv()

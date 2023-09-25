@@ -16,6 +16,7 @@ from logging import getLogger
 from uuid import uuid1
 import fasteners
 import tempfile
+import shutil
 
 DESCRIPTOR_CHOICES = ["ASO", "AEIF", "ADIF", "AESP", "ASR"]
 
@@ -32,6 +33,7 @@ arg_parser.add_argument(
     type=str.upper,
     help="This selects the specific descriptor to compute.",
 )
+
 arg_parser.add_argument(
     "conflib",
     metavar="MLIB_FILE",
@@ -98,7 +100,6 @@ def _mpi_worker():
 def molli_main(args, shared_lkfile=None, scratch_lkfile=None, **kwargs):
     parsed = arg_parser.parse_args(args)
     logger = getLogger("molli.scripts.gbca")
-
     
     # Test if molli is launched via openmpi
     comm = MPI.COMM_WORLD
@@ -108,33 +109,36 @@ def molli_main(args, shared_lkfile=None, scratch_lkfile=None, **kwargs):
     if size > 1:
         # This should only happen if MPI launch detected.
         if rank == 0:
+            print(ml.config.SPLASH)
             logger.info(f"MPI launch detected: universe size {size}. --nprocs CMD parameter ignored even if specified.")
             logger.debug(f"Shared  lock file: {shared_lkfile}")
             logger.debug(f"Scratch lock file: {scratch_lkfile}")
-
-            lib = ml.ConformerLibrary(parsed.conflib)
-        else:
-            # Not sure if this is an optimal step but sending this data could be faster than parsing every time.
-            # Need a timing comparison!
-            lib = comm.bcast(lib := None)
         
-        if rank == 0:
-            logger.info(f"Broadcasing of the library is finished")
+        lib = ml.ConformerLibrary(parsed.conflib)
+        grid = np.load(parsed.grid)
 
         # This enables strided access to the batch
         for batch_idx in range(rank, lib.n_batches(parsed.batchsize), size):
-            with ml.ConformerLibrary.new(ml.config.SCRATCH_DIR / f"molli-gbca-{batch_idx}-{rank}.mlib", overwrite=True) as templib:
-                pos = batch_idx * parsed.batchsize
-                chunksize = min(len(lib) - pos, parsed.batchsize)
-                # This creates a
-                lib.copy_chunk(templib, pos, chunksize)
-                logger.info(f"Batch {batch_idx} was copied into {templib.path}")
-        
-                # main code here
+            try:
+                with ml.ConformerLibrary.new(ml.config.SCRATCH_DIR / f"molli-gbca-{batch_idx}-{rank}.mlib", overwrite=True) as templib, lib:
+                    pos = batch_idx * parsed.batchsize
+                    chunksize = min(len(lib) - pos, parsed.batchsize)
+                    # This creates a
+                    lib.copy_chunk(templib, pos, chunksize)
+            except Exception as xc:
+                logger.critical("Could not copy batch {batch_idx}")
+                logger.exception(xc)
+                comm.Abort(1)
+            logger.info(f"Batch {batch_idx} was copied into {templib.path}")
+            with h5py.File(ml.config.SCRATCH_DIR / f"aso-{batch_idx}-{rank}.hdf5", "w") as f, templib:
+                for key in templib.keys():
+                    f[key] = ml.descriptor.chunky_aso(templib[key], grid, parsed.chunksize)
 
+            logger.info(f"Computing ASO for batch {batch_idx} (last key: {key}) finished.")
+        comm.barrier()
         if rank == 0:
             logger.info(f"Scattering the library across all workers is finished.")
-
+        
     else:
         # Using python multiprocessing now.
         logger.info(f"Using python multiprocessing with {parsed.nprocs} processes.")
