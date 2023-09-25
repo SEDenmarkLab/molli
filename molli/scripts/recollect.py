@@ -77,7 +77,7 @@ mol_conf.add_argument(
     help="This will parse the geometry into a ml.ConformerEnsemble"
 )
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args,  **kwargs):
     parsed = arg_parser.parse_args(args)
 
     inp = Path(parsed.input)

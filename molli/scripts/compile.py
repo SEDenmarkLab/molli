@@ -50,7 +50,7 @@ arg_parser.add_argument(
 )
 
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args,  **kwargs):
     print("This routine will compile all requested mol2 files into a single collection")
     parsed = arg_parser.parse_args(args)
     files = []

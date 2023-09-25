@@ -74,11 +74,11 @@ def coords_to_obmol(obmol: ob.OBMol, coords: np.ndarray):
         a.SetVector(x, y, z)
 
 
-def from_str_w_ob(block, input_fmt: str = "mol2") -> ob.OBMol:
+def from_str_w_ob(block: str, input_fmt: str = "mol2") -> ob.OBMol:
     """
     This function takes any file and creates an openbabel style mol format
     """
-
+    
     conv = ob.OBConversion()
     obmol = ob.OBMol()
     conv.SetInFormat(input_fmt)
