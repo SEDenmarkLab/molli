@@ -21,10 +21,11 @@ A plain byte string that is meant for file identification purposes
 - `256 (bytes)` Header 2. Comment string.
 """
 
-_BLOCK_HEADER = Struct(b">BI")
+_BLOCK_HEADER = Struct(b">xxHI")
 """
-5 byte record header
-- `1 (uchar)`   Key length
+8 byte record header
+- `2 pad` bytes (to be defined later)
+- `2 (ushort)`   Key length
 - `4 (uint)`    Record length
 """
 
