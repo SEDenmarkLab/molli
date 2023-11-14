@@ -27,7 +27,7 @@ class ConformerEnsembleTC(ut.TestCase):
         self.assertEqual(ens.n_bonds, 16)
         self.assertTupleEqual(ens.coords.shape, (7, 17, 3))
         self.assertTupleEqual(ens.weights.shape, (7,))
-        self.assertTupleEqual(ens.atomic_charges.shape, (17,))
+        self.assertTupleEqual(ens.atomic_charges.shape, (7, 17))
 
         charges = np.array(
             [
@@ -51,6 +51,4 @@ class ConformerEnsembleTC(ut.TestCase):
             ]
         )
 
-        np.testing.assert_allclose(
-            charges, ens.atomic_charges
-        )
+        np.testing.assert_allclose(charges, ens.atomic_charges[0])
