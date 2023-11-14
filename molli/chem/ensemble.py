@@ -41,37 +41,59 @@ class ConformerEnsemble(Connectivity):
         copy_atoms: bool = False,
         **kwds,
     ):
-        super().__init__(
-            other,
-            n_atoms=n_atoms,
-            name=name,
-            copy_atoms=copy_atoms,
-            charge=charge,
-            mult=mult,
-            **kwds,
-        )
+        # TODO: revise the constructor
 
-        self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
-        self._atomic_charges = np.zeros((self.n_atoms,))
-        self._weights = np.ones((n_conformers,))
+        if isinstance(other, list) and isinstance(other[0], Structure):
+            super().__init__(
+                other[0],
+                name=other[0].name,
+                charge=other[0].charge,
+                mult=other[0].mult,
+            )
+            n_conformers = len(other)
 
-        if isinstance(other, ConformerEnsemble):
-            self.atomic_charges = atomic_charges
-            self.coords = other.coords
-            self.weights = other.weights
+            self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros((n_conformers, self.n_atoms))
+            self._weights = np.ones((n_conformers,))
+
+            self.atomic_charges = [c.atomic_charges for c in other]
+            self.coords = [c.coords for c in other]
         else:
-            if coords is not None:
-                self.coords = coords
+            super().__init__(
+                other,
+                n_atoms=n_atoms,
+                name=name,
+                copy_atoms=copy_atoms,
+                charge=charge,
+                mult=mult,
+                **kwds,
+            )
+            self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros(
+                (
+                    n_conformers,
+                    self.n_atoms,
+                )
+            )
+            self._weights = np.ones((n_conformers,))
 
-            if atomic_charges is not None:
+            if isinstance(other, ConformerEnsemble):
                 self.atomic_charges = atomic_charges
+                self.coords = other.coords
+                self.weights = other.weights
+            else:
+                if coords is not None:
+                    self.coords = coords
 
-            if weights is not None:
-                self.weights = weights
+        if atomic_charges is not None:
+            self.atomic_charges = atomic_charges
+
+        if weights is not None:
+            self.weights = weights
 
     @property
     def coords(self):
-        """Set of atomic positions in shape (n_atoms, 3)"""
+        """Set of atomic positions in shape (n_conformers,n_atoms, 3)"""
         return self._coords
 
     @coords.setter
@@ -108,15 +130,7 @@ class ConformerEnsemble(Connectivity):
         mol2io = StringIO(input) if isinstance(input, str) else input
         mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
 
-        res = cls(
-            mols[0],
-            n_conformers=len(mols),
-            n_atoms=mols[0].n_atoms,
-            name=mols[0].name,
-            charge=charge,
-            mult=mult,
-            atomic_charges=mols[0].atomic_charges,
-        )
+        res = cls(mols)
 
         for i, m in enumerate(mols):
             res._coords[i] = m.coords
@@ -188,16 +202,17 @@ class ConformerEnsemble(Connectivity):
                 return Conformer(self, _i)
 
             case slice() as _s:
-                return [
-                    Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))
-                ]
+                return [Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))]
 
             case _:
                 raise ValueError("Cannot use this locator")
 
     def __str__(self):
         _fml = self.formula if self.n_atoms > 0 else "[no atoms]"
-        s = f"ConformerEnsemble(name='{self.name}', formula='{_fml}', n_conformers={self.n_conformers})"
+        s = (
+            f"ConformerEnsemble(name='{self.name}', formula='{_fml}',"
+            f" n_conformers={self.n_conformers})"
+        )
         return s
 
     def extend(self, others: Iterable[StructureLike]):
@@ -289,7 +304,8 @@ class ConformerEnsemble(Connectivity):
         """
         if factor < 0 and not allow_inversion:
             raise ValueError(
-                "Scaling with a negative factor can only be performed with explicit `scale(factor, allow_inversion = True)`"
+                "Scaling with a negative factor can only be performed with explicit `scale(factor,"
+                " allow_inversion = True)`"
             )
 
         if factor == 0:
