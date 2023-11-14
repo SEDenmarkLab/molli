@@ -10,6 +10,7 @@ __all__ = [
     "align",
     "inspect",
     "combine",
+    "test",
 ]
 
 __all__.sort()
