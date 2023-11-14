@@ -1,7 +1,7 @@
 from __future__ import annotations
 from . import Atom, Element, AtomLike, Promolecule, PromoleculeLike
 from dataclasses import dataclass, field, KW_ONLY
-from typing import Iterable, List, Generator, Tuple, Any
+from typing import Iterable, List, Generator, Tuple, Any, Self
 from copy import deepcopy
 from enum import IntEnum
 from collections import deque
@@ -10,6 +10,7 @@ from io import BytesIO
 import attrs
 from bidict import bidict
 from functools import cache
+from weakref import ref, WeakKeyDictionary, WeakSet
 
 
 class BondType(IntEnum):
@@ -72,8 +73,8 @@ MOL2_BOND_TYPE_MAP = bidict(
 class Bond:
     """`a1` and `a2` are always assumed to be interchangeable"""
 
-    a1: Atom
-    a2: Atom
+    a1: Atom = attrs.field()
+    a2: Atom = attrs.field()
 
     label: str = attrs.field(
         default=None,
@@ -93,6 +94,22 @@ class Bond:
         default=1.0,
         converter=float,
     )
+
+    _parent = attrs.field(
+        default=None,
+        init=False,
+    )
+
+    @property
+    def parent(self):
+        if self._parent is None:
+            return None
+        else:
+            return self._parent()
+
+    @parent.setter
+    def parent(self: Self, other: Self):
+        self._parent = ref(other)
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -229,7 +246,9 @@ class Connectivity(Promolecule):
 
         if isinstance(other, Connectivity):
             atom_map = {other.atoms[i]: self.atoms[i] for i in range(self.n_atoms)}
-            self._bonds = list(b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds)
+            self._bonds = list(
+                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds
+            )
         else:
             self._bonds = list()
 
@@ -253,6 +272,11 @@ class Connectivity(Promolecule):
             return self.bonds[self.index_bond({_a1, _a2})]
         except:
             return None
+
+    def connect(self, _a1: AtomLike, _a2: AtomLike, **kwds):
+        a1, a2 = self.get_atoms(_a1, _a2)
+        self.append_bond(b := Bond(a1, a2, **kwds))
+        return b
 
     def index_bond(self, b: Bond) -> int:
         return self._bonds.index(b)
