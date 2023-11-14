@@ -36,9 +36,6 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 class Structure(CartesianGeometry, Connectivity):
     """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
 
-    # Improve efficiency of attribute access
-    __slots__ = ("_name", "_atoms", "_bonds", "_coords", "charge", "mult")
-
     def __init__(
         self,
         other: Structure = None,
@@ -109,7 +106,6 @@ class Structure(CartesianGeometry, Connectivity):
             name = self.name
         else:
             name = "unknown"
-
 
         stream.write(f"# Produced with molli package\n")
         stream.write(
@@ -315,7 +311,6 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def concatenate(cls: type[Structure], *structs: Structure) -> Structure:
-
         source_atoms = list(chain.from_iterable(x.atoms for x in structs))
         res = cls(source_atoms, copy_atoms=True)
 
@@ -326,8 +321,8 @@ class Structure(CartesianGeometry, Connectivity):
 
         res.coords = np.vstack([x.coords for x in structs])
 
-        res.charge = np.sum(s.charge for s in structs)
-        res.mult = np.sum(s.mult for s in structs) - 1
+        res.charge = np.sum(np.fromiter((s.charge for s in structs), dtype="int32"))
+        res.mult = np.sum(np.fromiter((s.mult for s in structs), dtype="int32")) - 1
 
         return res
 

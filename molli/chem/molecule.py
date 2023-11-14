@@ -25,8 +25,6 @@ from . import (
 class Molecule(Structure):
     """Fundamental class of the MOLLI Package."""
 
-    __slots__ = Structure.__slots__ + ("_atomic_charges",)
-
     def __init__(
         self,
         other: Structure | PromoleculeLike = None,
@@ -46,7 +44,13 @@ class Molecule(Structure):
         # if isinstance(other, Molecule | Structure):
         #     ...
         super().__init__(
-            other, n_atoms=n_atoms, name=name, charge=charge, mult=mult, coords=coords, **kwds
+            other,
+            n_atoms=n_atoms,
+            name=name,
+            charge=charge,
+            mult=mult,
+            coords=coords,
+            **kwds,
         )
         self.atomic_charges = atomic_charges
 
