@@ -69,6 +69,6 @@ def rotation_matrix_from_axis(_axis: ArrayLike, angle: float):
 
 def rotate_2dvec_outa_plane(_vec: ArrayLike, angle: float, _plane_normal: ArrayLike = [0,0,1]):
     R = rotation_matrix_from_vectors(_plane_normal, [0, 0, 1])
-    ax = np.cross([0, 0, 1], _vec)  
+    ax = np.cross([0, 0, 1], _vec) 
     Rinv = np.linalg.inv(R)
     return R @ rotation_matrix_from_axis(ax, angle) @ Rinv
