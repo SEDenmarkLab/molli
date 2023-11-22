@@ -12,7 +12,7 @@
 This file defines all constituent elements of 
 """
 from __future__ import annotations
-from typing import Any, List, Iterable, Generator, Callable
+from typing import Any, List, Iterable, Generator, Callable, Self
 from enum import Enum, IntEnum
 from dataclasses import dataclass, field, KW_ONLY
 from collections import Counter, UserList
@@ -24,6 +24,7 @@ from warnings import warn
 import re
 from bidict import bidict
 import attrs
+from weakref import ref
 
 
 class Element(IntEnum):
@@ -232,54 +233,6 @@ Integer is interpreted as atomic number
 """
 
 
-# class Atom:
-#     """
-#     Atom is a mutable object that is compared by id.
-#     It stores atomic properties for the molecule.
-#     Performance of the class was optimized through the use of __slots__
-#     attrs allows for the storage of arbitrary atomic attributes
-#     """
-
-#     __slots__ = (
-#         "_parent",
-#         "element",
-#         "label",
-#         "isotope",
-#         "traits",
-#         "attrs",
-#     )
-
-#     def __init__(
-#         self,
-#         element: ElementLike = Element.Unknown,
-#         isotope: int = None,
-#         *,
-#         traits: str = None,
-#         label: str = None,
-#         parent: Promolecule = None,
-#         **attrs: Any,
-#     ):
-
-#         self.element = Element.get(element)
-#         self.isotope = isotope
-#         self.atype = atype
-#         self.label = label
-#         self.attrs = dict(**attrs)
-#         self._parent = parent
-
-#     def update(self, other: Atom):
-#         self.element = other.element
-#         self.label = other.label
-#         self.atype = other.atype
-#         self.isotope = other.isotope
-#         self.dummy = other.dummy
-#         self.attrs |= other.attrs
-
-#     @property
-#     def parent(self):
-#         return self._parent
-
-
 IMPLICIT_VALENCE = {
     1: 1,
     2: 2,
@@ -410,6 +363,33 @@ class Atom:
         # repr=lambda x: x.name,
     )
 
+    formal_charge: int = attrs.field(
+        default=0,
+        repr=False,
+    )
+
+    formal_spin: int = attrs.field(default=0, repr=False)
+
+    attrib: dict = attrs.field(
+        factory=dict,
+    )
+
+    _parent = attrs.field(
+        default=None,
+        init=False,
+    )
+
+    @property
+    def parent(self):
+        if self._parent is None:
+            return None
+        else:
+            return self._parent()
+
+    @parent.setter
+    def parent(self: Self, other: Self):
+        self._parent = ref(other)
+
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
 
@@ -429,10 +409,10 @@ class Atom:
 
     @property
     def idx(self) -> int | None:
-        if self._parent is None:
+        if self.parent is None:
             return None
         else:
-            return self._parent.index_atom(self)
+            return self.parent.index_atom(self)
 
     # def __repr__(self):
     #     return f"Atom([{self.isotope or ''}{self.element!r}], label={self.label!r}, atype={self.atype!r})"
@@ -497,7 +477,9 @@ class Atom:
         match mol2_type:
             case "4":
                 if self.element != Element.N:
-                    raise NotImplementedError(f"{mol2_type} not implemented for {mol2_elt}, only N")
+                    raise NotImplementedError(
+                        f"{mol2_type} not implemented for {mol2_elt}, only N"
+                    )
                 else:
                     self.atype = AtomType.N_Ammonium
                     self.geom = AtomGeom.R4_Tetrahedral
@@ -547,7 +529,9 @@ class Atom:
             case _ if mol2_elt == "Du":
                 # This case if to handle Du.X
                 self.element = (
-                    Element[mol2_type] if mol2_type in Element._member_names_ else Element.Unknown
+                    Element[mol2_type]
+                    if mol2_type in Element._member_names_
+                    else Element.Unknown
                 )
                 self.atype = AtomType.Dummy
 
@@ -577,15 +561,21 @@ class Atom:
             case Element.C, _, _:
                 if self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
-                elif (self.atype == AtomType.C_Guanidinium) & (self.geom == AtomGeom.R3_Planar):
+                elif (self.atype == AtomType.C_Guanidinium) & (
+                    self.geom == AtomGeom.R3_Planar
+                ):
                     return f"{self.element.symbol}.cat"
                 else:
                     return f"{self.element.symbol}"
 
             case Element.N, _, _:
-                if (self.atype == AtomType.N_Ammonium) & (self.geom == AtomGeom.R4_Tetrahedral):
+                if (self.atype == AtomType.N_Ammonium) & (
+                    self.geom == AtomGeom.R4_Tetrahedral
+                ):
                     return f"{self.element.symbol}.4"
-                elif (self.atype == AtomType.N_Amide) & (self.geom == AtomGeom.R3_Planar):
+                elif (self.atype == AtomType.N_Amide) & (
+                    self.geom == AtomGeom.R3_Planar
+                ):
                     return f"{self.element.symbol}.am"
                 elif self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
@@ -601,9 +591,13 @@ class Atom:
                     return f"{self.element.symbol}"
 
             case Element.S, _, _:
-                if (self.atype == AtomType.O_Sulfoxide) & (self.geom == AtomGeom.R3_Pyramidal):
+                if (self.atype == AtomType.O_Sulfoxide) & (
+                    self.geom == AtomGeom.R3_Pyramidal
+                ):
                     return f"{self.element.symbol}.O"
-                elif (self.atype == AtomType.O_Sulfone) & (self.geom == AtomGeom.R4_Tetrahedral):
+                elif (self.atype == AtomType.O_Sulfone) & (
+                    self.geom == AtomGeom.R4_Tetrahedral
+                ):
                     return f"{self.element.symbol}.O2"
                 else:
                     return f"{self.element.symbol}"
@@ -636,7 +630,19 @@ class Promolecule:
     for API compatibility reasons.
     """
 
-    # __slots__ = ("_atoms", "_atom_index_cache", "_name", "charge", "mult")
+    __slots__ = (
+        "_name",
+        "_parent",
+        "_atoms",
+        "_atomic_charges",
+        "_bonds",
+        "_adjacency",
+        "_coords",
+        "charge",
+        "mult",
+        "attrib",
+        "__weakref__",
+    )
 
     def __init__(
         self,
@@ -648,17 +654,18 @@ class Promolecule:
         copy_atoms: bool = False,
         charge: int = None,
         mult: int = None,
+        attrib: dict[str, Any] = None,
         **kwds,  # mostly just for subclassing compatibility
     ):
         """
         Initialization of promolecule pre-allocates storage space.
         n_atoms is ignored in cas
         """
-        self._atom_index_cache = bidict()
 
         self.name = name
         self.charge = charge or 0
         self.mult = mult or 1
+        self.attrib = attrib or {}
 
         match other:
             case None:
@@ -689,7 +696,12 @@ class Promolecule:
                 self._atoms = list(Atom(a) for a in atoms)
 
             case _:
-                raise NotImplementedError(f"Cannot interpret {other} of type {type(other)}")
+                raise NotImplementedError(
+                    f"Cannot interpret {other} of type {type(other)}"
+                )
+
+        # for a in self.atoms:
+        #     a.parent = self
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
@@ -796,7 +808,9 @@ class Promolecule:
     # ) -> Generator[Atom, None, None]:
     #     return map(self.get_atom, atoms)
 
-    def yield_atoms_by_element(self, elt: Element | str | int) -> Generator[Atom, None, None]:
+    def yield_atoms_by_element(
+        self, elt: Element | str | int
+    ) -> Generator[Atom, None, None]:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
