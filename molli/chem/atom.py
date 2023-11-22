@@ -363,12 +363,12 @@ class Atom:
         # repr=lambda x: x.name,
     )
 
-    charge: int = attrs.field(
+    formal_charge: int = attrs.field(
         default=0,
         repr=False,
     )
 
-    mult: int = attrs.field(default=1, repr=False)
+    formal_spin: int = attrs.field(default=0, repr=False)
 
     attrib: dict = attrs.field(
         factory=dict,
