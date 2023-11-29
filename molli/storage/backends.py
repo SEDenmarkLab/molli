@@ -1,6 +1,7 @@
 from fasteners import InterProcessLock, InterProcessReaderWriterLock
 from glob import glob
 from zipfile import ZipFile, is_zipfile
+from .ukvfile import UKVFile
 
 import abc
 from typing import (
@@ -15,6 +16,7 @@ from typing import (
     Type,
     Self,
     Any,
+    Literal,
 )
 from pathlib import Path
 from contextlib import contextmanager
@@ -22,6 +24,7 @@ from collections import deque
 from collections.abc import MutableMapping
 from deprecated import deprecated
 import atexit
+from io import UnsupportedOperation
 
 T = TypeVar("T")
 
@@ -39,59 +42,103 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
     This is a base class for all possible Collection backends
     """
 
-    def __init__(self, path, *, readonly: bool = True, bufsize=0, **kwargs) -> None:
+    def __init__(
+        self,
+        path,
+        *,
+        readonly: bool = True,
+        bufsize: int = None,
+        **kwargs,
+    ) -> None:
         """Bufsize refers to the sum of lengths of all keys AND all values"""
         self._path = Path(path)
-        self._readonly = readonly
         self._write_queue = deque()
-        self._keys = set()
-        self._lock = None
+        self._keys = set[str]()
+
+        self._lock = InterProcessReaderWriterLock(
+            self._path.with_name(self._path.name + ".lock")
+        )
+
         self._bufsize = (
-            int(bufsize) if bufsize >= 0 else 131_072
+            int(bufsize) if bufsize is not None else 131_072
         )  # default buffer size will be 128 MB TODO: make adjustable via config?
         self._usedmem = 0
+        self._readonly = readonly
+        self._state = "idle"
+
         # This registers the call so that once python terminates
         # normally then the contents are safely flushed onto the disk
         atexit.register(self.flush)
-        self.update_keys()
+        # self.update_keys()
 
-    @property
-    def lock(self):
-        """Returns a read lock object. When it is acquired it is safe to read the data structure"""
-        if self._lock is None:
-            if self._path.is_dir():
-                self._lock = InterProcessReaderWriterLock(self._path / "__lock__")
-            else:
-                self._lock = InterProcessReaderWriterLock(
-                    self._path.with_name(self._path.name + ".lock")
-                )
-        return self._lock
+    def begin_read(self):
+        pass
 
-    @lock.deleter
-    def lock(self):
-        self._lock._do_close()
-        self._lock = None
+    def end_read(self):
+        pass
+
+    def begin_write(self):
+        pass
+
+    def end_write(self):
+        pass
 
     @abc.abstractmethod
     def update_keys(self):
-        """Update the locator dictionary"""
+        pass
+
+    @contextmanager
+    def reading(self, timeout: float = None):
+        """Context manager that acquires a read lock"""
+        if not self._lock.acquire_read_lock(timeout=timeout):
+            raise TimeoutError(f"Could not acquire reading lock within timeout")
+        self.begin_read()
+        self._state = "reading"
+
+        try:
+            self.update_keys()
+            yield self
+        finally:
+            self.end_read()
+            self._state = "idle"
+            self._lock.release_read_lock()
+
+    @contextmanager
+    def writing(self, timeout: float = None):
+        """Context manager that acquires a write lock"""
+        if self._readonly:
+            raise UnsupportedOperation(
+                f"Cannot begin writing into a readonly collection backend."
+            )
+        if not self._lock.acquire_write_lock(timeout=timeout):
+            raise TimeoutError(f"Could not acquire reading lock within timeout")
+        self.begin_write()
+        self._state = "writing"
+        try:
+            self.update_keys()
+            yield self
+        finally:
+            self.flush()
+            self.end_write()
+            self._state = "idle"
+            self._lock.release_write_lock()
 
     @abc.abstractmethod
-    def read(self, key: str) -> bytes:
+    def _read(self, key: str) -> bytes:
         """Get the bytes based on the key"""
 
     @abc.abstractmethod
-    def write(self, key: str, value: bytes):
+    def _write(self, key: str, value: bytes):
         """Write the bytes into the Collection. Assuming all locks are configured correctly."""
 
-    def delete(self, key: str) -> bytes:
+    def _delete(self, key: str) -> bytes:
         """This method is responsible for deleting"""
         raise NotImplementedError(
             f"Collection backend {self.__class__} does not support item deletion"
         )
 
     def put(self, key: str, value: bytes):
-        if self.readonly:
+        if self._readonly:
             raise IOError("Cannot write into a readonly Collection.")
 
         self._write_queue.append((key, value))
@@ -103,30 +150,23 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
 
     def get(self, key: str):
         """The getter is very primitive in the ABC. However, this can be a chance to add caching if needed."""
-        with self.lock.read_lock():
-            return self.read(key)
-
-    @property
-    def readonly(self):
-        return self._readonly
+        return self._read(key)
 
     @property
     def used_memory(self):
         return self._usedmem
 
     def flush(self):
-        with self.lock.write_lock():
-            self.update_keys()
-            while self._write_queue:
-                key, value = self._write_queue.popleft()
-                self.write(key, value)
-            self._usedmem = 0
+        while self._write_queue:
+            key, value = self._write_queue.popleft()
+            self._write(key, value)
+        self._usedmem = 0
 
-    def keys(self):
+    def keys(self) -> set[str]:
         """This returns a set of mapping keys"""
         return self._keys
 
-    def items(self) -> Generator[tuple[bytes, bytes], None, None]:
+    def items(self) -> Generator[tuple[str, bytes], None, None]:
         return ((k, self.get(k)) for k in self.keys())
 
     def __len__(self):
@@ -135,19 +175,27 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
     def __repr__(self):
         return f"{self.__class__.__name__}({self._path.as_posix()!r})"
 
+    def __contains__(self, __key):
+        return __key in self.keys()
+
 
 class DirCollectionBackend(CollectionBackendBase):
     def __init__(
-        self, path, *, ext: str = ".dat", readonly: bool = True, bufsize=0
+        self,
+        path,
+        *,
+        readonly: bool = True,
+        ext: str = ".dat",
+        bufsize=0,
     ) -> None:
         self.ext = ext
 
-        if not path.exists():
-            path.mkdir()
-        else:
-            assert path.is_dir()
+        path = path if isinstance(path, Path) else Path(path)
 
-        super().__init__(path, readonly=readonly, bufsize=bufsize)
+        if not path.exists():
+            path.mkdir(exist_ok=True, parents=True)
+
+        super().__init__(path, bufsize=bufsize, readonly=readonly)
 
     def update_keys(self):
         allpaths: list[str] = glob(f"*{self.ext}", root_dir=self._path)
@@ -159,11 +207,11 @@ class DirCollectionBackend(CollectionBackendBase):
     def get_path(self, key: str):
         return self._path / f"{key}{self.ext}"
 
-    def write(self, key: str, value: bytes):
+    def _write(self, key: str, value: bytes):
         with open(self.get_path(key), "wb") as f:
             return f.write(value)
 
-    def read(self, key: bytes) -> bytes:
+    def _read(self, key: bytes) -> bytes:
         with open(self.get_path(key), "rb") as f:
             return f.read()
 
@@ -173,10 +221,15 @@ class DirCollectionBackend(CollectionBackendBase):
 
 class ZipCollectionBackend(CollectionBackendBase):
     def __init__(
-        self, path, *, ext: str = ".dat", readonly: bool = True, bufsize=0
+        self,
+        path,
+        *,
+        ext: str = ".dat",
+        mode: Literal["r", "w", "a", "x"] = "r",
+        bufsize=0,
     ) -> None:
         self.ext = ext
-        super().__init__(path, readonly=readonly, bufsize=bufsize)
+        super().__init__(path, mode=mode, bufsize=bufsize)
         self._zipfile = ZipFile(self._path, mode="a")
 
     def update_keys(self):
@@ -223,31 +276,46 @@ class UkvCollectionBackend(CollectionBackendBase):
         self,
         path,
         *,
-        h1: bytes = None,
-        lb: bytes = None,
-        comment: bytes = None,
         readonly: bool = True,
+        comment: str = None,
+        h1: bytes = None,
+        b0: bytes = None,
         bufsize=0,
+        **kwds,
     ) -> None:
-        from .ukvfile import UKVFile
+        super().__init__(path, bufsize=bufsize, readonly=readonly)
+        if comment is None:
+            comment = ""
 
-        super().__init__(path, readonly=readonly, bufsize=bufsize)
-        self._ukvfile = UKVFile(self._path, h1=h1, lb=lb, comment=comment, mode="a")
+        # This access needs to be very restrictive to prevent collisions
+        with self._lock.write_lock():
+            if not self._path.is_file():
+                with UKVFile(
+                    self._path,
+                    h1=h1,
+                    b0=b0,
+                    h2=comment.encode(),
+                    mode="x",
+                ):
+                    pass
+
+    def begin_read(self):
+        self._ukvfile = UKVFile(self._path, mode="r")
+
+    def end_read(self):
+        self._ukvfile.close()
+
+    def begin_write(self):
+        self._ukvfile = UKVFile(self._path, mode="a")
+
+    def end_write(self):
+        self._ukvfile.close()
 
     def update_keys(self):
-        self._ukvfile.map_blocks()
+        self._keys = {k.decode() for k in self._ukvfile.keys()}
 
-    def lock_acquire(self):
-        self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
-        self._plock.acquire()
-        self._ukvfile.open()
+    def _write(self, key: str, value: bytes):
+        self._ukvfile.put(key.encode(), value)
 
-    def lock_release(self):
-        self._ukvfile.close()
-        self._plock.release()
-
-    def write(self, key: bytes, value: bytes):
-        self._ukvfile.write(key, value)
-
-    def read(self, key: bytes) -> bytes:
-        return self._ukvfile.read(key)
+    def _read(self, key: str) -> bytes:
+        return self._ukvfile.get(key.encode())
