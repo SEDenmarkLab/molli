@@ -11,6 +11,7 @@ from typing import (
     Type,
     Self,
     Any,
+    Literal,
 )
 from pathlib import Path
 from contextlib import contextmanager
@@ -23,22 +24,19 @@ from .backends import (
     UkvCollectionBackend,
     MlibCollectionBackend,
 )
+from io import UnsupportedOperation
 import re
 
 T = TypeVar("T")
 
 __all__ = ("Collection",)
 
-_RE_Collection_TYPE = re.compile(
-    r"(?P<backend>\w*)\[(?P<ext>\.\w*)?:?(?P<protocol>.*)\]"
-)
-
 
 def _do_nothing(x):
     return x
 
 
-class CollectionBase(MutableMapping[str, T]):
+class Collection(MutableMapping[str, T]):
     def __init__(
         self: Self,
         path: Path | str,
@@ -46,20 +44,31 @@ class CollectionBase(MutableMapping[str, T]):
         value_encoder: Callable[[T], bytes] | str = None,
         value_decoder: Callable[[bytes], T] | str = None,
         *,
-        readonly: bool = True,
+        readonly: bool = False,
         encoding: str = "utf8",
         bufsize: int = -1,
         ext: str = None,
         **kwargs,
     ) -> None:
         self._path = Path(path)
+        self._readonly = readonly
 
         self._backend = backend(
-            self._path, readonly=readonly, bufsize=bufsize, ext=ext, **kwargs
+            self._path,
+            readonly=readonly,
+            bufsize=bufsize,
+            ext=ext,
+            **kwargs,
         )
         self._value_encoder = value_encoder or _do_nothing
         self._value_decoder = value_decoder or _do_nothing
         self._encoding = encoding
+
+    def reading(self):
+        return self._backend.reading()
+
+    def writing(self):
+        return self._backend.writing()
 
     def __contains__(self, __key: str) -> bool:
         return __key in self.keys()
