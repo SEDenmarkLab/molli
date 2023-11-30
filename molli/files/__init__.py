@@ -27,7 +27,8 @@ parser_demo_cdxml = ROOT / "parser_demo.cdxml"
 
 oldstyle_xml = ROOT / "oldstyle.xml"
 
-tiny_bpa_raw_conf = ROOT / "tiny_test_bpa_raw_conf.zip"
-box_no_conf = ROOT / "box_ligands.zip"
-cinchonidine_no_conf = ROOT / "cinchonidine.zip"
-fletcher_phosphoramidite = ROOT / "fletcher_phosphoramidite_cats.zip"
+tiny_bpa_raw_conf = ROOT / "tiny_test_bpa_raw_conf.mlib"
+box_no_conf = ROOT / "box_ligands.mlib"
+cinchonidine_no_conf = ROOT / "cinchonidine.mlib"
+cinchonidine_rd_conf = ROOT / "cinchonidine_rd_confs.clib"
+fletcher_phosphoramidite = ROOT / "fletcher_phosphoramidite_cats.mlib"
