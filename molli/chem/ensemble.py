@@ -27,6 +27,51 @@ from pathlib import Path
 
 
 class ConformerEnsemble(Connectivity):
+    # old one
+    # def __init__(
+    #     self,
+    #     other: ConformerEnsemble = None,
+    #     /,
+    #     n_conformers: int = 0,
+    #     n_atoms: int = 0,
+    #     *,
+    #     name: str = None,
+    #     charge: int = None,
+    #     mult: int = None,
+    #     coords: ArrayLike = None,
+    #     weights: ArrayLike = None,
+    #     atomic_charges: ArrayLike = None,
+    #     copy_atoms: bool = False,
+    #     **kwds,
+    # ):
+    #     super().__init__(
+    #         other,
+    #         n_atoms=n_atoms,
+    #         name=name,
+    #         copy_atoms=copy_atoms,
+    #         charge=charge,
+    #         mult=mult,
+    #         **kwds,
+    #     )
+
+    #     self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+    #     self._atomic_charges = np.zeros((self.n_atoms,))
+    #     self._weights = np.ones((n_conformers,))
+
+    #     if isinstance(other, ConformerEnsemble):
+    #         self.atomic_charges = atomic_charges
+    #         self.coords = other.coords
+    #         self.weights = other.weights
+    #     else:
+    #         if coords is not None:
+    #             self.coords = coords
+
+    #         if atomic_charges is not None:
+    #             self.atomic_charges = atomic_charges
+
+    #         if weights is not None:
+    #             self.weights = weights
+
     def __init__(
         self,
         other: ConformerEnsemble = None,
@@ -43,33 +88,54 @@ class ConformerEnsemble(Connectivity):
         copy_atoms: bool = False,
         **kwds,
     ):
-        super().__init__(
-            other,
-            n_atoms=n_atoms,
-            name=name,
-            copy_atoms=copy_atoms,
-            charge=charge,
-            mult=mult,
-            **kwds,
-        )
+        # TODO: revise the constructor
 
-        self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
-        self._atomic_charges = np.zeros((self.n_atoms,))
-        self._weights = np.ones((n_conformers,))
+        if isinstance(other, list) and isinstance(other[0], Structure):
+            super().__init__(other[0])
+            n_conformers = len(other)
 
-        if isinstance(other, ConformerEnsemble):
-            self.atomic_charges = atomic_charges
-            self.coords = other.coords
-            self.weights = other.weights
+            self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros((n_conformers, self.n_atoms))
+            self._weights = np.ones((n_conformers,))
+
+            self.atomic_charges = [c.atomic_charges for c in other]
+            self.coords = [c.coords for c in other]
         else:
-            if coords is not None:
-                self.coords = coords
+            super().__init__(
+                other,
+                n_atoms=n_atoms,
+                name=name,
+                copy_atoms=copy_atoms,
+                charge=charge,
+                mult=mult,
+                **kwds,
+            )
+            self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros(
+                (
+                    n_conformers,
+                    self.n_atoms,
+                )
+            )
+            self._weights = np.ones((n_conformers,))
 
-            if atomic_charges is not None:
+            if isinstance(other, ConformerEnsemble):
                 self.atomic_charges = atomic_charges
+                self.coords = other.coords
+                self.weights = other.weights
+            else:
+                if coords is not None:
+                    self.coords = coords
 
-            if weights is not None:
-                self.weights = weights
+        if atomic_charges is not None:
+            self.atomic_charges = np.reshape(
+                np.tile(atomic_charges, n_conformers), (n_conformers, n_atoms)
+            )
+
+            # self.atomic_charges = atomic_charges[:, np.newaxis]
+
+        if weights is not None:
+            self.weights = weights
 
     @property
     def coords(self):
@@ -190,7 +256,9 @@ class ConformerEnsemble(Connectivity):
                 return Conformer(self, _i)
 
             case slice() as _s:
-                return [Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))]
+                return [
+                    Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))
+                ]
 
             case _:
                 raise ValueError("Cannot use this locator")
@@ -202,14 +270,6 @@ class ConformerEnsemble(Connectivity):
             f" n_conformers={self.n_conformers})"
         )
         return s
-
-    def extend(self, others: Iterable[StructureLike]):
-        # TODO: Convince Lena to commit these changes
-        ...
-
-    def append(self, other: StructureLike):
-        # TODO: Convince Lena to commit these changes
-        ...
 
     def filter(
         self,
@@ -307,7 +367,9 @@ class ConformerEnsemble(Connectivity):
         """
         self.scale(-1, allow_inversion=True)
 
-    def get_substr_indices(self, pattern: Connectivity) -> Generator[list[int], None, None]:
+    def get_substr_indices(
+        self, pattern: Connectivity
+    ) -> Generator[list[int], None, None]:
         """
         Yields all possible combinations of substructure indices that matched
         with the given pattern.
@@ -330,7 +392,11 @@ class ConformerEnsemble(Connectivity):
                 ...
         ```
         """
-        mappings = self.match(pattern)
+        mappings = self.match(
+            pattern,
+            node_match=Connectivity._node_match,
+            edge_match=Connectivity._edge_match,
+        )
         ens_atom_idx = {a: i for i, a in enumerate(self.atoms)}
 
         for mapping in mappings:
@@ -369,7 +435,9 @@ class ConformerEnsemble(Connectivity):
         Centers ensemble at its substructure so that the coordinates of centroid of the
         this substructure are at the origin.
         """
-        centroids = np.array([cf.substructure(substructure_indices).centroid() for cf in self])
+        centroids = np.array(
+            [cf.substructure(substructure_indices).centroid() for cf in self]
+        )
         # self.coords -= centroids[:, np.newaxis]
         self.translate(-centroids)
 
