@@ -14,7 +14,6 @@ from typing import (
     Generator,
     Sequence,
     Type,
-    Self,
     Any,
     Literal,
 )

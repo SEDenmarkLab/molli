@@ -5,4 +5,4 @@ from .backends import (
     UkvCollectionBackend,
     MlibCollectionBackend,
 )
-from .collection import CollectionBase
+from .collection import Collection
