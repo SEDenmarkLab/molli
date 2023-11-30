@@ -12,7 +12,7 @@ import numpy as np
 import re
 import os
 
-from molli.parsing.xtbout import extract_xtb_atomic_properties
+from molli.parsing import extract_xtb_atomic_properties
 
 # exit()
 
@@ -167,14 +167,9 @@ class XTBDriver:
 
             if (pls := out.files['xtbopt.xyz']):
                 xyz = pls.decode()
-                # print(xyz)
 
                 # the second line of the xtb output is not needed - it is the energy line
                 xyz_coords = xyz.split('\n')[0] +'\n' + '\n'+ '\n'.join(xyz.split('\n')[2:]) 
-                # print(xyz_coords)
-                # exit()
-                
-
                 optimized = ml.Molecule(M, coords = ml.Molecule.loads_xyz(xyz_coords).coords)
                 
                 return optimized
@@ -222,43 +217,18 @@ class XTBDriver:
     
     @atom_properties.post
     def atom_properties(self, out: JobOutput, M: ml.Molecule, **kwargs):
+            assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
             # print(out.stderr)
 
             if (pls := out.stdout):
                 # print(pls)
 
                 outdf = extract_xtb_atomic_properties(pls)
-                return outdf
+                for i, a in enumerate(M.atoms):
+                    for j, property in enumerate(outdf.columns):
+                        a.attrib[property] = outdf.iloc[i, j]
+                return M
 
-            
-    # @Job(return_files=("xtb_charges",)).prep
-    # def charges(
-    #     self, 
-    #     M: ml.Molecule,
-    #     method: str = "gfn2",
-    #     accuracy: float = 0.5,
-    #     net_charge: int = 0
-    #     ):
-
-    #     inp = JobInput(
-    #         M.name,
-    #         command=f"""xtb input.xyz --sp --{method} --acc {accuracy:0.2f} --charge {net_charge} -P {self.nprocs}""",
-    #         files={"input.xyz": M.dumps_xyz().encode()}
-    #     )
-        
-    #     return inp
-    
-    # @charges.post
-    # def charges(self, out: JobOutput, M: ml.Molecule, **kwargs):
-
-    #         if (pls := out.files["xtb_charges"]):
-    #             charges = pls.decode()
-
-    #             optimized = ml.Molecule.loads_xyz(xyz)
-    #             # coord = np.array([geom.coords for geom in geom]) # don't think I need these
-    #             # optimized = ml.Molecule(M,coords=coord)
-
-    #             return optimized
 
 if __name__ == "__main__":
 
@@ -338,7 +308,12 @@ if __name__ == "__main__":
             method="gfn2",
             ) for m in mlib)
 
-    print(res)
-    with open('test.csv', 'w') as w:
-        res[-1].to_csv(w)
-    # exit()
+    # print(res[0])
+    for atom in res[0].atoms:
+        print(atom.attrib)
+    # print(res[0].columns)
+    # for i in enumerate(res[0]):
+    #     print(i)
+    # with open('test.csv', 'w') as w:
+    #     res[0].to_csv(w)
+    # # exit()
