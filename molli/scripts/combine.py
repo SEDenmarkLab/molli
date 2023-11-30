@@ -209,14 +209,18 @@ def molli_main(args, config=None, output=None, **kwargs):
     # TODO: turn all assertions into more meaningful errors
     assert all(sub.n_attachment_points == 1 for sub in substituents)
 
-    ap_indices = [
+    ap_indices = (
         [
-            core.index_atom(a)
-            for lbl in parsed.attachment_points
-            for a in core.yield_atoms_by_label(lbl)
+            [
+                core.index_atom(a)
+                for lbl in parsed.attachment_points
+                for a in core.yield_atoms_by_label(lbl)
+            ]
+            for core in cores
         ]
-        for core in cores
-    ]
+        if parsed.attachment_points
+        else [list(map(core.index_atom, core.attachment_points)) for core in cores]
+    )
     n_aps = len(ap_indices[0])
 
     # TODO: turn all assertions into more meaningful errors
