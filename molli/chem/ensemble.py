@@ -94,6 +94,7 @@ class ConformerEnsemble(Connectivity):
     def atomic_charges(self, other: ArrayLike):
         self._atomic_charges[:] = other
 
+    # TODO: redo
     @classmethod
     def from_mol2(
         cls: type[ConformerEnsemble],
@@ -200,13 +201,19 @@ class ConformerEnsemble(Connectivity):
         s = f"ConformerEnsemble(name='{self.name}', formula='{_fml}', n_conformers={self.n_conformers})"
         return s
 
-    def extend(self, others: Iterable[StructureLike]):
-        # TODO: Convince Lena to commit these changes
-        ...
+    def extend(self, others: Iterable[CartesianGeometry]):
+        if isinstance(others, ConformerEnsemble):
+            other_coords = others.coords
+        else:
+            other_coords = np.array([g.coords for g in others])
 
-    def append(self, other: StructureLike):
-        # TODO: Convince Lena to commit these changes
-        ...
+        self._coords = np.append(self._coords, other_coords, axis=0)
+
+    def append(self, other: CartesianGeometry):
+        if self._coords.shape == (0, 0, 3):
+            self._coords = other.coords[np.newaxis, :]
+        else:
+            self._coords = np.append(self._coords, [other.coords], axis=0)
 
     def filter(
         self,
