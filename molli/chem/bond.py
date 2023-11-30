@@ -1,7 +1,7 @@
 from __future__ import annotations
 from . import Atom, Element, AtomLike, Promolecule, PromoleculeLike
 from dataclasses import dataclass, field, KW_ONLY
-from typing import Iterable, List, Generator, Tuple, Any, Self
+from typing import Iterable, List, Generator, Tuple, Any
 from copy import deepcopy
 from enum import IntEnum
 from collections import deque
@@ -108,7 +108,7 @@ class Bond:
             return self._parent()
 
     @parent.setter
-    def parent(self: Self, other: Self):
+    def parent(self, other):
         self._parent = ref(other)
 
     def evolve(self, **changes):

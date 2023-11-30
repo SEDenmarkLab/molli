@@ -141,7 +141,7 @@ class Molecule(Structure):
         )
 
     @classmethod
-    def deserialize(cls: type[Molecule], struct: tuple):
+    def deserialize(cls, struct: tuple):
         (
             _name,
             _na,

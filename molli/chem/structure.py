@@ -63,7 +63,7 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def yield_from_mol2(
-        cls: type[Structure],
+        cls,
         input: str | StringIO,
         name: str = None,
         source_units: str = "Angstrom",
@@ -133,7 +133,7 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def load_mol2(
-        cls: type[CartesianGeometry],
+        cls,
         input: str | Path | IO,
         *,
         name: str = None,
@@ -158,12 +158,12 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def loads_mol2(
-        cls: type[CartesianGeometry],
+        cls,
         input: str,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> CartesianGeometry:
+    ):
         """Load mol2 file from string"""
         stream = StringIO(input)
         with stream:
@@ -179,12 +179,12 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def load_all_mol2(
-        cls: type[CartesianGeometry],
+        cls,
         input: str | Path | IO,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> List[CartesianGeometry]:
+    ):
         """Load all components in a mol2 file from a multimol2 file"""
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -235,7 +235,7 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def join(
-        cls: type[Structure],
+        cls,
         struct1: Structure,
         struct2: Structure,
         _a1: AtomLike,
@@ -310,7 +310,7 @@ class Structure(CartesianGeometry, Connectivity):
         return result
 
     @classmethod
-    def concatenate(cls: type[Structure], *structs: Structure) -> Structure:
+    def concatenate(cls, *structs: Structure):
         source_atoms = list(chain.from_iterable(x.atoms for x in structs))
         res = cls(source_atoms, copy_atoms=True)
 

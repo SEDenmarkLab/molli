@@ -12,7 +12,7 @@
 This file defines all constituent elements of 
 """
 from __future__ import annotations
-from typing import Any, List, Iterable, Generator, Callable, Self
+from typing import Any, List, Iterable, Generator, Callable
 from enum import Enum, IntEnum
 from dataclasses import dataclass, field, KW_ONLY
 from collections import Counter, UserList
@@ -31,7 +31,6 @@ class Element(IntEnum):
     """Element enumerator"""
 
     @classmethod
-    @cache
     def get(cls, elt: ElementLike):
         """More universal way of retrieving element instances"""
         match elt:
@@ -368,7 +367,8 @@ class Atom:
         repr=False,
     )
 
-    mult: int = attrs.field(default=1, repr=False)
+    # 2*Spin as an integer
+    spin: int = attrs.field(default=0, repr=False)
 
     attrib: dict = attrs.field(
         factory=dict,
@@ -387,7 +387,7 @@ class Atom:
             return self._parent()
 
     @parent.setter
-    def parent(self: Self, other: Self):
+    def parent(self, other):
         self._parent = ref(other)
 
     def evolve(self, **changes):

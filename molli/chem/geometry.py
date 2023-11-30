@@ -12,16 +12,7 @@ from . import (
     Connectivity,
 )
 from ..parsing import read_xyz
-from typing import (
-    Any,
-    List,
-    Iterable,
-    Generator,
-    TypeVar,
-    Generic,
-    Callable,
-    IO,
-)
+from typing import Any, List, Iterable, Generator, TypeVar, Generic, Callable, IO
 from enum import Enum
 import numpy as np
 from numpy.typing import ArrayLike
@@ -100,7 +91,9 @@ class CartesianGeometry(Promolecule):
         super().append_atom(a)
         _coord = np.array(coord, dtype=self._coords_dtype)
         if not _coord.shape == (3,):
-            raise ValueError("Inappropriate coordinates for atom (interpreted as {_coord})")
+            raise ValueError(
+                "Inappropriate coordinates for atom (interpreted as {_coord})"
+            )
         self._coords = np.append(self._coords, [coord], axis=0)
 
     def new_atom(
@@ -162,12 +155,12 @@ class CartesianGeometry(Promolecule):
 
     @classmethod
     def load_xyz(
-        cls: type[CartesianGeometry],
+        cls,
         input: str | Path | IO,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> CartesianGeometry:
+    ):
         """# `load_xyz`
         This function loads a *single* xyz file into the current instance
         The input should be a stream or file name/path
@@ -196,12 +189,12 @@ class CartesianGeometry(Promolecule):
 
     @classmethod
     def loads_xyz(
-        cls: type[CartesianGeometry],
+        cls,
         input: str,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> CartesianGeometry:
+    ):
         """# `load_xyz`
         This function loads a *single* xyz file into the current instance
         The input should be a string instance
@@ -225,12 +218,12 @@ class CartesianGeometry(Promolecule):
 
     @classmethod
     def load_all_xyz(
-        cls: type[CartesianGeometry],
+        cls,
         input: str | Path | IO,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> List[CartesianGeometry]:
+    ):
         if isinstance(input, str | Path):
             stream = open(input, "rt")
         else:
@@ -243,12 +236,12 @@ class CartesianGeometry(Promolecule):
 
     @classmethod
     def loads_all_xyz(
-        cls: type[CartesianGeometry],
+        cls,
         input: str | Path | IO,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> List[CartesianGeometry]:
+    ):
         stream = StringIO(input)
         with stream:
             res = list(cls.yield_from_xyz(stream, name=name, source_units=source_units))
@@ -257,7 +250,7 @@ class CartesianGeometry(Promolecule):
 
     @classmethod
     def yield_from_xyz(
-        cls: type[CartesianGeometry],
+        cls,
         stream: StringIO,
         *,
         name: str = None,
@@ -368,7 +361,9 @@ class CartesianGeometry(Promolecule):
             raise ValueError("Cannot compare geometries with different number of atoms")
 
         if validate_elements == True and self.elements != other.elements:
-            raise ValueError("Cannot compare two molecules with different lists of elements")
+            raise ValueError(
+                "Cannot compare two molecules with different lists of elements"
+            )
 
         raise NotImplementedError
 
