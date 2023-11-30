@@ -364,20 +364,14 @@ class Atom:
 
     charge: int = attrs.field(
         default=0,
-        repr=False,
     )
 
     # 2*Spin as an integer
-    spin: int = attrs.field(default=0, repr=False)
+    spin: int = attrs.field(default=0)
 
-    attrib: dict = attrs.field(
-        factory=dict,
-    )
+    attrib: dict = attrs.field(factory=dict, repr=False)
 
-    _parent = attrs.field(
-        default=None,
-        init=False,
-    )
+    _parent = attrs.field(default=None, init=False, repr=False)
 
     @property
     def parent(self):
@@ -664,6 +658,7 @@ class Promolecule:
         self.name = name
         self.charge = charge or 0
         self.mult = mult or 1
+        self.attrib = dict()
 
         match other:
             case None:

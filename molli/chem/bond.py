@@ -73,8 +73,8 @@ MOL2_BOND_TYPE_MAP = bidict(
 class Bond:
     """`a1` and `a2` are always assumed to be interchangeable"""
 
-    a1: Atom = attrs.field()
-    a2: Atom = attrs.field()
+    a1: Atom = attrs.field(repr=lambda a: a.idx or a)
+    a2: Atom = attrs.field(repr=lambda a: a.idx or a)
 
     label: str = attrs.field(
         default=None,
@@ -95,8 +95,11 @@ class Bond:
         converter=float,
     )
 
+    attrib: dict = attrs.field(factory=dict, repr=False)
+
     _parent = attrs.field(
         default=None,
+        repr=False,
         init=False,
     )
 
