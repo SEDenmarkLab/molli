@@ -431,12 +431,12 @@ class Connectivity(Promolecule):
         #     nx_mol.add_edge(bond.a1, bond.a2, order = bond.order)
 
         nx_mol = nx.Graph()
-        # for atom in self.atoms:
-        #     nx_mol.add_node(atom, **atom.as_dict())  # recursion?
+        for atom in self.atoms:
+            nx_mol.add_node(atom, **atom.as_dict())  # recursion?
 
         # TODO: re-run test examples
 
-        nx_mol.add_nodes_from(self.atoms, **self.atom.as_dict())
+        # nx_mol.add_nodes_from(self.atoms, **self.atom.as_dict())
 
         for bond in self.bonds:
             nx_mol.add_edge(bond.a1, bond.a2, **bond.as_dict())
