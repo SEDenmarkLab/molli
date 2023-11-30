@@ -153,6 +153,7 @@ class XTBDriver:
         # xyz_name: str = "mol", # do we need this anymore?
 
         ):
+        assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
         
         inp = JobInput(
             M.name,
@@ -181,6 +182,7 @@ class XTBDriver:
         method: str = "gfn2",
         accuracy: float = 0.5,
         ):
+        assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
         
         inp = JobInput(
             M.name,
@@ -206,6 +208,7 @@ class XTBDriver:
         method: str = "gfn2",
         accuracy: float = 0.5,
         ):
+        assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
         
         inp = JobInput(
             M.name,
@@ -217,8 +220,6 @@ class XTBDriver:
     
     @atom_properties.post
     def atom_properties(self, out: JobOutput, M: ml.Molecule, **kwargs):
-            assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
-            # print(out.stderr)
 
             if (pls := out.stdout):
                 # print(pls)
