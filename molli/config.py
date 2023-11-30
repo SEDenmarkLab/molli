@@ -9,7 +9,6 @@ import os, sys
 from pathlib import Path
 import logging
 
-
 VERSION = "1.0.0b1"
 
 HOME: Path = Path("~/.molli").expanduser()
@@ -82,3 +81,8 @@ if (default_path := HOME / "config.yaml").is_file():
         cfg = yaml.safe_load(f)
 
     configure(cfg)
+
+# This is to patch messagepack so that numpy arrays can be serialized
+import msgpack_numpy
+
+msgpack_numpy.patch()
