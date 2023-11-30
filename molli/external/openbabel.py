@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ..chem import Molecule, Element, Bond
+from ..chem import Molecule, ConformerEnsemble, Element, Bond
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, Dict
 from enum import Enum
 import numpy as np
@@ -31,7 +31,9 @@ def to_obmol(
 
     for i, a in enumerate(mol.atoms):
         oba: ob.OBAtom = obm.NewAtom()
-        oba.SetAtomicNum(a.Z if a.element is not Element.Unknown else Element.get(dummy).z)
+        oba.SetAtomicNum(
+            a.Z if a.element is not Element.Unknown else Element.get(dummy).z
+        )
         if coord_displace:
             dvec = np.random.random(3)
             dvec *= coord_displace / np.linalg.norm(dvec)
@@ -56,6 +58,32 @@ def to_obmol(
     return obm
 
 
+def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
+    """
+    This is only a stub method right now. We need fully supported conversion.
+    """
+    n_atoms = obmol.NumAtoms()
+    n_bonds = obmol.NumBonds()
+    obmol.NumConformers
+
+    charge = obmol.GetTotalCharge()
+    mult = obmol.GetTotalSpinMultiplicity()
+    name = obmol.GetTitle()
+    mol = ml.Molecule(name=name, n_atoms=n_atoms, charge=charge, mult=mult)
+    for i in range(n_atoms):
+        a: ob.OBAtom = obmol.GetAtomById(i)
+        mol.coords[i] = [a.GetX(), a.GetY(), a.GetZ()]
+        mol.atoms[i].element = a.GetAtomicNum()
+        mol.atoms[i].isotope = a.GetIsotope()
+
+    for j in range(n_bonds):
+        b: ob.OBBond = obmol.GetBondById(j)
+        ai1, ai2 = b.GetBeginAtomIdx() - 1, b.GetEndAtomIdx() - 1
+        mol.connect(ai1, ai2)
+
+    return mol
+
+
 def coord_from_obmol(obmol: ob.OBMol, dtype: np.dtype = np.float64) -> np.ndarray:
     n_atoms = obmol.NumAtoms()
     coord = np.empty((n_atoms, 3), dtype=dtype)
@@ -78,7 +106,7 @@ def from_str_w_ob(block: str, input_fmt: str = "mol2") -> ob.OBMol:
     """
     This function takes any file and creates an openbabel style mol format
     """
-    
+
     conv = ob.OBConversion()
     obmol = ob.OBMol()
     conv.SetInFormat(input_fmt)
