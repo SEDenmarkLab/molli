@@ -31,7 +31,9 @@ def to_obmol(
 
     for i, a in enumerate(mol.atoms):
         oba: ob.OBAtom = obm.NewAtom()
-        oba.SetAtomicNum(a.Z if a.element is not Element.Unknown else Element.get(dummy).z)
+        oba.SetAtomicNum(
+            a.Z if a.element is not Element.Unknown else Element.get(dummy).z
+        )
         if coord_displace:
             dvec = np.random.random(3)
             dvec *= coord_displace / np.linalg.norm(dvec)

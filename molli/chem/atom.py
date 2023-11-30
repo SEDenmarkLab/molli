@@ -497,7 +497,9 @@ class Atom:
         match mol2_type:
             case "4":
                 if self.element != Element.N:
-                    raise NotImplementedError(f"{mol2_type} not implemented for {mol2_elt}, only N")
+                    raise NotImplementedError(
+                        f"{mol2_type} not implemented for {mol2_elt}, only N"
+                    )
                 else:
                     self.atype = AtomType.N_Ammonium
                     self.geom = AtomGeom.R4_Tetrahedral
@@ -547,7 +549,9 @@ class Atom:
             case _ if mol2_elt == "Du":
                 # This case if to handle Du.X
                 self.element = (
-                    Element[mol2_type] if mol2_type in Element._member_names_ else Element.Unknown
+                    Element[mol2_type]
+                    if mol2_type in Element._member_names_
+                    else Element.Unknown
                 )
                 self.atype = AtomType.Dummy
 
@@ -577,15 +581,21 @@ class Atom:
             case Element.C, _, _:
                 if self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
-                elif (self.atype == AtomType.C_Guanidinium) & (self.geom == AtomGeom.R3_Planar):
+                elif (self.atype == AtomType.C_Guanidinium) & (
+                    self.geom == AtomGeom.R3_Planar
+                ):
                     return f"{self.element.symbol}.cat"
                 else:
                     return f"{self.element.symbol}"
 
             case Element.N, _, _:
-                if (self.atype == AtomType.N_Ammonium) & (self.geom == AtomGeom.R4_Tetrahedral):
+                if (self.atype == AtomType.N_Ammonium) & (
+                    self.geom == AtomGeom.R4_Tetrahedral
+                ):
                     return f"{self.element.symbol}.4"
-                elif (self.atype == AtomType.N_Amide) & (self.geom == AtomGeom.R3_Planar):
+                elif (self.atype == AtomType.N_Amide) & (
+                    self.geom == AtomGeom.R3_Planar
+                ):
                     return f"{self.element.symbol}.am"
                 elif self.atype == AtomType.Aromatic:
                     return f"{self.element.symbol}.ar"
@@ -601,9 +611,13 @@ class Atom:
                     return f"{self.element.symbol}"
 
             case Element.S, _, _:
-                if (self.atype == AtomType.O_Sulfoxide) & (self.geom == AtomGeom.R3_Pyramidal):
+                if (self.atype == AtomType.O_Sulfoxide) & (
+                    self.geom == AtomGeom.R3_Pyramidal
+                ):
                     return f"{self.element.symbol}.O"
-                elif (self.atype == AtomType.O_Sulfone) & (self.geom == AtomGeom.R4_Tetrahedral):
+                elif (self.atype == AtomType.O_Sulfone) & (
+                    self.geom == AtomGeom.R4_Tetrahedral
+                ):
                     return f"{self.element.symbol}.O2"
                 else:
                     return f"{self.element.symbol}"
@@ -689,7 +703,9 @@ class Promolecule:
                 self._atoms = list(Atom(a) for a in atoms)
 
             case _:
-                raise NotImplementedError(f"Cannot interpret {other} of type {type(other)}")
+                raise NotImplementedError(
+                    f"Cannot interpret {other} of type {type(other)}"
+                )
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
@@ -796,7 +812,9 @@ class Promolecule:
     # ) -> Generator[Atom, None, None]:
     #     return map(self.get_atom, atoms)
 
-    def yield_atoms_by_element(self, elt: Element | str | int) -> Generator[Atom, None, None]:
+    def yield_atoms_by_element(
+        self, elt: Element | str | int
+    ) -> Generator[Atom, None, None]:
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
