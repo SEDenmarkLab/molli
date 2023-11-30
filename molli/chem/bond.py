@@ -1,5 +1,13 @@
 from __future__ import annotations
-from . import Atom, AtomType, AtomStereo, Element, AtomLike, Promolecule, PromoleculeLike
+from . import (
+    Atom,
+    AtomType,
+    AtomStereo,
+    Element,
+    AtomLike,
+    Promolecule,
+    PromoleculeLike,
+)
 from dataclasses import dataclass, field, KW_ONLY
 from typing import Iterable, List, Generator, Tuple, Any, Callable
 from copy import deepcopy
@@ -230,7 +238,9 @@ class Connectivity(Promolecule):
 
         if isinstance(other, Connectivity):
             atom_map = {other.atoms[i]: self.atoms[i] for i in range(self.n_atoms)}
-            self._bonds = list(b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds)
+            self._bonds = list(
+                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds
+            )
         else:
             self._bonds = list()
 
@@ -424,7 +434,9 @@ class Connectivity(Promolecule):
         # for atom in self.atoms:
         #     nx_mol.add_node(atom, **atom.as_dict())  # recursion?
 
-        nx_mol.add_nodes_from(self.atoms, **self.atoms[0].as_dict())
+        # TODO: re-run test examples
+
+        nx_mol.add_nodes_from(self.atoms, **self.atom.as_dict())
 
         for bond in self.bonds:
             nx_mol.add_edge(bond.a1, bond.a2, **bond.as_dict())
@@ -458,6 +470,7 @@ class Connectivity(Promolecule):
 
     @staticmethod
     def _node_match(a1: dict, a2: dict) -> bool:
+        # print({x: a1[x] == a2[x] for x in a1 if x in a2})
         """
         Callable helper function that compares attributes of the nodes(atoms) in nx.isomorphism.GraphMatcher().
         Returns True is nodes(atoms) are considered equal, False otherwise.
@@ -466,20 +479,28 @@ class Connectivity(Promolecule):
 
         # TODO: which attributes might be query?
 
-        if a1["element"] != Element.Unknown and a1["element"] != a2["element"]:
+        if a2["element"] != Element.Unknown and a1["element"] != a2["element"]:
+            # print("element:", a1["element"], a2["element"])
             return False
 
-        if a1["isotope"] and a1["isotope"] != a2["isotope"]:
+        if (
+            a2["isotope"] is not None
+            # and a2["isotope"] is not None  # think about it
+            and a1["isotope"] != a2["isotope"]
+        ):
+            # print("isotope:", a1["isotope"], a2["isotope"])
             return False
 
         # NOTE "geom" and "label" are not compared
 
-        if a1["stereo"] != AtomStereo.Unknown and a1["stereo"] != a2["stereo"]:
+        if a2["stereo"] != AtomStereo.Unknown and a1["stereo"] != a2["stereo"]:
             # NOTE: no queries for now
+            # print("stereo:", a1["stereo"], a2["stereo"])
             return False
 
         if a1["atype"] != AtomType.Unknown and a2["atype"] != a2["atype"]:
             # TODO: add groups for queries
+            # print("atype:", a1["atype"], a2["atype"])
             return False
 
         return True
@@ -491,41 +512,59 @@ class Connectivity(Promolecule):
         Returns True is edges(bonds) are considered equal, False otherwise.
         For further information: refer to nx.isomorphism.GraphMatcher() documentation.
         """
+        # print({x: e1[x] == e2[x] for x in e1 if x in e2})
 
-        match e1["btype"]:
+        match e2["btype"]:
             case BondType.Unknown:
                 pass
             case BondType.Single | BondType.Double | BondType.Triple:
                 # should work for aromatic and resonating structures
                 if e1["btype"] < e2["btype"]:
+                    # print("btype 1-3:", e1["btype"], e2["btype"])
                     return False
             case BondType.Aromatic | BondType.Amide:
                 if e1["btype"] != e2["btype"]:
+                    # print("btype aromatic or amide:", e1["btype"], e2["btype"])
                     return False
             case BondType.NotConnected:
+                # print("bond not connected")
                 return False
             case BondType.Dummy | _:
                 raise NotImplementedError
 
-        match e1["stereo"]:
+        match e2["stereo"]:
             case BondStereo.Unknown:
                 pass
             case _:
                 if e1["stereo"] != e2["stereo"]:
+                    # print("bond stereo not equal")
                     return False
 
-        match e1["label"]:
+        match e2["label"]:
             case None:
                 pass
             case _:
                 if e1["label"] != e2["label"]:
+                    # print("blabel:", e1["label"], e2["label"])
                     return False
 
         return True
 
-    # @staticmethod
-    # def _smiles_node_match(a1, a2):
-    #     return a1["element"].symbol == a2["element"]
+    @staticmethod
+    def _edge_match_debug(e1: dict, e2: dict):
+        res = Connectivity._edge_match(e1, e2)
+        print("Bonds")
+        print(f"{e1}\n{e2}\n{res}\n")
+        # print(e1["btype"], e2["btype"], res)
+        return res
+
+    @staticmethod
+    def _node_match_debug(a1, a2):
+        res = Connectivity._node_match(a1, a2)
+        print("Atoms")
+        print(f"{a1}\n{a2}\n{res}\n")
+        # print(a1["atype"], a2["atype"], res)
+        return res
 
     def match(
         self,
@@ -566,3 +605,8 @@ class Connectivity(Promolecule):
 
         for ismorphism in matcher.subgraph_isomorphisms_iter():
             yield {v: k for k, v in ismorphism.items()}
+
+    def connect(self, _a1: AtomLike, _a2: AtomLike, **kwds):
+        a1, a2 = self.get_atoms(_a1, _a2)
+        self.append_bond(b := Bond(a1, a2, **kwds))
+        return b
