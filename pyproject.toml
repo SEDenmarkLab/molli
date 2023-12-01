@@ -21,7 +21,7 @@ dependencies = [
     "tqdm>=4.64.0",
     "packaging>=23.1",
 ]
-version = "1.0.0a7"
+version = "1.0.0a10"
 
 
 [tool.setuptools.package-data]

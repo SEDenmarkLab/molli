@@ -201,7 +201,7 @@ def _ml_assemble(core: ml.Molecule, core_aps: tuple[int], substituent_combo: tup
         progress.value += 1
 
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args,  **kwargs):
     parsed = arg_parser.parse_args(args)
     cores: list[ml.Molecule] = ml.MoleculeLibrary(parsed.cores)[:]
     substituents: list[ml.Molecule] = ml.MoleculeLibrary(parsed.substituents)[:]

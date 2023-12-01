@@ -95,6 +95,6 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO, mol_lib=False) -> Conform
             ens = read_geom(k,g,ens)
     else:
         for k,g in enumerate(xconfs):
-            ens = read_geom(k+1,g,ens)
+            ens = read_geom(k,g,ens)
 
     return ens

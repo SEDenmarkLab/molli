@@ -55,7 +55,7 @@ arg_parser.add_argument(
 )
 
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args,  **kwargs):
     parsed = arg_parser.parse_args(args)
     fpath = Path(parsed.file)
 
