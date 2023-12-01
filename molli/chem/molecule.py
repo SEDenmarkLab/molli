@@ -138,6 +138,7 @@ class Molecule(Structure):
             self.mult,
             self.coords.astype(">f4").tobytes(),
             self.atomic_charges.astype(">f4").tobytes(),
+            self.attrib,
         )
 
     @classmethod
@@ -151,6 +152,7 @@ class Molecule(Structure):
             _mult,
             _coords,
             _atomic_charges,
+            _attrib,
         ) = struct
 
         coords = np.frombuffer(_coords, dtype=">f4").reshape((_na, 3))

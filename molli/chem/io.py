@@ -11,7 +11,7 @@ import msgpack
 # left mostly for backwards compatibility reasons
 # These should not be used
 # =====================================
-ATOM_SCHEMA_OLD = (
+ATOM_SCHEMA_V1 = (
     "element",
     "isotope",
     "label",
@@ -20,16 +20,16 @@ ATOM_SCHEMA_OLD = (
     "geom",
 )
 
-BOND_SCHEMA_OLD = (
-    "a1",
-    "a2",
+BOND_SCHEMA_V1 = (
+    # "a1",
+    # "a2",
     "label",
     "btype",
     "stereo",
     "f_order",
 )
 
-MOLECULE_SCHEMA_OLD = (
+MOLECULE_SCHEMA_V1 = (
     "name",
     "n_atoms",
     "atoms",
@@ -40,7 +40,7 @@ MOLECULE_SCHEMA_OLD = (
     "atomic_charges",
 )
 
-ENSEMBLE_SCHEMA_OLD = (
+ENSEMBLE_SCHEMA_V1 = (
     "name",
     "n_conformers",
     "n_atoms",
@@ -57,21 +57,21 @@ ENSEMBLE_SCHEMA_OLD = (
 # These are the current default schemas
 # =====================================
 
-ATOM_SCHEMA_DEFAULT = (
+ATOM_SCHEMA_V2 = (
     "element",
     "isotope",
     "label",
     "atype",
     "stereo",
     "geom",
-    "charge",
-    "spin",
+    "formal_charge",
+    "formal_spin",
     "attrib",
 )
 
-BOND_SCHEMA_DEFAULT = (
-    "a1",
-    "a2",
+BOND_SCHEMA_V2 = (
+    # "a1",
+    # "a2",
     "label",
     "btype",
     "stereo",
@@ -79,7 +79,7 @@ BOND_SCHEMA_DEFAULT = (
     "attrib",
 )
 
-MOLECULE_SCHEMA_DEFAULT = (
+MOLECULE_SCHEMA_V2 = (
     "name",
     "n_atoms",
     "n_bonds",
@@ -92,10 +92,11 @@ MOLECULE_SCHEMA_DEFAULT = (
     "attrib",
 )
 
-ENSEMBLE_SCHEMA_DEFAULT = (
+ENSEMBLE_SCHEMA_V2 = (
     "name",
     "n_conformers",
     "n_atoms",
+    "n_bonds",
     "atoms",
     "bonds",
     "charge",
@@ -106,51 +107,98 @@ ENSEMBLE_SCHEMA_DEFAULT = (
     "attrib",
 )
 
-
-def _serialize_mb(mol: Molecule | ConformerEnsemble, schema: List[str] = None):
-    """
-    This provides a binary serialization in a form of a messagepack dictionary with the outer schema defined
-    """
-    ...
+HIGHEST_VERSION = 2
 
 
-def _deserialize_mb(
-    cls: Type[Molecule] | Type[ConformerEnsemble], data: tuple, schema: List[str] = None
-):
-    """
-    This provides a deserialization of messagepack decoded tuples
-    """
-    # This is to ensure backwards compatibility with the previous mlib data storage
-    if schema is None:
-        if len(data) == 8:
-            schema = (
-                "name",
-                "n_atoms",
-                "atoms",
-                "bonds",
-                "charge",
-                "mult",
-                "coords",
-                "atomic_charges",
-            )
-        elif len(data) == 10:
-            schema = (
-                "name",
-                "n_conformers",
-                "n_atoms",
-                "atoms",
-                "bonds",
-                "charge",
-                "mult",
-                "coords",
-                "weights",
-                "atomic_charges",
-            )
+def _serialize_mol_v1(mol: Molecule):
+    atom_id_map = {a: i for i, a in enumerate(mol.atoms)}
 
-    # This is a dictionary that can initialize molecule or conformer objects
-    mol_dict = dict(zip(schema, data))
+    atoms = [a.as_tuple(ATOM_SCHEMA_V1) for a in mol.atoms]
+    bonds = [
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V1)
+        for b in mol.bonds
+    ]
 
-    pass
+    return (
+        mol.name,
+        mol.n_atoms,
+        atoms,
+        bonds,
+        mol.charge,
+        mol.mult,
+        mol.coords.astype(">f4").tobytes(),
+        mol.atomic_charges.astype(">f4").tobytes(),
+    )
+
+
+def _serialize_ens_v1(ens: ConformerEnsemble):
+    atom_id_map = {a: i for i, a in enumerate(ens.atoms)}
+
+    atoms = [a.as_tuple(ATOM_SCHEMA_V1) for a in ens.atoms]
+    bonds = [
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V1)
+        for b in ens.bonds
+    ]
+
+    return (
+        ens.name,
+        ens.n_conformers,
+        ens.n_atoms,
+        atoms,
+        bonds,
+        ens.charge,
+        ens.mult,
+        ens.coords.astype(">f4").tobytes(),
+        ens.weights.astype(">f4").tobytes(),
+        ens.atomic_charges.astype(">f4").tobytes(),
+    )
+
+
+def _serialize_mol_v2(mol: Molecule):
+    atom_id_map = {a: i for i, a in enumerate(mol.atoms)}
+
+    atoms = [a.as_tuple(ATOM_SCHEMA_V2) for a in mol.atoms]
+    bonds = [
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V2)
+        for b in mol.bonds
+    ]
+
+    return (
+        mol.name,
+        mol.n_atoms,
+        mol.n_bonds,
+        mol.charge,
+        mol.mult,
+        atoms,
+        bonds,
+        mol.coords.astype(">f4").tobytes(),
+        mol.atomic_charges.astype(">f4").tobytes(),
+        mol.attrib,
+    )
+
+
+def _serialize_ens_v2(ens: ConformerEnsemble):
+    atom_id_map = {a: i for i, a in enumerate(ens.atoms)}
+
+    atoms = [a.as_tuple(ATOM_SCHEMA_V2) for a in ens.atoms]
+    bonds = [
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V2)
+        for b in ens.bonds
+    ]
+
+    return (
+        ens.name,
+        ens.n_conformers,
+        ens.n_atoms,
+        ens.charge,
+        ens.mult,
+        atoms,
+        bonds,
+        ens.coords.astype(">f4").tobytes(),
+        ens.weights.astype(">f4").tobytes(),
+        ens.atomic_charges.astype(">f4").tobytes(),
+        ens.attrib,
+    )
 
 
 def load(

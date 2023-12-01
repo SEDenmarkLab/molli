@@ -362,12 +362,12 @@ class Atom:
         # repr=lambda x: x.name,
     )
 
-    charge: int = attrs.field(
+    formal_charge: int = attrs.field(
         default=0,
     )
 
     # 2*Spin as an integer
-    spin: int = attrs.field(default=0)
+    formal_spin: int = attrs.field(default=0)
 
     attrib: dict = attrs.field(factory=dict, repr=False)
 
@@ -387,11 +387,17 @@ class Atom:
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
 
-    def as_dict(self):
-        return attrs.asdict(self)
+    def as_dict(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.asdict(self)
+        else:
+            return {a: getattr(self, a, None) for a in schema}
 
-    def as_tuple(self):
-        return attrs.astuple(self)
+    def as_tuple(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.astuple(self)
+        else:
+            return tuple(getattr(self, a, None) for a in schema)
 
     @property
     def is_dummy(self) -> bool:

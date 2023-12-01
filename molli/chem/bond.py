@@ -144,21 +144,17 @@ class Bond:
             case _:
                 return 1.0
 
-    def as_dict(self, atom_id_map: dict = None):
-        res = attrs.asdict(self)
-        if atom_id_map is not None:
-            res["a1"] = atom_id_map[self.a1]
-            res["a2"] = atom_id_map[self.a2]
-        return res
+    def as_dict(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.asdict(self)
+        else:
+            return {a: getattr(self, a, None) for a in schema}
 
-    def as_tuple(self, atom_id_map: dict = None):
-        res = attrs.astuple(self)
-
-        if atom_id_map is not None:
-            a1, a2, *rest = res
-            res = (atom_id_map[self.a1], atom_id_map[self.a2], *rest)
-
-        return res
+    def as_tuple(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.astuple(self)
+        else:
+            return tuple(getattr(self, a, None) for a in schema)
 
     def __contains__(self, other: Atom):
         return other in {self.a1, self.a2}
