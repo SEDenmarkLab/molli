@@ -13,10 +13,13 @@ arg_parser = ArgumentParser(
 )
 
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args,  **kwargs):
     arg_parser.parse_args(args)
-
     with ml.aux.ForeColor("yellow"):
-        print(ml.__doc__)
-        print(f"MOLLI version {MOLLI_VERSION}\n\n")
-        print(f"Data root: {ml.data.DATA_ROOT}")
+        print(ml.config.SPLASH)
+    print(ml.__doc__)
+    print("HOME:     ", ml.config.HOME)
+    print("DATA_DIR: ", ml.config.DATA_DIR)
+
+
+    

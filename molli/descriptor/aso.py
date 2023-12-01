@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, Future
 import numpy as np
 from math import dist
 import molli_xt
-
+import deprecated
 
 def _where_distance(p, g: np.ndarray, r: float):
     """
@@ -15,7 +15,8 @@ def _where_distance(p, g: np.ndarray, r: float):
 
     return dists <= r**2
 
-
+@deprecated.deprecated("This function is left for compatibility and testing purposes only."
+                       "While it is more readable, due to pure Python for loops it is relatively slow.")
 def aso1(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.ndarray:
     aso_full = np.empty((ens.n_conformers, g.shape[0]), dtype=dtype)
 
@@ -31,11 +32,17 @@ def aso1(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.nd
 
 
 def aso2(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.ndarray:
+    """
+    Main workhorse function for ASO calculation that takes advantage of C++ backend code whenever possible.
+    With large grids can be relatively memory intensive, so breaking up the grid into smaller pieces is recommended
+    (see "chunky" calculation strategy)
+    """
     alldist = molli_xt.cdist32_eu2_f3(ens._coords, g)
     vdwr2s = np.array([a.vdw_radius for a in ens.atoms]) ** 2
     diff = alldist <= vdwr2s[:, None]
 
-    return np.average(np.any(diff, axis=1), axis=0)
+    return np.average(np.any(diff, axis=1), axis=0, weights=ens.weights)
+
 
 def chunky_aso(ens: ConformerEnsemble, grid: np.ndarray, chunksize=512):
     aso_chunks = []
@@ -43,15 +50,16 @@ def chunky_aso(ens: ConformerEnsemble, grid: np.ndarray, chunksize=512):
         aso_chunks.append(aso2(ens, subgrid))
     return np.concatenate(aso_chunks)
 
+
 def parallel_aso(ens: ConformerEnsemble, grid: np.ndarray, n_threads=4, chunksize=512):
     with ThreadPoolExecutor(n_threads) as tp:
         futures: list[Future] = []
         for subgrid in np.array_split(grid, grid.shape[0] // chunksize):
             f = tp.submit(aso2, ens, subgrid)
             futures.append(f)
-        
+
         sub_asos = [f.result() for f in futures]
-    
+
     return np.concatenate(sub_asos)
 
 

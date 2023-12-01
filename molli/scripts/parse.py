@@ -55,7 +55,7 @@ arg_parser.add_argument(
 )
 
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args,  **kwargs):
     parsed = arg_parser.parse_args(args)
     fpath = Path(parsed.file)
 
@@ -71,7 +71,10 @@ def molli_main(args, config=None, output=None, **kwargs):
 
     with ml.MoleculeLibrary.new(opath, overwrite=parsed.overwrite) as lib:
         for k in tqdm(input_file.keys()):
-            mol = input_file[k]
-            if parsed.hadd:
-                mol.add_implicit_hydrogens()
-            lib.append(mol.name, mol)
+            try:
+                mol = input_file[k]
+                if parsed.hadd:
+                    mol.add_implicit_hydrogens()
+                lib.append(mol.name, mol)
+            except Exception as e:
+                raise RuntimeError(f"Unable to parse {k}") from e

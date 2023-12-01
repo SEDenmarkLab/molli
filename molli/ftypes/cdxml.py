@@ -152,7 +152,7 @@ class CDXMLFile:
 
     def __len__(self):
         return len(self.keys())
-
+    
     def __getitem__(self, key: str) -> Molecule:
         # TEMPORARY. DO A BETTER REWRITE.
         if isinstance(key, int):
@@ -216,7 +216,10 @@ class CDXMLFile:
                 lbl = node.get("GenericNickname")
 
             case "Unspecified":
-                return None
+                elt = Element.Unknown
+                atyp = AtomType.AttachmentPoint
+                lbl = node.find("./t/s").text
+
             case _:
                 atyp = AtomType.Regular
                 # Potentially add because Casey requests.
@@ -251,66 +254,69 @@ class CDXMLFile:
         coords = []
         atom_idx = {}
         bond_idx = {}
+        
+        try:
+            # iterate over all nodes
+            for node in frag.findall("./n"):
+                atom = self._parse_atom_node(node)
+                if atom is not None:
+                    atoms.append(atom)
+                    atom_idx[node.get("id")] = atom
+                    coords.append(position(node))
 
-        # iterate over all nodes
-        for node in frag.findall("./n"):
-            atom = self._parse_atom_node(node)
-            if atom is not None:
-                atoms.append(atom)
-                atom_idx[node.get("id")] = atom
-                coords.append(position(node))
+            result = cls(atoms, name=name, copy_atoms=False)
+            result.coords[:, 2] = 0
 
-        result = cls(atoms, name=name, copy_atoms=False)
-        result.coords[:, 2] = 0
+            for bd in frag.findall("./b"):
+                b = self._parse_bond(bd, atom_idx)
+                result.bonds.append(b)
+                bond_idx[bd.get("id")] = b
 
-        for bd in frag.findall("./b"):
-            b = self._parse_bond(bd, atom_idx)
-            result.bonds.append(b)
-            bond_idx[bd.get("id")] = b
+            result.coords[:, :2] = coords
 
-        result.coords[:, :2] = coords
+            # This is to bring the bond length to 1.5A. Not ideal, but should work in most cases.
+            result.scale(1.5 / self.bond_length)
 
-        # This is to bring the bond length to 1.5A. Not ideal, but should work in most cases.
-        result.scale(1.5 / self.bond_length)
+            # in chemdraw window coordinates Y-axis points down
+            # (opposite to real life)
+            # this line inverts this.
+            result.coords *= [1, -1, 1]
 
-        # in chemdraw window coordinates Y-axis points down
-        # (opposite to real life)
-        # this line inverts this.
-        result.coords *= [1, -1, 1]
+            # Not that it's necessary, but the structure coordinates are centered here
+            result.translate(-result.centroid())
 
-        # Not that it's necessary, but the structure coordinates are centered here
-        result.translate(-result.centroid())
+            for bd in frag.findall("./b[@Display]"):
+                b = bond_idx[bd.get("id")]
+                i1, i2 = result.get_atom_indices(b.a1, b.a2)
 
-        for bd in frag.findall("./b[@Display]"):
-            b = bond_idx[bd.get("id")]
-            i1, i2 = result.get_atom_indices(b.a1, b.a2)
+                match bd.get("Display"):
+                    case "WedgeBegin":
+                        # result.coords[i2][2] += result.coords[i1][2] + 1.1
+                        _cdxml_3dify_(result, i1, i2, sign=+1)
+                    case "WedgedHashBegin":
+                        _cdxml_3dify_(result, i1, i2, sign=-1)
+                    case "WedgeEnd":
+                        _cdxml_3dify_(result, i2, i1, sign=+1)
+                    case "WedgedHashEnd":
+                        _cdxml_3dify_(result, i2, i1, sign=-1)
+                    case "Bold":
+                        _cdxml_3dify_(result, i1, i2, sign=+2)
+                    case _:
+                        pass
 
-            match bd.get("Display"):
-                case "WedgeBegin":
-                    # result.coords[i2][2] += result.coords[i1][2] + 1.1
-                    _cdxml_3dify_(result, i1, i2, sign=+1)
-                case "WedgedHashBegin":
-                    _cdxml_3dify_(result, i1, i2, sign=-1)
-                case "WedgeEnd":
-                    _cdxml_3dify_(result, i2, i1, sign=+1)
-                case "WedgedHashEnd":
-                    _cdxml_3dify_(result, i2, i1, sign=-1)
-                case "Bold":
-                    _cdxml_3dify_(result, i1, i2, sign=+2)
-                case _:
-                    pass
-
-        # this handles composite structures
-        for subfrag in frag.findall("./n/[fragment]"):
-            substruct = self._parse_fragment(subfrag.find("./fragment"), Structure)
-            ap = result.get_atom(subfrag.get("id"))
-            result = cls.join(
-                result,
-                substruct,
-                ap,
-                substruct.attachment_points[0],
-                optimize_rotation=(substruct.n_atoms > 1),
-                name=name,
-            )
+            # this handles composite structures
+            for subfrag in frag.findall("./n/[fragment]"):
+                substruct = self._parse_fragment(subfrag.find("./fragment"), Structure)
+                ap = result.get_atom(subfrag.get("id"))
+                result = cls.join(
+                    result,
+                    substruct,
+                    ap,
+                    substruct.attachment_points[0],
+                    optimize_rotation=(substruct.n_atoms > 1),
+                    name=name,
+                )
+        except Exception as xc:
+            raise SyntaxError(f"Invalid syntax encountered in fragment id=\"{frag.get('id')}\"") from xc
 
         return result

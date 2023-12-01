@@ -31,7 +31,9 @@ def to_obmol(
 
     for i, a in enumerate(mol.atoms):
         oba: ob.OBAtom = obm.NewAtom()
-        oba.SetAtomicNum(a.Z if a.element is not Element.Unknown else Element.get(dummy).z)
+        oba.SetAtomicNum(
+            a.Z if a.element is not Element.Unknown else Element.get(dummy).z
+        )
         if coord_displace:
             dvec = np.random.random(3)
             dvec *= coord_displace / np.linalg.norm(dvec)
@@ -74,11 +76,11 @@ def coords_to_obmol(obmol: ob.OBMol, coords: np.ndarray):
         a.SetVector(x, y, z)
 
 
-def from_str_w_ob(block, input_fmt: str = "mol2") -> ob.OBMol:
+def from_str_w_ob(block: str, input_fmt: str = "mol2") -> ob.OBMol:
     """
     This function takes any file and creates an openbabel style mol format
     """
-
+    
     conv = ob.OBConversion()
     obmol = ob.OBMol()
     conv.SetInFormat(input_fmt)
