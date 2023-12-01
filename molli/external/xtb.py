@@ -1,5 +1,7 @@
 from typing import Any, Generator, Callable
-import molli as ml
+from ..chem import Molecule
+from ..config import BACKUP_DIR
+from ..config import SCRATCH_DIR
 from subprocess import run, PIPE
 from pathlib import Path
 import attrs
@@ -133,8 +135,8 @@ class Cache:
 class XTBDriver:
     def __init__(self, nprocs: int = 1) -> None:
         self.nprocs = nprocs
-        self.backup_dir = ml.config.BACKUP_DIR
-        self.scratch_dir = ml.config.SCRATCH_DIR
+        self.backup_dir = BACKUP_DIR
+        self.scratch_dir = SCRATCH_DIR
         self.backup_dir.mkdir(exist_ok=True)
         self.scratch_dir.mkdir(exist_ok=True)
         self.cache = Cache(self.backup_dir)
@@ -145,7 +147,7 @@ class XTBDriver:
     @Job(return_files=("xtbopt.xyz",)).prep
     def optimize(
         self, 
-        M: ml.Molecule,
+        M: Molecule,
         method: str = "gff",
         crit: str = "normal",
         xtbinp: str = "",
@@ -153,8 +155,8 @@ class XTBDriver:
         # xyz_name: str = "mol", # do we need this anymore?
 
         ):
-        assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
-        
+        assert isinstance(M, Molecule), "User did not pass a Molecule object!"
+        # print(self.nprocs)
         inp = JobInput(
             M.name,
             command=f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
@@ -164,25 +166,25 @@ class XTBDriver:
         return inp
 
     @optimize.post
-    def optimize(self, out: JobOutput, M: ml.Molecule, **kwargs):
+    def optimize(self, out: JobOutput, M: Molecule, **kwargs):
 
             if (pls := out.files['xtbopt.xyz']):
                 xyz = pls.decode()
 
                 # the second line of the xtb output is not needed - it is the energy line
                 xyz_coords = xyz.split('\n')[0] +'\n' + '\n'+ '\n'.join(xyz.split('\n')[2:]) 
-                optimized = ml.Molecule(M, coords = ml.Molecule.loads_xyz(xyz_coords).coords)
+                optimized = Molecule(M, coords = Molecule.loads_xyz(xyz_coords).coords)
                 
                 return optimized
             
     @Job().prep
     def energy(
         self, 
-        M: ml.Molecule,
+        M: Molecule,
         method: str = "gfn2",
         accuracy: float = 0.5,
         ):
-        assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
+        assert isinstance(M, Molecule), "User did not pass a Molecule object!"
         
         inp = JobInput(
             M.name,
@@ -193,7 +195,7 @@ class XTBDriver:
         return inp
     
     @energy.post
-    def energy(self, out: JobOutput, M: ml.Molecule, **kwargs):
+    def energy(self, out: JobOutput, M: Molecule, **kwargs):
 
             if (pls := out.stdout):
 
@@ -204,11 +206,11 @@ class XTBDriver:
     @Job(return_files=()).prep
     def atom_properties(
         self, 
-        M: ml.Molecule,
+        M: Molecule,
         method: str = "gfn2",
         accuracy: float = 0.5,
         ):
-        assert isinstance(M, ml.Molecule), "User did not pass a Molecule object!"
+        assert isinstance(M, Molecule), "User did not pass a Molecule object!"
         
         inp = JobInput(
             M.name,
@@ -219,7 +221,7 @@ class XTBDriver:
         return inp
     
     @atom_properties.post
-    def atom_properties(self, out: JobOutput, M: ml.Molecule, **kwargs):
+    def atom_properties(self, out: JobOutput, M: Molecule, **kwargs):
 
             if (pls := out.stdout):
                 # print(pls)
@@ -231,90 +233,90 @@ class XTBDriver:
                 return M
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    '''
-    To set the directories for scratch and backup, for now, use the following commands in the terminal as an example:
+#     '''
+#     To set the directories for scratch and backup, for now, use the following commands in the terminal as an example:
 
-    export MOLLI_SCRATCH_DIR="/home/colen2/xtb_test/scratch_dir"
-    export MOLLI_BACKUP_DIR="/home/colen2/xtb_test/backup_dir"
+#     export MOLLI_SCRATCH_DIR="/home/colen2/xtb_test/scratch_dir"
+#     export MOLLI_BACKUP_DIR="/home/colen2/xtb_test/backup_dir"
 
-    Otherwise it defaults based to what is shown in the config.py file (~/.molli/*)
+#     Otherwise it defaults based to what is shown in the config.py file (~/.molli/*)
 
-    '''
+#     '''
 
-    ml.config.configure()
+#     ml.config.configure()
 
-    print(f'Scratch files writing to: {ml.config.SCRATCH_DIR}')
-    print(f'Backup files writing to: {ml.config.BACKUP_DIR}')
+#     print(f'Scratch files writing to: {ml.config.SCRATCH_DIR}')
+#     print(f'Backup files writing to: {ml.config.BACKUP_DIR}')
 
-    # exit()
+#     # exit()
     
 
-    mlib = ml.MoleculeLibrary('cinchona_base.mli')
+#     mlib = ml.MoleculeLibrary('cinchona_base.mli')
 
-    print(len(mlib))
-
-    
-
-    xtb = XTBDriver(nprocs=4)
-
-    #Cinchonidine Charges = 1
-    for m in mlib:
-        m.charge = 1
+#     print(len(mlib))
 
     
-    ######################################
-    # testing geom optimization
-    ######################################
 
+#     xtb = XTBDriver(nprocs=4)
 
-    # #Note, currently the cache is based on the molecule name
-    # res = Parallel(n_jobs=32, verbose=50)(
-    #     # delayed(crest.conformer_search)(m) for m in ml1_mols
-    #     delayed(xtb.optimize)(
-    #         M=m, 
-    #         method="gff",
-    #         ) for m in mlib)
+#     #Cinchonidine Charges = 1
+#     for m in mlib:
+#         m.charge = 1
+
     
-    # print(res)
-
-    # exit()
-    # with ml.MoleculeLibrary.new(f'./final.cli') as lib:
-    #     for mol in res:
-    #         if isinstance(mol, ml.Molecule):
-    #             lib.append(mol.name, mol)
+#     ######################################
+#     # testing geom optimization
+#     ######################################
 
 
-    ######################################
-    # testing energies
-    ######################################
-    # res = Parallel(n_jobs=32, verbose=50)(
-    #     # delayed(crest.conformer_search)(m) for m in ml1_mols
-    #     delayed(xtb.energy)(
-    #         M=m, 
-    #         method="gfn2",
-    #         ) for m in mlib)
+#     # #Note, currently the cache is based on the molecule name
+#     # res = Parallel(n_jobs=32, verbose=50)(
+#     #     # delayed(crest.conformer_search)(m) for m in ml1_mols
+#     #     delayed(xtb.optimize)(
+#     #         M=m, 
+#     #         method="gff",
+#     #         ) for m in mlib)
+    
+#     # print(res)
 
-    # print(res)
-    # exit()
+#     # exit()
+#     # with ml.MoleculeLibrary.new(f'./final.cli') as lib:
+#     #     for mol in res:
+#     #         if isinstance(mol, ml.Molecule):
+#     #             lib.append(mol.name, mol)
 
-    ######################################
-    # testing atom properties
-    ######################################
-    res = Parallel(n_jobs=32, verbose=50)(
-        # delayed(crest.conformer_search)(m) for m in ml1_mols
-        delayed(xtb.atom_properties)(
-            M=m, 
-            method="gfn2",
-            ) for m in mlib)
 
-    # print(res[0])
-    for atom in res[0].atoms:
-        print(atom.attrib)
-    # print(res[0].columns)
-    # for i in enumerate(res[0]):
-    #     print(i)
-    # with open('test.csv', 'w') as w:
-    #     res[0].to_csv(w)
-    # # exit()
+#     ######################################
+#     # testing energies
+#     ######################################
+#     # res = Parallel(n_jobs=32, verbose=50)(
+#     #     # delayed(crest.conformer_search)(m) for m in ml1_mols
+#     #     delayed(xtb.energy)(
+#     #         M=m, 
+#     #         method="gfn2",
+#     #         ) for m in mlib)
+
+#     # print(res)
+#     # exit()
+
+#     ######################################
+#     # testing atom properties
+#     ######################################
+#     res = Parallel(n_jobs=32, verbose=50)(
+#         # delayed(crest.conformer_search)(m) for m in ml1_mols
+#         delayed(xtb.atom_properties)(
+#             M=m, 
+#             method="gfn2",
+#             ) for m in mlib)
+
+#     # print(res[0])
+#     for atom in res[0].atoms:
+#         print(atom.attrib)
+#     # print(res[0].columns)
+#     # for i in enumerate(res[0]):
+#     #     print(i)
+#     # with open('test.csv', 'w') as w:
+#     #     res[0].to_csv(w)
+#     # # exit()

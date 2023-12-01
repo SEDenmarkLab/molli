@@ -24,3 +24,5 @@ substituents_cdxml = ROOT / "substituents.cdxml"
 parser_demo_cdxml = ROOT / "parser_demo.cdxml"
 
 oldstyle_xml = ROOT / "oldstyle.xml"
+
+cinchonidines = ROOT / "cinchona_base.mli"
