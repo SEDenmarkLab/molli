@@ -6,8 +6,6 @@ from ..storage import _Library
 from typing import Generic, TypeVar, Iterable, List, Literal
 from pathlib import Path
 import msgpack
-import py3Dmol
-
 
 class MoleculeLibrary(_Library[Molecule]):
     @staticmethod
