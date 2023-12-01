@@ -9,13 +9,12 @@ import os, sys
 from pathlib import Path
 import logging
 
-
 VERSION = "1.0.0b1"
 
 HOME: Path = Path("~/.molli").expanduser()
-USER_DATA_DIR: Path  = HOME / "user_data"
-BACKUP_DIR: Path  = HOME / "backup"
-SCRATCH_DIR: Path  = HOME / "scratch"
+USER_DATA_DIR: Path = HOME / "user_data"
+BACKUP_DIR: Path = HOME / "backup"
+SCRATCH_DIR: Path = HOME / "scratch"
 SHARED_DIR: Path = HOME / "shared"
 
 SPLASH = f"""
@@ -28,40 +27,62 @@ SPLASH = f"""
                 --- version {VERSION} ---
 """
 
-def configure(config_from_file: dict[str, str]=None, **kwds):
+
+def configure(config_from_file: dict[str, str] = None, **kwds):
     """
     This function populates the values of molli configuration
     """
     global HOME
-    logger = logging.getLogger("molli.config")
-    
+    # logger = logging.getLogger("molli.config")
+
+    requested_config: dict[str, str] = (config_from_file or {}) | kwds
+
     if "MOLLI_HOME" in os.environ:
         HOME = Path(os.environ["MOLLI_HOME"])
-    elif config_from_file is not None and "HOME" in config_from_file:
-        HOME = config_from_file["HOME"]
+    elif requested_config is not None and "HOME" in requested_config:
+        HOME = Path(requested_config["HOME"])
     else:
         HOME = Path("~/.molli").expanduser()
-    
+
     os.environ["MOLLI_HOME"] = str(HOME)
-        
+
     # tuple[type, default_value]
     _VAR_DEFAULTS = {
-        "DATA_DIR" : (Path, HOME / "data"),
-        "BACKUP_DIR" : (Path, HOME / "backup"),
-        "SCRATCH_DIR" : (Path, HOME / "scratch"),
-        "SHARED_DIR" : (Path, HOME / "shared"),
+        "DATA_DIR": (Path, HOME / "data"),
+        "BACKUP_DIR": (Path, HOME / "backup"),
+        "SCRATCH_DIR": (Path, HOME / "scratch"),
+        "SHARED_DIR": (Path, HOME / "shared"),
     }
 
     for varname, (vartype, vardefault) in _VAR_DEFAULTS.items():
         if (envarname := f"MOLLI_{varname}") in os.environ:
             value = vartype(os.environ[envarname])
         # elif varname in kwds:
-        #     value = vartype(config_from_file[varname])
-        elif config_from_file is not None and varname in config_from_file:
-            value = vartype(config_from_file[varname])
+        #     value = vartype(requested_config[varname])
+        elif requested_config is not None and varname in requested_config:
+            value = vartype(requested_config[varname])
         else:
             value = vartype(vardefault)
 
         globals()[varname] = value
-    
 
+    for k, v in requested_config.items():
+        if k.startswith("ENV_"):
+            envar = k.removeprefix("ENV_")
+            value = os.path.expandvars(v)
+            os.environ[envar] = value
+
+
+# This happens if a configuration file exists
+if (default_path := HOME / "config.yaml").is_file():
+    import yaml
+
+    with open(default_path, "rt") as f:
+        cfg = yaml.safe_load(f)
+
+    configure(cfg)
+
+# This is to patch messagepack so that numpy arrays can be serialized
+import msgpack_numpy
+
+msgpack_numpy.patch()
