@@ -1,45 +1,51 @@
 # # A library is a dict-like object with a cached access to the elements
-# from __future__ import annotations
-# from . import ConformerEnsemble, Molecule
-# from ..storage import _Library
-# from typing import Generic, TypeVar, Iterable, List, Literal
-# from pathlib import Path
-# import msgpack
+from pathlib import Path
+from typing import Callable, Type
+from molli.storage.backends import CollectionBackendBase
+from . import Molecule, ConformerEnsemble
+from .io import (
+    _serialize_mol_v2,
+    _serialize_ens_v2,
+    _deserialize_mol_v2,
+    _deserialize_ens_v2,
+)
+from ..storage import Collection, UkvCollectionBackend
+import msgpack
+import gc
 
 
-# class MoleculeLibrary(_Library[Molecule]):
-#     @staticmethod
-#     def default_encoder(mol: Molecule) -> bytes:
-#         return msgpack.dumps(mol.serialize(), use_single_float=True)
+class MoleculeLibrary(Collection[Molecule]):
+    def __init__(
+        self,
+        path: Path | str,
+        *,
+        readonly: bool = True,
+        encoding: str = "utf8",
+        bufsize: int = -1,
+        ext: str = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            path,
+            UkvCollectionBackend,
+            value_encoder=self._molecule_encoder,
+            value_decoder=self._molecule_decoder,
+            readonly=readonly,
+            encoding=encoding,
+            bufsize=bufsize,
+            ext=ext,
+            **kwargs,
+        )
+        self._backend: UkvCollectionBackend
 
-#     @staticmethod
-#     def default_decoder(bts: bytes) -> Molecule:
-#         return Molecule.deserialize(msgpack.loads(bts, use_list=False))
+    @staticmethod
+    def _molecule_encoder(mol: Molecule) -> bytes:
+        return msgpack.dumps(_serialize_mol_v2(mol), use_single_float=True)
 
-#     @classmethod
-#     def new(
-#         cls: type[_Library],
-#         path: Path | str,
-#         overwrite: bool = False,
-#     ) -> MoleculeLibrary:
-
-#         return super().new(path, overwrite=overwrite)
+    @staticmethod
+    def _molecule_decoder(mb: bytes) -> Molecule:
+        return _deserialize_mol_v2(msgpack.loads(mb, use_list=False))
 
 
-# class ConformerLibrary(_Library[ConformerEnsemble]):
-#     @staticmethod
-#     def default_encoder(ens: ConformerEnsemble) -> bytes:
-#         return msgpack.dumps(ens.serialize(), use_single_float=True)
-
-#     @staticmethod
-#     def default_decoder(bts: bytes) -> ConformerEnsemble:
-#         return ConformerEnsemble.deserialize(msgpack.loads(bts, use_list=False))
-
-#     @classmethod
-#     def new(
-#         cls: type[_Library],
-#         path: Path | str,
-#         overwrite: bool = False,
-#     ) -> ConformerLibrary:
-
-#         return super().new(path, overwrite=overwrite)
+class ConformerLibrary(Collection[Molecule]):
+    pass
