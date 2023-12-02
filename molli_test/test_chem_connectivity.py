@@ -16,7 +16,6 @@ class ConnectivityTC(ut.TestCase):
         assert id(empty1._bonds) != id(empty2._bonds)
 
     def test_connectivity_bond_creation(self):
-
         ###############################################
         # This creates a water molecule from scratch
 
