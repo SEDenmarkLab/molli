@@ -267,9 +267,25 @@ def _deserialize_mol_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
     #     return res
 
 
-def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
+def _deserialize_ens_v2(
+    mt: tuple, cls: type[ConformerEnsemble] = ConformerEnsemble
+) -> ConformerEnsemble:
+    # "name",
+    # "n_conformers",
+    # "n_atoms",
+    # "n_bonds",
+    # "charge",
+    # "mult",
+    # "atoms",
+    # "bonds",
+    # "coords",
+    # "weights",
+    # "atomic_charges",
+    # "attrib"
+
     (
         name,
+        n_conformers,
         n_atoms,
         n_bonds,
         charge,
@@ -277,6 +293,7 @@ def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
         atoms,
         bonds,
         coords,
+        weights,
         atomic_charges,
         attrib,
     ) = mt
@@ -286,11 +303,15 @@ def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
     res = cls(
         atoms,
         n_atoms=n_atoms,
+        n_conformers=n_conformers,
         name=name,
         charge=charge,
         mult=mult,
-        coords=np.frombuffer(coords, dtype=">f4").reshape((n_atoms, 3)),
-        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4").reshape((n_atoms)),
+        coords=np.frombuffer(coords, dtype=">f4").reshape((n_conformers, n_atoms, 3)),
+        weights=np.frombuffer(weights, dtype=">f4"),
+        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4").reshape(
+            (n_conformers, n_atoms)
+        ),
         attrib=attrib,
     )
 

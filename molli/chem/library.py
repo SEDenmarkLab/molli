@@ -19,21 +19,24 @@ class MoleculeLibrary(Collection[Molecule]):
         self,
         path: Path | str,
         *,
+        overwrite: bool = False,
         readonly: bool = True,
         encoding: str = "utf8",
         bufsize: int = -1,
-        ext: str = None,
+        comment: str = None,
         **kwargs,
     ) -> None:
+        # Figure out the correct version of the library
         super().__init__(
             path,
             UkvCollectionBackend,
             value_encoder=self._molecule_encoder,
             value_decoder=self._molecule_decoder,
+            overwrite=overwrite,
             readonly=readonly,
             encoding=encoding,
             bufsize=bufsize,
-            ext=ext,
+            comment=comment,
             **kwargs,
         )
         self._backend: UkvCollectionBackend
@@ -47,5 +50,37 @@ class MoleculeLibrary(Collection[Molecule]):
         return _deserialize_mol_v2(msgpack.loads(mb, use_list=False))
 
 
-class ConformerLibrary(Collection[Molecule]):
-    pass
+class ConformerLibrary(Collection[ConformerEnsemble]):
+    def __init__(
+        self,
+        path: Path | str,
+        *,
+        overwrite: bool = False,
+        readonly: bool = True,
+        encoding: str = "utf8",
+        bufsize: int = -1,
+        comment: str = None,
+        **kwargs,
+    ) -> None:
+        # Figure out the correct version of the library
+        super().__init__(
+            path,
+            UkvCollectionBackend,
+            value_encoder=self._ensemble_encoder,
+            value_decoder=self._ensemble_decoder,
+            overwrite=overwrite,
+            readonly=readonly,
+            encoding=encoding,
+            bufsize=bufsize,
+            comment=comment,
+            **kwargs,
+        )
+        self._backend: UkvCollectionBackend
+
+    @staticmethod
+    def _ensemble_encoder(ens: ConformerEnsemble) -> bytes:
+        return msgpack.dumps(_serialize_ens_v2(ens), use_single_float=True)
+
+    @staticmethod
+    def _ensemble_decoder(ensb: bytes) -> ConformerEnsemble:
+        return _deserialize_ens_v2(msgpack.loads(ensb, use_list=False))
