@@ -43,7 +43,7 @@ class Collection(MutableMapping[str, T]):
         value_encoder: Callable[[T], bytes] | str = None,
         value_decoder: Callable[[bytes], T] | str = None,
         *,
-        readonly: bool = False,
+        readonly: bool = True,
         encoding: str = "utf8",
         bufsize: int = -1,
         ext: str = None,
