@@ -150,10 +150,12 @@ class ConformerEnsembleTC(ut.TestCase):
             )
 
     def test_iterating_through_ensemble(self):
+        "Test ability to iterate over instance of the ConformerEnsemble class"
         ens = ml.ConformerEnsemble(["O", "H", "H"], n_conformers=5)
         self.assertNotEqual(next(iter(ens)), None)
 
     def test_appending_to_ensemble(self):
+        "Tests append() method of the the ConformerEnsemble class"
         ens = ml.ConformerEnsemble(["O", "H", "H"], n_conformers=1)
         prev_n_conf = ens.n_conformers
         struct = ml.Molecule(["O", "H", "H"])
@@ -161,6 +163,7 @@ class ConformerEnsembleTC(ut.TestCase):
         self.assertEqual(ens.n_conformers, prev_n_conf + 1)
 
     def test_extend_ensemble(self):
+        "Tests extend() method of the the ConformerEnsemble class"
         ens1 = ml.ConformerEnsemble(["O", "H", "H"], n_conformers=2)
         ens1_n_conf = ens1.n_conformers
         ens2 = ml.ConformerEnsemble(["O", "H", "H"], n_conformers=5)
@@ -170,6 +173,7 @@ class ConformerEnsembleTC(ut.TestCase):
     # TODO: test_serialization and test_deserialization after Alex fixes the source code
 
     def test_scale(self):
+        "Tests scaling coordinates of the conformer ensemble"
         ens = ml.ConformerEnsemble.loads_mol2(h2o_mol2_str)
         old_coords = ens.coords
 
@@ -184,6 +188,7 @@ class ConformerEnsembleTC(ut.TestCase):
         self.assertTrue(np.allclose(ens.coords, old_coords))
 
     def test_invert(self):
+        "Tests inverting the coordinates of the conformer ensemble"
         ens = ml.ConformerEnsemble.loads_mol2(h2o_mol2_str)
         old_coords = ens.coords
         ens.invert()
