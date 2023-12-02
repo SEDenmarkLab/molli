@@ -100,7 +100,7 @@ class Bond:
     _parent = attrs.field(
         default=None,
         repr=False,
-        init=False,
+        # converter=lambda x: None if x is None else ref(x),
     )
 
     @property
@@ -246,7 +246,8 @@ class Connectivity(Promolecule):
         if isinstance(other, Connectivity):
             atom_map = {other.atoms[i]: self.atoms[i] for i in range(self.n_atoms)}
             self._bonds = list(
-                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds
+                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=self)
+                for b in other.bonds
             )
         else:
             self._bonds = list()
@@ -296,12 +297,17 @@ class Connectivity(Promolecule):
 
     def append_bond(self, bond: Bond):
         self._bonds.append(bond)
+        bond.parent = self
 
     def append_bonds(self, *bonds: Bond):
         self._bonds.extend(bonds)
+        for b in bonds:
+            b.parent = self
 
     def extend_bonds(self, bonds: Iterable[Bond]):
         self._bonds.extend(bonds)
+        for b in bonds:
+            b.parent = self
 
     def del_bond(self, b: Bond):
         self._bonds.remove(b)
