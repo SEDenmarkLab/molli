@@ -1,7 +1,5 @@
 from typing import Any, Generator, Callable
 from ..chem import Molecule
-from ..config import BACKUP_DIR
-from ..config import SCRATCH_DIR
 from subprocess import run, PIPE
 from pathlib import Path
 import attrs
@@ -134,6 +132,8 @@ class Cache:
     
 class XTBDriver:
     def __init__(self, nprocs: int = 1) -> None:
+        from ..config import BACKUP_DIR
+        from ..config import SCRATCH_DIR        
         self.nprocs = nprocs
         self.backup_dir = BACKUP_DIR
         self.scratch_dir = SCRATCH_DIR
@@ -152,14 +152,11 @@ class XTBDriver:
         crit: str = "normal",
         xtbinp: str = "",
         maxiter: int = 50,
-        # xyz_name: str = "mol", # do we need this anymore?
-
         ):
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
-        # print(self.nprocs)
         inp = JobInput(
             M.name,
-            command=f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
+            command=f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
             files={"input.xyz": M.dumps_xyz().encode()}
         )
         
