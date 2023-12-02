@@ -117,7 +117,7 @@ class UKVFile:
                     self.map_blocks()
 
                 case "a":
-                    self._stream = self.path.open("a+b")
+                    self._stream = self.path.open("r+b")
                     self.read_header()
                     self.map_blocks()
 
@@ -258,6 +258,10 @@ class UKVFile:
         """
         for k in keys:
             _dest.put(k, self.get(k))
+
+    def truncate(self):
+        self._stream.seek(self._bof)
+        self._stream.truncate()
 
     # @classmethod
     # def concatenate(

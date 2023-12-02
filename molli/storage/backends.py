@@ -24,6 +24,7 @@ from collections.abc import MutableMapping
 from deprecated import deprecated
 import atexit
 from io import UnsupportedOperation
+import os
 
 T = TypeVar("T")
 
@@ -45,14 +46,20 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
         self,
         path,
         *,
+        overwrite: bool = True,
         readonly: bool = True,
         bufsize: int = None,
         **kwargs,
     ) -> None:
         """Bufsize refers to the sum of lengths of all keys AND all values"""
         self._path = Path(path)
+        self._readonly = readonly
+
         self._write_queue = deque()
         self._keys = set[str]()
+
+        if overwrite and readonly:
+            raise ValueError("overwrite and readonly are mutually exclusive.")
 
         self._lock = InterProcessReaderWriterLock(
             self._path.with_name(self._path.name + ".lock")
@@ -62,7 +69,7 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
             int(bufsize) if bufsize is not None else 131_072
         )  # default buffer size will be 128 MB TODO: make adjustable via config?
         self._usedmem = 0
-        self._readonly = readonly
+
         self._state = "idle"
 
         # This registers the call so that once python terminates
@@ -130,6 +137,10 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
     def _write(self, key: str, value: bytes):
         """Write the bytes into the Collection. Assuming all locks are configured correctly."""
 
+    @abc.abstractmethod
+    def _truncate(self):
+        """Truncate the collection. This deletes all contents."""
+
     def _delete(self, key: str) -> bytes:
         """This method is responsible for deleting"""
         raise NotImplementedError(
@@ -150,6 +161,10 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
     def get(self, key: str):
         """The getter is very primitive in the ABC. However, this can be a chance to add caching if needed."""
         return self._read(key)
+
+    def truncate(self):
+        with self.writing():
+            self._truncate()
 
     @property
     def used_memory(self):
@@ -183,6 +198,7 @@ class DirCollectionBackend(CollectionBackendBase):
         self,
         path,
         *,
+        overwrite: bool = True,
         readonly: bool = True,
         ext: str = ".dat",
         bufsize=0,
@@ -213,6 +229,10 @@ class DirCollectionBackend(CollectionBackendBase):
     def _read(self, key: bytes) -> bytes:
         with open(self.get_path(key), "rb") as f:
             return f.read()
+
+    def _truncate(self):
+        for fn in map(self.get_path, self.keys()):
+            os.remove(fn)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self._path.as_posix()!r}, ext={self.ext!r})"
@@ -275,6 +295,7 @@ class UkvCollectionBackend(CollectionBackendBase):
         self,
         path,
         *,
+        overwrite: bool = True,
         readonly: bool = True,
         comment: str = None,
         h1: bytes = None,
@@ -295,6 +316,15 @@ class UkvCollectionBackend(CollectionBackendBase):
                     b0=b0,
                     h2=comment.encode(),
                     mode="x",
+                ):
+                    pass
+            elif overwrite:
+                with UKVFile(
+                    self._path,
+                    h1=h1,
+                    b0=b0,
+                    h2=comment.encode(),
+                    mode="w",
                 ):
                     pass
 
@@ -318,3 +348,6 @@ class UkvCollectionBackend(CollectionBackendBase):
 
     def _read(self, key: str) -> bytes:
         return self._ukvfile.get(key.encode())
+
+    def _truncate(self):
+        self._ukvfile.truncate()

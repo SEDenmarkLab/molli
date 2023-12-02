@@ -43,6 +43,7 @@ class Collection(MutableMapping[str, T]):
         value_encoder: Callable[[T], bytes] | str = None,
         value_decoder: Callable[[bytes], T] | str = None,
         *,
+        overwrite: bool = False,
         readonly: bool = True,
         encoding: str = "utf8",
         bufsize: int = -1,
@@ -50,15 +51,16 @@ class Collection(MutableMapping[str, T]):
         **kwargs,
     ) -> None:
         self._path = Path(path)
-        self._readonly = readonly
 
         self._backend = backend(
             self._path,
+            overwrite=overwrite,
             readonly=readonly,
             bufsize=bufsize,
             ext=ext,
             **kwargs,
         )
+
         self._value_encoder = value_encoder or _do_nothing
         self._value_decoder = value_decoder or _do_nothing
         self._encoding = encoding
