@@ -23,7 +23,7 @@ class CollectionsTC(ut.TestCase):
         self.root = ml.config.SCRATCH_DIR / "_molli_test" / self._testMethodName
         if self.root.exists():
             shutil.rmtree(self.root)
-        self.root.mkdir()
+        self.root.mkdir(parents=True)
 
     def test_dir(self):
         """Testing the most primitive form of data storage"""
