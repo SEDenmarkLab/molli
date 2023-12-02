@@ -24,6 +24,7 @@ from collections.abc import MutableMapping
 from deprecated import deprecated
 import atexit
 from io import UnsupportedOperation
+import os
 
 T = TypeVar("T")
 
@@ -45,14 +46,20 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
         self,
         path,
         *,
+        overwrite: bool = False,
         readonly: bool = True,
         bufsize: int = None,
         **kwargs,
     ) -> None:
         """Bufsize refers to the sum of lengths of all keys AND all values"""
         self._path = Path(path)
+        self._readonly = readonly
+
         self._write_queue = deque()
         self._keys = set[str]()
+
+        if overwrite and readonly:
+            raise ValueError("overwrite and readonly are mutually exclusive.")
 
         self._lock = InterProcessReaderWriterLock(
             self._path.with_name(self._path.name + ".lock")
@@ -62,7 +69,7 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
             int(bufsize) if bufsize is not None else 131_072
         )  # default buffer size will be 128 MB TODO: make adjustable via config?
         self._usedmem = 0
-        self._readonly = readonly
+
         self._state = "idle"
 
         # This registers the call so that once python terminates
@@ -130,6 +137,10 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
     def _write(self, key: str, value: bytes):
         """Write the bytes into the Collection. Assuming all locks are configured correctly."""
 
+    @abc.abstractmethod
+    def _truncate(self):
+        """Truncate the collection. This deletes all contents."""
+
     def _delete(self, key: str) -> bytes:
         """This method is responsible for deleting"""
         raise NotImplementedError(
@@ -150,6 +161,10 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
     def get(self, key: str):
         """The getter is very primitive in the ABC. However, this can be a chance to add caching if needed."""
         return self._read(key)
+
+    def truncate(self):
+        with self.writing():
+            self._truncate()
 
     @property
     def used_memory(self):
@@ -183,6 +198,7 @@ class DirCollectionBackend(CollectionBackendBase):
         self,
         path,
         *,
+        overwrite: bool = False,
         readonly: bool = True,
         ext: str = ".dat",
         bufsize=0,
@@ -214,52 +230,57 @@ class DirCollectionBackend(CollectionBackendBase):
         with open(self.get_path(key), "rb") as f:
             return f.read()
 
+    def _truncate(self):
+        for fn in map(self.get_path, self.keys()):
+            os.remove(fn)
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self._path.as_posix()!r}, ext={self.ext!r})"
 
 
 class ZipCollectionBackend(CollectionBackendBase):
-    def __init__(
-        self,
-        path,
-        *,
-        ext: str = ".dat",
-        mode: Literal["r", "w", "a", "x"] = "r",
-        bufsize=0,
-    ) -> None:
-        self.ext = ext
-        super().__init__(path, mode=mode, bufsize=bufsize)
-        self._zipfile = ZipFile(self._path, mode="a")
+    pass
+    # def __init__(
+    #     self,
+    #     path,
+    #     *,
+    #     ext: str = ".dat",
+    #     mode: Literal["r", "w", "a", "x"] = "r",
+    #     bufsize=0,
+    # ) -> None:
+    #     self.ext = ext
+    #     super().__init__(path, mode=mode, bufsize=bufsize)
+    #     self._zipfile = ZipFile(self._path, mode="a")
 
-    def update_keys(self):
-        if is_zipfile(str(self._path)):
-            with ZipFile(self._path) as f:
-                allnames: list[str] = filter(
-                    lambda x: x.endswith(self.ext), f.namelist()
-                )
+    # def update_keys(self):
+    #     if is_zipfile(str(self._path)):
+    #         with ZipFile(self._path) as f:
+    #             allnames: list[str] = filter(
+    #                 lambda x: x.endswith(self.ext), f.namelist()
+    #             )
 
-            keys = map(lambda x: x.removesuffix(self.ext).encode(), allnames)
-            self._keys = set(keys)
+    #         keys = map(lambda x: x.removesuffix(self.ext).encode(), allnames)
+    #         self._keys = set(keys)
 
-    def lock_acquire(self):
-        self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
-        self._plock.acquire()
+    # def lock_acquire(self):
+    #     self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
+    #     self._plock.acquire()
 
-    def lock_release(self):
-        self._zipfile.close()
-        self._plock.release()
+    # def lock_release(self):
+    #     self._zipfile.close()
+    #     self._plock.release()
 
-    def get_path(self, key: bytes):
-        s_key = key.decode()
-        return f"{s_key}{self.ext}"
+    # def get_path(self, key: bytes):
+    #     s_key = key.decode()
+    #     return f"{s_key}{self.ext}"
 
-    def write(self, key: bytes, value: bytes):
-        with self._zipfile.open(self.get_path(key), "w") as f:
-            f.write(value)
+    # def write(self, key: bytes, value: bytes):
+    #     with self._zipfile.open(self.get_path(key), "w") as f:
+    #         f.write(value)
 
-    def read(self, key: bytes) -> bytes:
-        with self._zipfile.open(self.get_path(key), "r") as f:
-            return f.read()
+    # def read(self, key: bytes) -> bytes:
+    #     with self._zipfile.open(self.get_path(key), "r") as f:
+    #         return f.read()
 
 
 @deprecated(
@@ -275,6 +296,7 @@ class UkvCollectionBackend(CollectionBackendBase):
         self,
         path,
         *,
+        overwrite: bool = False,
         readonly: bool = True,
         comment: str = None,
         h1: bytes = None,
@@ -295,6 +317,15 @@ class UkvCollectionBackend(CollectionBackendBase):
                     b0=b0,
                     h2=comment.encode(),
                     mode="x",
+                ):
+                    pass
+            elif overwrite:
+                with UKVFile(
+                    self._path,
+                    h1=h1,
+                    b0=b0,
+                    h2=comment.encode(),
+                    mode="w",
                 ):
                     pass
 
@@ -318,3 +349,6 @@ class UkvCollectionBackend(CollectionBackendBase):
 
     def _read(self, key: str) -> bytes:
         return self._ukvfile.get(key.encode())
+
+    def _truncate(self):
+        self._ukvfile.truncate()

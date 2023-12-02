@@ -1,6 +1,7 @@
 # This describes chemical I/O operations
 from typing import Literal, Type, IO, List
 from . import Molecule, ConformerEnsemble, Atom, Bond
+from ..config import VERSION
 from enum import IntEnum
 import numpy as np
 import msgpack
@@ -153,6 +154,96 @@ def _serialize_ens_v1(ens: ConformerEnsemble):
     )
 
 
+def _deserialize_mol_v1(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
+    # "name",
+    # "n_atoms",
+    # "atoms",
+    # "bonds",
+    # "charge",
+    # "mult",
+    # "coords",
+    # "atomic_charges",
+
+    (
+        name,
+        n_atoms,
+        atoms,
+        bonds,
+        charge,
+        mult,
+        coords,
+        atomic_charges,
+    ) = mt
+
+    atoms = [Atom(**dict(zip(ATOM_SCHEMA_V1, a))) for a in atoms]
+
+    #     atoms = []
+    #     for i, a in enumerate(_atoms):
+    #         atoms.append(Atom(*a))
+
+    res = cls(
+        atoms,
+        n_atoms=n_atoms,
+        name=name,
+        charge=charge,
+        mult=mult,
+        coords=np.frombuffer(coords, dtype=">f4").reshape((n_atoms, 3)),
+        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4").reshape((n_atoms)),
+    )
+
+    for b in bonds:
+        res.connect(*b[:2], **dict(zip(BOND_SCHEMA_V1[2:], b[2:])))
+
+    return res
+
+
+def _deserialize_ens_v1(
+    mt: tuple, cls: type[ConformerEnsemble] = ConformerEnsemble
+) -> ConformerEnsemble:
+    # "name",
+    # "n_conformers",
+    # "n_atoms",
+    # "atoms",
+    # "bonds",
+    # "charge",
+    # "mult",
+    # "coords",
+    # "weights",
+    # "atomic_charges",
+
+    (
+        name,
+        n_conformers,
+        n_atoms,
+        atoms,
+        bonds,
+        charge,
+        mult,
+        coords,
+        weights,
+        atomic_charges,
+    ) = mt
+
+    atoms = [Atom(**dict(zip(ATOM_SCHEMA_V1, a))) for a in atoms]
+
+    res = cls(
+        atoms,
+        n_atoms=n_atoms,
+        n_conformers=n_conformers,
+        name=name,
+        charge=charge,
+        mult=mult,
+        coords=np.frombuffer(coords, dtype=">f4").reshape((n_conformers, n_atoms, 3)),
+        weights=np.frombuffer(weights, dtype=">f4"),
+        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4"),
+    )
+
+    for b in bonds:
+        res.connect(*b[:2], **dict(zip(BOND_SCHEMA_V1[2:], b[2:])))
+
+    return res
+
+
 def _serialize_mol_v2(mol: Molecule):
     atom_id_map = {a: i for i, a in enumerate(mol.atoms)}
 
@@ -267,9 +358,25 @@ def _deserialize_mol_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
     #     return res
 
 
-def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
+def _deserialize_ens_v2(
+    mt: tuple, cls: type[ConformerEnsemble] = ConformerEnsemble
+) -> ConformerEnsemble:
+    # "name",
+    # "n_conformers",
+    # "n_atoms",
+    # "n_bonds",
+    # "charge",
+    # "mult",
+    # "atoms",
+    # "bonds",
+    # "coords",
+    # "weights",
+    # "atomic_charges",
+    # "attrib"
+
     (
         name,
+        n_conformers,
         n_atoms,
         n_bonds,
         charge,
@@ -277,6 +384,7 @@ def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
         atoms,
         bonds,
         coords,
+        weights,
         atomic_charges,
         attrib,
     ) = mt
@@ -286,11 +394,15 @@ def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
     res = cls(
         atoms,
         n_atoms=n_atoms,
+        n_conformers=n_conformers,
         name=name,
         charge=charge,
         mult=mult,
-        coords=np.frombuffer(coords, dtype=">f4").reshape((n_atoms, 3)),
-        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4").reshape((n_atoms)),
+        coords=np.frombuffer(coords, dtype=">f4").reshape((n_conformers, n_atoms, 3)),
+        weights=np.frombuffer(weights, dtype=">f4"),
+        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4").reshape(
+            (n_conformers, n_atoms)
+        ),
         attrib=attrib,
     )
 
@@ -298,6 +410,23 @@ def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
         res.connect(*b[:2], **dict(zip(BOND_SCHEMA_V2[2:], b[2:])))
 
     return res
+
+
+DESCRIPTOR_MOL_V2 = {
+    "molli_version": VERSION,
+    "object_class": "Molecule",
+    "object_schema": MOLECULE_SCHEMA_V2,
+    "atom_schema": ATOM_SCHEMA_V2,
+    "bond_schema": BOND_SCHEMA_V2,
+}
+
+DESCRIPTOR_ENS_V2 = {
+    "molli_version": VERSION,
+    "object_class": "ConformerEnsemble",
+    "object_schema": ENSEMBLE_SCHEMA_V2,
+    "atom_schema": ATOM_SCHEMA_V2,
+    "bond_schema": BOND_SCHEMA_V2,
+}
 
 
 def load(
