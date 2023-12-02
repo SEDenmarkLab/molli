@@ -46,7 +46,7 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
         self,
         path,
         *,
-        overwrite: bool = True,
+        overwrite: bool = False,
         readonly: bool = True,
         bufsize: int = None,
         **kwargs,
@@ -198,7 +198,7 @@ class DirCollectionBackend(CollectionBackendBase):
         self,
         path,
         *,
-        overwrite: bool = True,
+        overwrite: bool = False,
         readonly: bool = True,
         ext: str = ".dat",
         bufsize=0,
@@ -239,47 +239,48 @@ class DirCollectionBackend(CollectionBackendBase):
 
 
 class ZipCollectionBackend(CollectionBackendBase):
-    def __init__(
-        self,
-        path,
-        *,
-        ext: str = ".dat",
-        mode: Literal["r", "w", "a", "x"] = "r",
-        bufsize=0,
-    ) -> None:
-        self.ext = ext
-        super().__init__(path, mode=mode, bufsize=bufsize)
-        self._zipfile = ZipFile(self._path, mode="a")
+    pass
+    # def __init__(
+    #     self,
+    #     path,
+    #     *,
+    #     ext: str = ".dat",
+    #     mode: Literal["r", "w", "a", "x"] = "r",
+    #     bufsize=0,
+    # ) -> None:
+    #     self.ext = ext
+    #     super().__init__(path, mode=mode, bufsize=bufsize)
+    #     self._zipfile = ZipFile(self._path, mode="a")
 
-    def update_keys(self):
-        if is_zipfile(str(self._path)):
-            with ZipFile(self._path) as f:
-                allnames: list[str] = filter(
-                    lambda x: x.endswith(self.ext), f.namelist()
-                )
+    # def update_keys(self):
+    #     if is_zipfile(str(self._path)):
+    #         with ZipFile(self._path) as f:
+    #             allnames: list[str] = filter(
+    #                 lambda x: x.endswith(self.ext), f.namelist()
+    #             )
 
-            keys = map(lambda x: x.removesuffix(self.ext).encode(), allnames)
-            self._keys = set(keys)
+    #         keys = map(lambda x: x.removesuffix(self.ext).encode(), allnames)
+    #         self._keys = set(keys)
 
-    def lock_acquire(self):
-        self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
-        self._plock.acquire()
+    # def lock_acquire(self):
+    #     self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
+    #     self._plock.acquire()
 
-    def lock_release(self):
-        self._zipfile.close()
-        self._plock.release()
+    # def lock_release(self):
+    #     self._zipfile.close()
+    #     self._plock.release()
 
-    def get_path(self, key: bytes):
-        s_key = key.decode()
-        return f"{s_key}{self.ext}"
+    # def get_path(self, key: bytes):
+    #     s_key = key.decode()
+    #     return f"{s_key}{self.ext}"
 
-    def write(self, key: bytes, value: bytes):
-        with self._zipfile.open(self.get_path(key), "w") as f:
-            f.write(value)
+    # def write(self, key: bytes, value: bytes):
+    #     with self._zipfile.open(self.get_path(key), "w") as f:
+    #         f.write(value)
 
-    def read(self, key: bytes) -> bytes:
-        with self._zipfile.open(self.get_path(key), "r") as f:
-            return f.read()
+    # def read(self, key: bytes) -> bytes:
+    #     with self._zipfile.open(self.get_path(key), "r") as f:
+    #         return f.read()
 
 
 @deprecated(
@@ -295,7 +296,7 @@ class UkvCollectionBackend(CollectionBackendBase):
         self,
         path,
         *,
-        overwrite: bool = True,
+        overwrite: bool = False,
         readonly: bool = True,
         comment: str = None,
         h1: bytes = None,
