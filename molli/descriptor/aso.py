@@ -41,7 +41,8 @@ def aso2(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.nd
     vdwr2s = np.array([a.vdw_radius for a in ens.atoms]) ** 2
     diff = alldist <= vdwr2s[:, None]
 
-    return np.average(np.any(diff, axis=1), axis=0)
+    return np.average(np.any(diff, axis=1), axis=0, weights=ens.weights)
+
 
 def chunky_aso(ens: ConformerEnsemble, grid: np.ndarray, chunksize=512):
     aso_chunks = []
@@ -49,15 +50,16 @@ def chunky_aso(ens: ConformerEnsemble, grid: np.ndarray, chunksize=512):
         aso_chunks.append(aso2(ens, subgrid))
     return np.concatenate(aso_chunks)
 
+
 def parallel_aso(ens: ConformerEnsemble, grid: np.ndarray, n_threads=4, chunksize=512):
     with ThreadPoolExecutor(n_threads) as tp:
         futures: list[Future] = []
         for subgrid in np.array_split(grid, grid.shape[0] // chunksize):
             f = tp.submit(aso2, ens, subgrid)
             futures.append(f)
-        
+
         sub_asos = [f.result() for f in futures]
-    
+
     return np.concatenate(sub_asos)
 
 
