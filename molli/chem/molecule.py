@@ -123,60 +123,60 @@ class Molecule(Structure):
         super().del_atom(_a)
         self._atomic_charges = np.delete(self._atomic_charges, _i, axis=0)
 
-    def serialize(self):
-        atom_id_map = {a: i for i, a in enumerate(self.atoms)}
+    # def serialize(self):
+    #     atom_id_map = {a: i for i, a in enumerate(self.atoms)}
 
-        atoms = [a.as_tuple() for a in self.atoms]
-        bonds = [b.as_tuple(atom_id_map=atom_id_map) for b in self.bonds]
+    #     atoms = [a.as_tuple() for a in self.atoms]
+    #     bonds = [b.as_tuple(atom_id_map=atom_id_map) for b in self.bonds]
 
-        return (
-            self.name,
-            self.n_atoms,
-            atoms,
-            bonds,
-            self.charge,
-            self.mult,
-            self.coords.astype(">f4").tobytes(),
-            self.atomic_charges.astype(">f4").tobytes(),
-            self.attrib,
-        )
+    #     return (
+    #         self.name,
+    #         self.n_atoms,
+    #         atoms,
+    #         bonds,
+    #         self.charge,
+    #         self.mult,
+    #         self.coords.astype(">f4").tobytes(),
+    #         self.atomic_charges.astype(">f4").tobytes(),
+    #         self.attrib,
+    #     )
 
-    @classmethod
-    def deserialize(cls, struct: tuple):
-        (
-            _name,
-            _na,
-            _atoms,
-            _bonds,
-            _charge,
-            _mult,
-            _coords,
-            _atomic_charges,
-            _attrib,
-        ) = struct
+    # @classmethod
+    # def deserialize(cls, struct: tuple):
+    #     (
+    #         _name,
+    #         _na,
+    #         _atoms,
+    #         _bonds,
+    #         _charge,
+    #         _mult,
+    #         _coords,
+    #         _atomic_charges,
+    #         _attrib,
+    #     ) = struct
 
-        coords = np.frombuffer(_coords, dtype=">f4").reshape((_na, 3))
-        atomic_charges = np.frombuffer(_atomic_charges, dtype=">f4")
+    #     coords = np.frombuffer(_coords, dtype=">f4").reshape((_na, 3))
+    #     atomic_charges = np.frombuffer(_atomic_charges, dtype=">f4")
 
-        atoms = []
-        for i, a in enumerate(_atoms):
-            atoms.append(Atom(*a))
+    #     atoms = []
+    #     for i, a in enumerate(_atoms):
+    #         atoms.append(Atom(*a))
 
-        res = cls(
-            atoms,
-            n_atoms=_na,
-            name=_name,
-            charge=_charge,
-            mult=_mult,
-            coords=coords,
-            atomic_charges=atomic_charges,
-        )
+    #     res = cls(
+    #         atoms,
+    #         n_atoms=_na,
+    #         name=_name,
+    #         charge=_charge,
+    #         mult=_mult,
+    #         coords=coords,
+    #         atomic_charges=atomic_charges,
+    #     )
 
-        for i, b in enumerate(_bonds):
-            a1, a2, *b_attr = b
-            res.append_bond(Bond(atoms[a1], atoms[a2], *b_attr))
+    #     for i, b in enumerate(_bonds):
+    #         a1, a2, *b_attr = b
+    #         res.append_bond(Bond(atoms[a1], atoms[a2], *b_attr))
 
-        return res
+    #     return res
 
 
 StructureLike = Molecule | Structure | Substructure
