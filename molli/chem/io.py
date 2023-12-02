@@ -1,7 +1,6 @@
 # This describes chemical I/O operations
 from typing import Literal, Type, IO, List
-from .molecule import Molecule
-from .ensemble import ConformerEnsemble
+from . import Molecule, ConformerEnsemble, Atom, Bond
 from enum import IntEnum
 import numpy as np
 import msgpack
@@ -21,8 +20,8 @@ ATOM_SCHEMA_V1 = (
 )
 
 BOND_SCHEMA_V1 = (
-    # "a1",
-    # "a2",
+    "a1",
+    "a2",
     "label",
     "btype",
     "stereo",
@@ -70,8 +69,8 @@ ATOM_SCHEMA_V2 = (
 )
 
 BOND_SCHEMA_V2 = (
-    # "a1",
-    # "a2",
+    "a1",
+    "a2",
     "label",
     "btype",
     "stereo",
@@ -115,7 +114,7 @@ def _serialize_mol_v1(mol: Molecule):
 
     atoms = [a.as_tuple(ATOM_SCHEMA_V1) for a in mol.atoms]
     bonds = [
-        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V1)
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V1[2:])
         for b in mol.bonds
     ]
 
@@ -136,7 +135,7 @@ def _serialize_ens_v1(ens: ConformerEnsemble):
 
     atoms = [a.as_tuple(ATOM_SCHEMA_V1) for a in ens.atoms]
     bonds = [
-        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V1)
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V1[2:])
         for b in ens.bonds
     ]
 
@@ -159,7 +158,7 @@ def _serialize_mol_v2(mol: Molecule):
 
     atoms = [a.as_tuple(ATOM_SCHEMA_V2) for a in mol.atoms]
     bonds = [
-        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V2)
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V2[2:])
         for b in mol.bonds
     ]
 
@@ -182,14 +181,28 @@ def _serialize_ens_v2(ens: ConformerEnsemble):
 
     atoms = [a.as_tuple(ATOM_SCHEMA_V2) for a in ens.atoms]
     bonds = [
-        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V2)
+        (atom_id_map[b.a1], atom_id_map[b.a2]) + b.as_tuple(BOND_SCHEMA_V2[2:])
         for b in ens.bonds
     ]
+
+    # "name",
+    # "n_conformers",
+    # "n_atoms",
+    # "n_bonds",
+    # "charge",
+    # "mult",
+    # "atoms",
+    # "bonds",
+    # "coords",
+    # "weights",
+    # "atomic_charges",
+    # "attrib"
 
     return (
         ens.name,
         ens.n_conformers,
         ens.n_atoms,
+        ens.n_bonds,
         ens.charge,
         ens.mult,
         atoms,
@@ -199,6 +212,92 @@ def _serialize_ens_v2(ens: ConformerEnsemble):
         ens.atomic_charges.astype(">f4").tobytes(),
         ens.attrib,
     )
+
+
+def _deserialize_mol_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
+    (
+        name,
+        n_atoms,
+        n_bonds,
+        charge,
+        mult,
+        atoms,
+        bonds,
+        coords,
+        atomic_charges,
+        attrib,
+    ) = mt
+
+    atoms = [Atom(**dict(zip(ATOM_SCHEMA_V2, a))) for a in atoms]
+
+    #     atoms = []
+    #     for i, a in enumerate(_atoms):
+    #         atoms.append(Atom(*a))
+
+    res = cls(
+        atoms,
+        n_atoms=n_atoms,
+        name=name,
+        charge=charge,
+        mult=mult,
+        coords=np.frombuffer(coords, dtype=">f4").reshape((n_atoms, 3)),
+        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4").reshape((n_atoms)),
+        attrib=attrib,
+    )
+
+    for b in bonds:
+        res.connect(*b[:2], **dict(zip(BOND_SCHEMA_V2[2:], b[2:])))
+
+    return res
+
+    #     res = cls(
+    #         atoms,
+    #         n_atoms=_na,
+    #         name=_name,
+    #         charge=_charge,
+    #         mult=_mult,
+    #         coords=coords,
+    #         atomic_charges=atomic_charges,
+    #     )
+
+    #     for i, b in enumerate(_bonds):
+    #         a1, a2, *b_attr = b
+    #         res.append_bond(Bond(atoms[a1], atoms[a2], *b_attr))
+
+    #     return res
+
+
+def _deserialize_ens_v2(mt: tuple, cls: type[Molecule] = Molecule) -> Molecule:
+    (
+        name,
+        n_atoms,
+        n_bonds,
+        charge,
+        mult,
+        atoms,
+        bonds,
+        coords,
+        atomic_charges,
+        attrib,
+    ) = mt
+
+    atoms = [Atom(**dict(zip(ATOM_SCHEMA_V2, a))) for a in atoms]
+
+    res = cls(
+        atoms,
+        n_atoms=n_atoms,
+        name=name,
+        charge=charge,
+        mult=mult,
+        coords=np.frombuffer(coords, dtype=">f4").reshape((n_atoms, 3)),
+        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4").reshape((n_atoms)),
+        attrib=attrib,
+    )
+
+    for b in bonds:
+        res.connect(*b[:2], **dict(zip(BOND_SCHEMA_V2[2:], b[2:])))
+
+    return res
 
 
 def load(
