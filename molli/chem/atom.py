@@ -654,6 +654,7 @@ class Promolecule:
         copy_atoms: bool = False,
         charge: int = None,
         mult: int = None,
+        attrib: dict = None,
         **kwds,  # mostly just for subclassing compatibility
     ):
         """
@@ -664,7 +665,7 @@ class Promolecule:
         self.name = name
         self.charge = charge or 0
         self.mult = mult or 1
-        self.attrib = dict()
+        self.attrib = attrib or dict()
 
         match other:
             case None:
