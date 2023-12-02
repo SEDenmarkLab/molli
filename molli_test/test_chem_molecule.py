@@ -7,6 +7,30 @@ import molli as ml
 class MoleculeTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
+    def test_molecule_empty_constructor(self):
+        m1 = ml.Molecule()
+        m2 = ml.Molecule()
+
+        self.assertIsInstance(m1, ml.Molecule) # make sure its a molecule
+
+        self.assertEqual(len(m1.atoms), 0) # no atoms
+        self.assertEqual(len(m1.atomic_charges), 0) # no charges
+        self.assertEqual(len(m1.bonds), 0) # no bonds
+        self.assertEqual(m1.coords.shape, (0,3)) # no coords, but correct shape
+        self.assertEqual(m1.charge, 0) # total charge is 0
+        self.assertEqual(m1.mult, 1) # multiplicity is 1, closed shell
+        self.assertEqual(m1.name, 'unknown') # name is unknown
+
+        self.assertNotEqual(id(m1), id(m2)) # should be different objects in memory
+        self.assertNotEqual(id(m1.atoms), id(m2.atoms)) # atom list should be different
+        self.assertNotEqual(id(m1.atomic_charges), id(m2.atomic_charges)) # atom list should be different
+        self.assertNotEqual(id(m1.bonds), id(m2.bonds)) # bonds should be different
+        self.assertNotEqual(id(m1.coords), id(m2.coords)) # coords should be different
+        
+        self.assertEqual(id(m1.charge), id(m2.charge)) # primitive types should be the same
+        self.assertEqual(id(m1.mult), id(m2.mult)) # primitive types should be the same
+        self.assertEqual(id(m1.name), id(m2.name))
+
     def test_yield_from_mol2(self):
         with open(ml.files.pentane_confs_mol2) as f:
             lst_structs: list[ml.Molecule] = list(
@@ -71,6 +95,22 @@ class MoleculeTC(ut.TestCase):
         self.assertEqual(mol.n_atoms, na - 1)
         self.assertEqual(mol.n_bonds, nb - 3) # atom 0 is connected to 3 bonds
         self.assertEqual(mol._atomic_charges.shape, (na - 1,))
+
+    def test_add_atom(self):
+        """This tests if atom addition is correctly handled for atomic charges, coordinates"""
+
+        mol = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+        na = mol.n_atoms
+        nb = mol.n_bonds
+        ncoords = mol.coords.shape
+
+        a = ml.Atom()
+        mol.add_atom(a, [0,0,0])
+
+        self.assertEqual(mol.n_atoms, na + 1)
+        self.assertEqual(mol.n_bonds, nb) # added an atom but no bonds
+        self.assertEqual(mol._atomic_charges.shape, (na + 1,))
+        self.assertEqual(mol.coords.shape, (ncoords[0] + 1, 3))
 
 
             

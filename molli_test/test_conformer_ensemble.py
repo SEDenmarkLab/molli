@@ -94,9 +94,9 @@ class ConformerEnsembleTC(ut.TestCase):
         self.assertEqual(ens.n_bonds, 16)
         self.assertTupleEqual(ens.coords.shape, (7, 17, 3))
         self.assertTupleEqual(ens.weights.shape, (7,))
-        self.assertTupleEqual(ens.atomic_charges.shape, (17,))
+        self.assertTupleEqual(ens.atomic_charges.shape, (7,17))
 
-        charges = np.array(
+        charges = np.tile(np.array(
             [
                 -0.0653,
                 -0.0559,
@@ -143,7 +143,7 @@ class ConformerEnsembleTC(ut.TestCase):
                 0.023,
             ]
         )
-
+       
         with self.assertRaises(TypeError):
             ens = ml.ConformerEnsemble.load_mol2(
                 ml.files.pentane_confs_mol2, atomic_charges=charges
