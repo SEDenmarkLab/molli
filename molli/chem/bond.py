@@ -1,7 +1,15 @@
 from __future__ import annotations
-from . import Atom, Element, AtomLike, Promolecule, PromoleculeLike
+from . import (
+    Atom,
+    AtomType,
+    AtomStereo,
+    Element,
+    AtomLike,
+    Promolecule,
+    PromoleculeLike,
+)
 from dataclasses import dataclass, field, KW_ONLY
-from typing import Iterable, List, Generator, Tuple, Any
+from typing import Iterable, List, Generator, Tuple, Any, Self
 from copy import deepcopy
 from enum import IntEnum
 from collections import deque
@@ -421,3 +429,204 @@ class Connectivity(Promolecule):
                 return True
 
         return False
+
+    def to_nxgraph(self) -> nx.Graph:
+        """
+        Converts an insantce of Connectivity class into networkx object
+
+        Returns:
+        --------
+        nx_mol: nx.Graph()
+            instance of Networkx Graph object
+        Notes:
+        ------
+        In latest version, all the atom and bond attributes are added to Networkx Graph.
+        """
+        # older working version:
+        # with ml.aux.timeit("Converting molli Connectivity into networkx object"):
+        # nx_mol = nx.Graph()
+        # for atom in self.atoms:
+        #     nx_mol.add_node(atom, element=atom.element, label=atom.label, isotope=atom.isotope)
+        # for bond in self.bonds:
+        #     nx_mol.add_edge(bond.a1, bond.a2, order = bond.order)
+
+        nx_mol = nx.Graph()
+        for atom in self.atoms:
+            nx_mol.add_node(atom, **atom.as_dict())  # recursion?
+
+        # TODO: re-run test examples
+
+        # nx_mol.add_nodes_from(self.atoms, **self.atom.as_dict())
+
+        for bond in self.bonds:
+            nx_mol.add_edge(bond.a1, bond.a2, **bond.as_dict())
+
+        # didn't work: b should be 3-tuple
+        # nx_mol.add_edges_from(
+        #     [b.as_tuple() for b in self.bonds]  # , **self.bonds[0].as_dict()
+        # )
+        return nx_mol
+
+    def find_cycle_containing_atom(self, start: AtomLike) -> list:
+        """
+        Finds the first cycle containing "start" atom
+        Parameters:
+        -----------
+        start: ml.chem.AtomLike
+            atom or its atomic index or a unique identifier for starting searching for cycles (loops)
+        Returns:
+        --------
+        cycle: list
+            the first found cycle that countains "start" atom
+
+        Current implementation using networkx grpah. Should be rewritten w/o any extra dependencies.
+        """
+        atom = next(self.yield_atoms_by_element(start))
+        nx_mol = self.to_nxgraph()
+
+        for cycle in nx.cycle_basis(nx_mol, atom):
+            if atom in cycle:
+                return cycle
+
+    @staticmethod
+    def _node_match(a1: dict, a2: dict) -> bool:
+        # print({x: a1[x] == a2[x] for x in a1 if x in a2})
+        """
+        Callable helper function that compares attributes of the nodes(atoms) in nx.isomorphism.GraphMatcher().
+        Returns True is nodes(atoms) are considered equal, False otherwise.
+        For further information: refer to nx.isomorphism.GraphMatcher() documentation.
+        """
+
+        # TODO: which attributes might be query?
+
+        if a2["element"] != Element.Unknown and a1["element"] != a2["element"]:
+            # print("element:", a1["element"], a2["element"])
+            return False
+
+        if (
+            a2["isotope"] is not None
+            # and a2["isotope"] is not None  # think about it
+            and a1["isotope"] != a2["isotope"]
+        ):
+            # print("isotope:", a1["isotope"], a2["isotope"])
+            return False
+
+        # NOTE "geom" and "label" are not compared
+
+        if a2["stereo"] != AtomStereo.Unknown and a1["stereo"] != a2["stereo"]:
+            # NOTE: no queries for now
+            # print("stereo:", a1["stereo"], a2["stereo"])
+            return False
+
+        if a1["atype"] != AtomType.Unknown and a2["atype"] != a2["atype"]:
+            # TODO: add groups for queries
+            # print("atype:", a1["atype"], a2["atype"])
+            return False
+
+        return True
+
+    @staticmethod
+    def _edge_match(e1: dict, e2: dict) -> bool:  # TODO: needs improving!
+        """
+        Callable helper function that compares attributes of the edges(bonds) in nx.isomorphism.GraphMatcher().
+        Returns True is edges(bonds) are considered equal, False otherwise.
+        For further information: refer to nx.isomorphism.GraphMatcher() documentation.
+        """
+        # print({x: e1[x] == e2[x] for x in e1 if x in e2})
+
+        match e2["btype"]:
+            case BondType.Unknown:
+                pass
+            case BondType.Single | BondType.Double | BondType.Triple:
+                # should work for aromatic and resonating structures
+                if e1["btype"] < e2["btype"]:
+                    # print("btype 1-3:", e1["btype"], e2["btype"])
+                    return False
+            case BondType.Aromatic | BondType.Amide:
+                if e1["btype"] != e2["btype"]:
+                    # print("btype aromatic or amide:", e1["btype"], e2["btype"])
+                    return False
+            case BondType.NotConnected:
+                # print("bond not connected")
+                return False
+            case BondType.Dummy | _:
+                raise NotImplementedError
+
+        match e2["stereo"]:
+            case BondStereo.Unknown:
+                pass
+            case _:
+                if e1["stereo"] != e2["stereo"]:
+                    # print("bond stereo not equal")
+                    return False
+
+        match e2["label"]:
+            case None:
+                pass
+            case _:
+                if e1["label"] != e2["label"]:
+                    # print("blabel:", e1["label"], e2["label"])
+                    return False
+
+        return True
+
+    @staticmethod
+    def _edge_match_debug(e1: dict, e2: dict):
+        res = Connectivity._edge_match(e1, e2)
+        print("Bonds")
+        print(f"{e1}\n{e2}\n{res}\n")
+        # print(e1["btype"], e2["btype"], res)
+        return res
+
+    @staticmethod
+    def _node_match_debug(a1, a2):
+        res = Connectivity._node_match(a1, a2)
+        print("Atoms")
+        print(f"{a1}\n{a2}\n{res}\n")
+        # print(a1["atype"], a2["atype"], res)
+        return res
+
+    def match(
+        self,
+        pattern: Connectivity,
+        /,
+        *,
+        node_match: Callable[[dict, dict], bool] | None = None,
+        edge_match: Callable[[dict, dict], bool] | None = None,
+    ) -> Generator[dict | Any, None, None]:
+        # TODO: add new parameters to docs
+        """
+        Checks two molli connectivities for isomorphism.
+        Yields generator over subgraph isomorphism mappings.
+
+        ```python
+        for mapping in connectivity.match(pattern):
+            ...
+        ```
+        Parameters:
+        -----------
+        pattern: Connectivity
+            query-Connectivity (Molecule) to match with given Connectivity
+        """
+        nx_pattern = pattern.to_nxgraph()
+        nx_source = self.to_nxgraph()
+
+        if not node_match:
+            node_match = self._node_match
+        if not edge_match:
+            edge_match = self._edge_match
+
+        matcher = nx.isomorphism.GraphMatcher(
+            nx_source,
+            nx_pattern,
+            node_match=node_match,
+            edge_match=edge_match,
+        )
+
+        for ismorphism in matcher.subgraph_isomorphisms_iter():
+            yield {v: k for k, v in ismorphism.items()}
+
+    def connect(self, _a1: AtomLike, _a2: AtomLike, **kwds):
+        a1, a2 = self.get_atoms(_a1, _a2)
+        self.append_bond(b := Bond(a1, a2, **kwds))
+        return b

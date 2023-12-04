@@ -20,3 +20,4 @@ molli_xt.*.so
 **/_temp_*
 
 /.vscode/c_cpp_properties.json
+molli/chem/molli_dev.code-workspace

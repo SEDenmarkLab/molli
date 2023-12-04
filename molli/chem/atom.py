@@ -12,7 +12,7 @@
 This file defines all constituent elements of 
 """
 from __future__ import annotations
-from typing import Any, List, Iterable, Generator, Callable
+from typing import Any, List, Iterable, Generator, Callable, Self
 from enum import Enum, IntEnum
 from dataclasses import dataclass, field, KW_ONLY
 from collections import Counter, UserList

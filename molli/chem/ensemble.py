@@ -1,14 +1,16 @@
 from __future__ import annotations
-from typing import Iterable, Iterator, List, Callable
+from typing import IO, Iterable, Iterator, List, Callable, Generator, Tuple
 from . import (
     Molecule,
     Atom,
+    AtomLike,
     Element,
     Promolecule,
     Bond,
     Connectivity,
     CartesianGeometry,
     Structure,
+    Substructure,
     StructureLike,
     PromoleculeLike,
 )
@@ -25,6 +27,51 @@ from pathlib import Path
 
 
 class ConformerEnsemble(Connectivity):
+    # old one
+    # def __init__(
+    #     self,
+    #     other: ConformerEnsemble = None,
+    #     /,
+    #     n_conformers: int = 0,
+    #     n_atoms: int = 0,
+    #     *,
+    #     name: str = None,
+    #     charge: int = None,
+    #     mult: int = None,
+    #     coords: ArrayLike = None,
+    #     weights: ArrayLike = None,
+    #     atomic_charges: ArrayLike = None,
+    #     copy_atoms: bool = False,
+    #     **kwds,
+    # ):
+    #     super().__init__(
+    #         other,
+    #         n_atoms=n_atoms,
+    #         name=name,
+    #         copy_atoms=copy_atoms,
+    #         charge=charge,
+    #         mult=mult,
+    #         **kwds,
+    #     )
+
+    #     self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
+    #     self._atomic_charges = np.zeros((self.n_atoms,))
+    #     self._weights = np.ones((n_conformers,))
+
+    #     if isinstance(other, ConformerEnsemble):
+    #         self.atomic_charges = atomic_charges
+    #         self.coords = other.coords
+    #         self.weights = other.weights
+    #     else:
+    #         if coords is not None:
+    #             self.coords = coords
+
+    #         if atomic_charges is not None:
+    #             self.atomic_charges = atomic_charges
+
+    #         if weights is not None:
+    #             self.weights = weights
+
     def __init__(
         self,
         other: ConformerEnsemble = None,
@@ -77,13 +124,13 @@ class ConformerEnsemble(Connectivity):
             )
             self._weights = np.ones((n_conformers,))
 
-            if isinstance(other, ConformerEnsemble):
-                self.atomic_charges = atomic_charges
-                self.coords = other.coords
-                self.weights = other.weights
-            else:
-                if coords is not None:
-                    self.coords = coords
+        if isinstance(other, ConformerEnsemble):
+            self.atomic_charges = atomic_charges
+            self.coords = other.coords
+            self.weights = other.weights
+        else:
+            if coords is not None:
+                self.coords = coords
 
         if atomic_charges is not None:
             self.atomic_charges = atomic_charges
@@ -215,14 +262,6 @@ class ConformerEnsemble(Connectivity):
         )
         return s
 
-    def extend(self, others: Iterable[StructureLike]):
-        # TODO: Convince Lena to commit these changes
-        ...
-
-    def append(self, other: StructureLike):
-        # TODO: Convince Lena to commit these changes
-        ...
-
     def filter(
         self,
         fx: Callable[[Conformer], bool],
@@ -318,6 +357,195 @@ class ConformerEnsemble(Connectivity):
         Coordinates are inverted wrt the origin. This also inverts the absolute stereochemistry
         """
         self.scale(-1, allow_inversion=True)
+
+    def get_substr_indices(
+        self, pattern: Connectivity
+    ) -> Generator[list[int], None, None]:
+        """
+        Yields all possible combinations of substructure indices that matched
+        with the given pattern.
+
+        Parameters:
+        -----------
+        pattern: Connectivity
+
+        Returns:
+        --------
+        Generator over list of all possible mappings to pattern
+
+
+        If only one variation of substructure indices is needed, use
+        next(ens.get_substr_indices(pattern))
+
+        ``python
+        for ens in tqdm(library):
+            for mapping in ens.get_substr_indices(pattern):
+                ...
+        ```
+        """
+        mappings = self.match(
+            pattern,
+            node_match=Connectivity._node_match,
+            edge_match=Connectivity._edge_match,
+        )
+        ens_atom_idx = {a: i for i, a in enumerate(self.atoms)}
+
+        for mapping in mappings:
+            yield [ens_atom_idx[mapping[x]] for x in pattern.atoms]
+
+    # NOTE: this function is different to translate function from geometry! (explain why)
+    def translate(self, vector: ArrayLike):
+        v = np.array(vector)
+        match v.ndim:
+            case 1:
+                self.coords += v
+            case 2:
+                self.coords += v[:, np.newaxis]
+            case _:
+                raise ValueError("wrong shape of vector")
+
+    def rotate(self, rotation_matrix):
+        self.coords = self.coords @ rotation_matrix
+
+    def center_at_atom(self, _a: AtomLike):
+        """
+        Centers ensemble at atom so that the atom _a coordinates are at the
+        origin.
+        """
+        atom_ind = self.index_atom(_a)
+
+        self.translate(-self.coords[atom_ind])
+
+        # previous working version:
+        # for cf in self:
+        #     atom_coord = cf.coords[atom_ind]
+        #     cf.coords -= atom_coord
+
+    def center_at_core(self, substructure_indices: list[int]):
+        """
+        Centers ensemble at its substructure so that the coordinates of centroid of the
+        this substructure are at the origin.
+        """
+        centroids = np.array(
+            [cf.substructure(substructure_indices).centroid() for cf in self]
+        )
+        # self.coords -= centroids[:, np.newaxis]
+        self.translate(-centroids)
+
+        # previous working version:
+        # for cf in self:
+        #     cnf_subgeom = cf.substructure(substructure_indices)
+        #     cf.coords -= cnf_subgeom.centroid()
+
+    def optimal_rotation_to_ref_coords(
+        self,
+        func: Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, float]],
+        substr_indices: list[list[int]],
+        reference_subgeometry: Substructure,
+    ) -> Tuple[list[float], np.ndarray]:
+        """
+        This is the inner part of the main function for Conformer alignment. For each conformer in the ConformerEnsemble,
+        it does the following:
+        1. Finds optimal rotation using symmetry corrected rmsd. It calculates rmsd (root mean squared deviation) for
+        every possible mapping with reference coordinates, then picks the lowest rmsd and corresponding rotation matrix.
+        2. Rotates conformer with the resulting rotation matrix.
+        3. Returns list with the lowest rmsd values for each conformer.
+
+        Parameters:
+        -----------
+        func: callable
+            function that calculates rmsd value and rotation matrix.
+            It accepts two ndarrays of coordinates and returns optimal rotation
+            matrix as ndarray and minimal rmsd value as float.
+        substr_indices: list
+            list of all possible mappings to the alignment core
+        reference_subgeometry: ml.chem.Substructure
+            Referentce coordinates for the alignment
+
+        Returns:
+        --------
+        rmsds: list
+            List of rmsd values for each conformer in the given ConformerEnsemble
+
+        Notes:
+        ------
+        If core_indices list has only one element, the algorithm will perform the usual (non symmetry corrected) alignment
+        """
+
+        rmsds = []
+        opt_rot_ms = []
+
+        for cf in self:
+            smallest_rmsd = 100.0
+            optimal_rot_matrix = None
+
+            for idx in substr_indices:
+                cnf_subgeom = cf.substructure(idx)
+
+                rotation, rmsd_ = func(cnf_subgeom.coords, reference_subgeometry.coords)
+
+                if rmsd_ < smallest_rmsd:
+                    smallest_rmsd = rmsd_
+                    optimal_rot_matrix = rotation
+
+            rmsds.append(smallest_rmsd)
+            opt_rot_ms.append(optimal_rot_matrix)
+            # cf.coords = cf.coords @ optimal_rot_matrix
+
+        return rmsds, np.array(opt_rot_ms)
+
+    def align_to_ref_coords(
+        self,
+        func: Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, float]],
+        substructure_indices: list[list[int]],
+        reference_subgeometry: Substructure,
+        vec: list = None,
+    ) -> list:
+        """
+        This is the outer part of the main function for the ConformerEnsemble alignment.
+
+        Parameters:
+        -----------
+        func: Callable
+            function that calculates rmsd value and rotation matrix.
+            It accepts two ndarrays of coordinates and returns optimal rotation
+            matrix as ndarray and minimal rmsd value as float.
+        substr_indices: list
+            list of all possible mappings to the alignment core
+        reference_subgeometry: Substructure
+            Referential coordinates for the alignment
+        vec: list = None
+            translation vector. If vec is not None, the whole ConformerEnsemble
+            will be translated on that vector.
+
+        Returns:
+        --------
+        rmsds: list
+            List of rmsd values for each conformer in the ConformerEnsemble
+
+        Notes:
+        ------
+        Reference_subgeometry should be centered at the origin before calling
+        this function.
+        """
+
+        # Most alignment algorithms require centering the ensemble first
+        self.center_at_core(substructure_indices[0])
+
+        # Finding optimal rotation
+        rmsds, rot_matrix = self.optimal_rotation_to_ref_coords(
+            func, substructure_indices, reference_subgeometry
+        )
+
+        self.rotate(rot_matrix)
+
+        # bringing ensemble coordinates from origin back to referential coordinates (if necessary)
+        if vec is not None:
+            self.translate(vec)
+            # for cf in self:
+            #     cf.coords += vec
+
+        return rmsds
 
 
 class Conformer(Molecule):

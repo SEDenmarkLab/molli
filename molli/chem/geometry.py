@@ -124,7 +124,7 @@ class CartesianGeometry(Promolecule):
         """This extends current geometry with another one"""
         raise NotImplementedError
 
-    def dump_xyz(self, output: StringIO, write_header: bool = True) -> None:
+    def dump_xyz(self, output: StringIO, write_header: bool = True, *, fmt: str = "12.6f") -> None:
         """
         This dumps an xyz file into the output stream.
         """
@@ -132,15 +132,15 @@ class CartesianGeometry(Promolecule):
         # Like ORCA inputs
         if write_header:
             if hasattr(self, "name"):
-                comment = f"{self.name} [produced with molli]"
+                comment = f"{self.name}"
             else:
-                comment = f"{self!r} [produced with molli]"
+                comment = f"{type(self)}"
             output.write(f"{self.n_atoms}\n{comment}\n")
 
         for i in range(self.n_atoms):
             s = self.atoms[i].element.symbol
             x, y, z = self.coords[i]
-            output.write(f"{s:<5} {x:12.6f} {y:12.6f} {z:12.6f}\n")
+            output.write(f"{s:<5} {x:{fmt}} {y:{fmt}} {z:{fmt}}\n")
 
     def dumps_xyz(self, write_header: bool = True) -> str:
         """

@@ -91,9 +91,7 @@ class Structure(CartesianGeometry, Connectivity):
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 res.scale(DistanceUnit[source_units].value)
 
-            if block.header.chrg_type != "NO_CHARGES" and hasattr(
-                res, "atomic_charges"
-            ):
+            if block.header.chrg_type != "NO_CHARGES" and hasattr(res, "atomic_charges"):
                 res.atomic_charges = [a.charge for a in block.atoms]
 
             yield res
@@ -109,7 +107,8 @@ class Structure(CartesianGeometry, Connectivity):
 
         stream.write(f"# Produced with molli package\n")
         stream.write(
-            f"@<TRIPOS>MOLECULE\n{name}\n{self.n_atoms} {self.n_bonds} 0 0 0\nSMALL\nUSER_CHARGES\n\n"
+            f"@<TRIPOS>MOLECULE\n{name}\n{self.n_atoms} {self.n_bonds} 0 0"
+            " 0\nSMALL\nUSER_CHARGES\n\n"
         )
 
         stream.write("@<TRIPOS>ATOM\n")
@@ -250,8 +249,14 @@ class Structure(CartesianGeometry, Connectivity):
         bstereo: BondStereo = BondStereo.Unknown,
         bforder: float = 1.0,
     ):
-        assert struct1.n_bonds_with_atom(_a1) == 1
-        assert struct2.n_bonds_with_atom(_a2) == 1
+        assert struct1.n_bonds_with_atom(_a1) == 1, (
+            f"{struct1.get_atom(_a1)} does not seem to be a valid attachment point."
+            f" {struct1.n_bonds_with_atom(_a1)=}"
+        )
+        assert struct2.n_bonds_with_atom(_a2) == 1, (
+            f"{struct1.get_atom(_a2)} does not seem to be a valid attachment point."
+            f" {struct1.n_bonds_with_atom(_a2)=}"
+        )
 
         # Atoms that are bonded to the attachment points
         a1 = struct1.get_atom(_a1)
@@ -414,9 +419,7 @@ class Structure(CartesianGeometry, Connectivity):
                     vec = mean_plane(self.coord_subset(neighbors))
                     cent = np.average(self.coord_subset(neighbors), axis=0)
                     align = np.dot(vec, cent - a_coord)
-                    if (
-                        abs(align) > 0.05
-                    ):  # Note that this threshold is completely arbitrary.
+                    if abs(align) > 0.05:  # Note that this threshold is completely arbitrary.
                         vec *= align
                 else:
                     vec = np.average(self.coord_subset(neighbors) - a_coord, axis=0)
@@ -432,9 +435,7 @@ class Structure(CartesianGeometry, Connectivity):
                 elif diff == 2:
                     if len(neighbors) == 2:
                         r1, r2 = self.coord_subset(neighbors) - a_coord
-                        z = np.cross(
-                            r1, r2
-                        )  # this is a vector that is orthogonal to neighbors
+                        z = np.cross(r1, r2)  # this is a vector that is orthogonal to neighbors
                         z /= np.linalg.norm(z)
                     else:
                         z = np.cross(vec, [0.0, 0.0, 1.0])
@@ -466,9 +467,7 @@ class Substructure(Structure):
             if b.a1 in self.atoms and b.a2 in self.atoms:
                 self._bonds.append(b)
 
-    def yield_parent_atom_indices(
-        self, atoms: Iterable[AtomLike]
-    ) -> Generator[int, None, None]:
+    def yield_parent_atom_indices(self, atoms: Iterable[AtomLike]) -> Generator[int, None, None]:
         yield from map(self._parent.get_atom_index, atoms)
 
     def __repr__(self):
