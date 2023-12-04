@@ -91,7 +91,12 @@ class ConformerEnsemble(Connectivity):
         # TODO: revise the constructor
 
         if isinstance(other, list) and isinstance(other[0], Structure):
-            super().__init__(other[0])
+            super().__init__(
+                other[0],
+                name=other[0].name,
+                charge=other[0].charge,
+                mult=other[0].mult,
+            )
             n_conformers = len(other)
 
             self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
@@ -119,27 +124,23 @@ class ConformerEnsemble(Connectivity):
             )
             self._weights = np.ones((n_conformers,))
 
-            if isinstance(other, ConformerEnsemble):
-                self.atomic_charges = atomic_charges
-                self.coords = other.coords
-                self.weights = other.weights
-            else:
-                if coords is not None:
-                    self.coords = coords
+        if isinstance(other, ConformerEnsemble):
+            self.atomic_charges = atomic_charges
+            self.coords = other.coords
+            self.weights = other.weights
+        else:
+            if coords is not None:
+                self.coords = coords
 
         if atomic_charges is not None:
-            self.atomic_charges = np.reshape(
-                np.tile(atomic_charges, n_conformers), (n_conformers, n_atoms)
-            )
-
-            # self.atomic_charges = atomic_charges[:, np.newaxis]
+            self.atomic_charges = atomic_charges
 
         if weights is not None:
             self.weights = weights
 
     @property
     def coords(self):
-        """Set of atomic positions in shape (n_atoms, 3)"""
+        """Set of atomic positions in shape (n_conformers,n_atoms, 3)"""
         return self._coords
 
     @coords.setter
@@ -176,15 +177,7 @@ class ConformerEnsemble(Connectivity):
         mol2io = StringIO(input) if isinstance(input, str) else input
         mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
 
-        res = cls(
-            mols[0],
-            n_conformers=len(mols),
-            n_atoms=mols[0].n_atoms,
-            name=mols[0].name,
-            charge=charge,
-            mult=mult,
-            atomic_charges=mols[0].atomic_charges,
-        )
+        res = cls(mols)
 
         for i, m in enumerate(mols):
             res._coords[i] = m.coords
@@ -256,9 +249,7 @@ class ConformerEnsemble(Connectivity):
                 return Conformer(self, _i)
 
             case slice() as _s:
-                return [
-                    Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))
-                ]
+                return [Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))]
 
             case _:
                 raise ValueError("Cannot use this locator")

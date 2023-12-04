@@ -39,9 +39,7 @@ class PromoleculeTC(ut.TestCase):
         pm.append_atom(ml.Atom("H", label="H2"))
         pm.append_atom(ml.Atom(8, label="O3"))
 
-        self.assertEqual(
-            pm.n_atoms, 3, "This promolecule (H2O) must have 3 atoms"
-        )
+        self.assertEqual(pm.n_atoms, 3, "This promolecule (H2O) must have 3 atoms")
         self.assertEqual(
             pm.molecular_weight,
             18.0150,
@@ -86,6 +84,8 @@ class PromoleculeTC(ut.TestCase):
             "That would be the third atom in that promolecule",
         )
 
+        self.assertEqual(o3.idx, 2, "This tests the alternative way of indexing atoms")
+
         # Atom deletion tests
         pm.del_atom(h2)
         self.assertEqual(
@@ -98,9 +98,7 @@ class PromoleculeTC(ut.TestCase):
         )
 
         with self.assertRaises(ValueError):
-            pm.index_atom(
-                h2
-            )  # This should fail as h2 is no longer in the atom list
+            pm.index_atom(h2)  # This should fail as h2 is no longer in the atom list
 
         h2 = ml.Atom(ml.Element.H, label="H2")
         pm.append_atom(h2)
