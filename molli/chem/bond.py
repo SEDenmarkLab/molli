@@ -9,7 +9,7 @@ from . import (
     PromoleculeLike,
 )
 from dataclasses import dataclass, field, KW_ONLY
-from typing import Iterable, List, Generator, Tuple, Any, Self
+from typing import Iterable, List, Generator, Tuple, Any
 from copy import deepcopy
 from enum import IntEnum
 from collections import deque
@@ -108,8 +108,9 @@ class Bond:
     _parent = attrs.field(
         default=None,
         repr=False,
-        init=False,
+        converter=lambda x: x if x is None or isinstance(x, ref) else ref(x),
     )
+
 
     @property
     def parent(self):
@@ -120,7 +121,7 @@ class Bond:
 
     @parent.setter
     def parent(self, other):
-        self._parent = ref(other)
+        self._parent = other
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -254,7 +255,8 @@ class Connectivity(Promolecule):
         if isinstance(other, Connectivity):
             atom_map = {other.atoms[i]: self.atoms[i] for i in range(self.n_atoms)}
             self._bonds = list(
-                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds
+                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=self)
+                for b in other.bonds
             )
         else:
             self._bonds = list()
@@ -304,12 +306,15 @@ class Connectivity(Promolecule):
 
     def append_bond(self, bond: Bond):
         self._bonds.append(bond)
+        bond.parent = self
 
     def append_bonds(self, *bonds: Bond):
         self._bonds.extend(bonds)
+        for b in bonds:
+            b.parent = self
 
     def extend_bonds(self, bonds: Iterable[Bond]):
-        self._bonds.extend(bonds)
+        self.append_bonds(*bonds)
 
     def del_bond(self, b: Bond):
         self._bonds.remove(b)

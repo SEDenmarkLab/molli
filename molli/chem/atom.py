@@ -12,7 +12,7 @@
 This file defines all constituent elements of 
 """
 from __future__ import annotations
-from typing import Any, List, Iterable, Generator, Callable, Self
+from typing import Any, List, Iterable, Generator, Callable
 from enum import Enum, IntEnum
 from dataclasses import dataclass, field, KW_ONLY
 from collections import Counter, UserList
@@ -371,7 +371,11 @@ class Atom:
 
     attrib: dict = attrs.field(factory=dict, repr=False)
 
-    _parent = attrs.field(default=None, init=False, repr=False)
+    _parent = attrs.field(
+        default=None,
+        repr=False,
+        converter=lambda x: x if x is None or isinstance(x, ref) else ref(x),
+    )
 
     @property
     def parent(self):
@@ -382,7 +386,7 @@ class Atom:
 
     @parent.setter
     def parent(self, other):
-        self._parent = ref(other)
+        self._parent = other
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -672,13 +676,13 @@ class Promolecule:
                 if n_atoms < 0:
                     raise ValueError("Cannot instantiate with negative number of atoms")
 
-                self._atoms = list(Atom() for _ in range(n_atoms))
+                self._atoms = list(Atom(parent=self) for _ in range(n_atoms))
                 self.name = name
                 self.charge = charge or 0
                 self.mult = mult or 1
 
             case Promolecule() as pm:
-                self._atoms = list(a.evolve() for a in pm.atoms)
+                self._atoms = list(a.evolve(parent=self) for a in pm.atoms)
                 if hasattr(pm, "name"):
                     self.name = name or pm.name
                 if hasattr(pm, "charge"):
@@ -688,20 +692,17 @@ class Promolecule:
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
-                    self._atoms = list(a.evolve() for a in atoms)
+                    self._atoms = list(a.evolve(parent=self) for a in atoms)
                 else:
                     self._atoms = atoms
 
             case [*atoms] if all(isinstance(a, ElementLike) for a in atoms):
-                self._atoms = list(Atom(a) for a in atoms)
+                self._atoms = list(Atom(a, parent=self) for a in atoms)
 
             case _:
                 raise NotImplementedError(
                     f"Cannot interpret {other} of type {type(other)}"
                 )
-
-        for a in self.atoms:
-            a.parent = self
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
@@ -793,6 +794,7 @@ class Promolecule:
 
     def append_atom(self, a: Atom):
         self._atoms.append(a)
+        a.parent = self
 
     def index_atom(self, _a: Atom) -> int:
         return self._atoms.index(_a)
