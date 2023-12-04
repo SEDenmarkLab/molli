@@ -9,7 +9,7 @@ from . import (
     PromoleculeLike,
 )
 from dataclasses import dataclass, field, KW_ONLY
-from typing import Iterable, List, Generator, Tuple, Any, Self
+from typing import Iterable, List, Generator, Tuple, Any
 from copy import deepcopy
 from enum import IntEnum
 from collections import deque
@@ -81,8 +81,8 @@ MOL2_BOND_TYPE_MAP = bidict(
 class Bond:
     """`a1` and `a2` are always assumed to be interchangeable"""
 
-    a1: Atom = attrs.field()
-    a2: Atom = attrs.field()
+    a1: Atom = attrs.field(repr=lambda a: a.idx or a)
+    a2: Atom = attrs.field(repr=lambda a: a.idx or a)
 
     label: str = attrs.field(
         default=None,
@@ -103,10 +103,14 @@ class Bond:
         converter=float,
     )
 
+    attrib: dict = attrs.field(factory=dict, repr=False)
+
     _parent = attrs.field(
         default=None,
-        init=False,
+        repr=False,
+        converter=lambda x: x if x is None or isinstance(x, ref) else ref(x),
     )
+
 
     @property
     def parent(self):
@@ -116,8 +120,8 @@ class Bond:
             return self._parent()
 
     @parent.setter
-    def parent(self: Self, other: Self):
-        self._parent = ref(other)
+    def parent(self, other):
+        self._parent = other
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
@@ -149,21 +153,17 @@ class Bond:
             case _:
                 return 1.0
 
-    def as_dict(self, atom_id_map: dict = None):
-        res = attrs.asdict(self)
-        if atom_id_map is not None:
-            res["a1"] = atom_id_map[self.a1]
-            res["a2"] = atom_id_map[self.a2]
-        return res
+    def as_dict(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.asdict(self)
+        else:
+            return {a: getattr(self, a, None) for a in schema}
 
-    def as_tuple(self, atom_id_map: dict = None):
-        res = attrs.astuple(self)
-
-        if atom_id_map is not None:
-            a1, a2, *rest = res
-            res = (atom_id_map[self.a1], atom_id_map[self.a2], *rest)
-
-        return res
+    def as_tuple(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.astuple(self)
+        else:
+            return tuple(getattr(self, a, None) for a in schema)
 
     def __contains__(self, other: Atom):
         return other in {self.a1, self.a2}
@@ -255,7 +255,8 @@ class Connectivity(Promolecule):
         if isinstance(other, Connectivity):
             atom_map = {other.atoms[i]: self.atoms[i] for i in range(self.n_atoms)}
             self._bonds = list(
-                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]) for b in other.bonds
+                b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=self)
+                for b in other.bonds
             )
         else:
             self._bonds = list()
@@ -305,12 +306,15 @@ class Connectivity(Promolecule):
 
     def append_bond(self, bond: Bond):
         self._bonds.append(bond)
+        bond.parent = self
 
     def append_bonds(self, *bonds: Bond):
         self._bonds.extend(bonds)
+        for b in bonds:
+            b.parent = self
 
     def extend_bonds(self, bonds: Iterable[Bond]):
-        self._bonds.extend(bonds)
+        self.append_bonds(*bonds)
 
     def del_bond(self, b: Bond):
         self._bonds.remove(b)

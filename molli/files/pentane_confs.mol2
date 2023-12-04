@@ -4,7 +4,7 @@
 
 
 @<TRIPOS>MOLECULE
-.\pentane.xyz
+pentane
  17 16 0 0 0
 SMALL
 GASTEIGER
@@ -45,7 +45,7 @@ GASTEIGER
     15     6    11    1
     16     1     4    1
 @<TRIPOS>MOLECULE
-.\pentane.xyz
+pentane
  17 16 0 0 0
 SMALL
 GASTEIGER
@@ -86,7 +86,7 @@ GASTEIGER
     15     6    11    1
     16     1     4    1
 @<TRIPOS>MOLECULE
-.\pentane.xyz
+pentane
  17 16 0 0 0
 SMALL
 GASTEIGER
@@ -127,7 +127,7 @@ GASTEIGER
     15     6    11    1
     16     1     4    1
 @<TRIPOS>MOLECULE
-.\pentane.xyz
+pentane
  17 16 0 0 0
 SMALL
 GASTEIGER
@@ -168,7 +168,7 @@ GASTEIGER
     15     6    11    1
     16     1     4    1
 @<TRIPOS>MOLECULE
-.\pentane.xyz
+pentane
  17 16 0 0 0
 SMALL
 GASTEIGER
@@ -209,7 +209,7 @@ GASTEIGER
     15     6    11    1
     16     1     4    1
 @<TRIPOS>MOLECULE
-.\pentane.xyz
+pentane
  17 16 0 0 0
 SMALL
 GASTEIGER
@@ -250,7 +250,7 @@ GASTEIGER
     15     6    11    1
     16     1     4    1
 @<TRIPOS>MOLECULE
-.\pentane.xyz
+pentane
  17 16 0 0 0
 SMALL
 GASTEIGER

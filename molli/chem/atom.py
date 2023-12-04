@@ -12,7 +12,7 @@
 This file defines all constituent elements of 
 """
 from __future__ import annotations
-from typing import Any, List, Iterable, Generator, Callable, Self
+from typing import Any, List, Iterable, Generator, Callable
 from enum import Enum, IntEnum
 from dataclasses import dataclass, field, KW_ONLY
 from collections import Counter, UserList
@@ -31,7 +31,6 @@ class Element(IntEnum):
     """Element enumerator"""
 
     @classmethod
-    @cache
     def get(cls, elt: ElementLike):
         """More universal way of retrieving element instances"""
         match elt:
@@ -365,18 +364,17 @@ class Atom:
 
     formal_charge: int = attrs.field(
         default=0,
-        repr=False,
     )
 
-    formal_spin: int = attrs.field(default=0, repr=False)
+    # 2*Spin as an integer
+    formal_spin: int = attrs.field(default=0)
 
-    attrib: dict = attrs.field(
-        factory=dict,
-    )
+    attrib: dict = attrs.field(factory=dict, repr=False)
 
     _parent = attrs.field(
         default=None,
-        init=False,
+        repr=False,
+        converter=lambda x: x if x is None or isinstance(x, ref) else ref(x),
     )
 
     @property
@@ -387,17 +385,23 @@ class Atom:
             return self._parent()
 
     @parent.setter
-    def parent(self: Self, other: Self):
-        self._parent = ref(other)
+    def parent(self, other):
+        self._parent = other
 
     def evolve(self, **changes):
         return attrs.evolve(self, **changes)
 
-    def as_dict(self):
-        return attrs.asdict(self)
+    def as_dict(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.asdict(self)
+        else:
+            return {a: getattr(self, a, None) for a in schema}
 
-    def as_tuple(self):
-        return attrs.astuple(self)
+    def as_tuple(self, schema: List[str] = None):
+        if schema is None:
+            return attrs.astuple(self)
+        else:
+            return tuple(getattr(self, a, None) for a in schema)
 
     @property
     def is_dummy(self) -> bool:
@@ -654,7 +658,7 @@ class Promolecule:
         copy_atoms: bool = False,
         charge: int = None,
         mult: int = None,
-        attrib: dict[str, Any] = None,
+        attrib: dict = None,
         **kwds,  # mostly just for subclassing compatibility
     ):
         """
@@ -665,20 +669,20 @@ class Promolecule:
         self.name = name
         self.charge = charge or 0
         self.mult = mult or 1
-        self.attrib = attrib or {}
+        self.attrib = attrib or dict()
 
         match other:
             case None:
                 if n_atoms < 0:
                     raise ValueError("Cannot instantiate with negative number of atoms")
 
-                self._atoms = list(Atom() for _ in range(n_atoms))
+                self._atoms = list(Atom(parent=self) for _ in range(n_atoms))
                 self.name = name
                 self.charge = charge or 0
                 self.mult = mult or 1
 
             case Promolecule() as pm:
-                self._atoms = list(a.evolve() for a in pm.atoms)
+                self._atoms = list(a.evolve(parent=self) for a in pm.atoms)
                 if hasattr(pm, "name"):
                     self.name = name or pm.name
                 if hasattr(pm, "charge"):
@@ -688,20 +692,19 @@ class Promolecule:
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
-                    self._atoms = list(a.evolve() for a in atoms)
+                    self._atoms = list(a.evolve(parent=self) for a in atoms)
                 else:
                     self._atoms = atoms
+                    for a in self._atoms:
+                        a.parent = self
 
             case [*atoms] if all(isinstance(a, ElementLike) for a in atoms):
-                self._atoms = list(Atom(a) for a in atoms)
+                self._atoms = list(Atom(a, parent=self) for a in atoms)
 
             case _:
                 raise NotImplementedError(
                     f"Cannot interpret {other} of type {type(other)}"
                 )
-
-        # for a in self.atoms:
-        #     a.parent = self
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"
@@ -793,6 +796,7 @@ class Promolecule:
 
     def append_atom(self, a: Atom):
         self._atoms.append(a)
+        a.parent = self
 
     def index_atom(self, _a: Atom) -> int:
         return self._atoms.index(_a)

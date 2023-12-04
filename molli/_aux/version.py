@@ -1,9 +1,9 @@
-from .. import __version__ as _molli_version
+from molli.config import VERSION
 from .misc import ForeColor
 from packaging.version import parse as parse_version
 
 
-current_version = parse_version(_molli_version)
+current_version = parse_version(VERSION)
 
 
 def assert_molli_version_min(vmin: str):
@@ -24,7 +24,7 @@ def assert_molli_version_min(vmin: str):
     `AssertionError`
         If the test fails, it raises an error.
     """
-    if current_version < (_vmin := version.parse(vmin)):
+    if current_version < (_vmin := parse_version(vmin)):
         raise AssertionError(
             f"Current molli version {current_version} is below the minimum requirement of {_vmin}"
         )
@@ -48,7 +48,7 @@ def assert_molli_version_max(vmax: str):
     `AssertionError`
         If the test fails, it raises an error.
     """
-    if current_version > (_vmax := version.parse(vmax)):
+    if current_version > (_vmax := parse_version(vmax)):
         raise AssertionError(
             f"Current molli version {current_version} is above the maximum requirement of {_vmax}"
         )
