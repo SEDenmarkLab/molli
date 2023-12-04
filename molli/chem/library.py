@@ -36,6 +36,9 @@ class MoleculeLibrary(Collection[Molecule]):
         **kwargs,
     ) -> None:
         # Figure out the correct version of the library
+
+        _v = 2
+
         if Path(path).is_file():
             try:
                 with open(path, "rb") as f:
@@ -45,8 +48,6 @@ class MoleculeLibrary(Collection[Molecule]):
             else:
                 if header.startswith(b"ML10Library"):
                     _v = 1
-        else:
-            _v = 2
 
         if _v == 1:
             self._serializer = _serialize_mol_v1
@@ -92,6 +93,8 @@ class ConformerLibrary(Collection[ConformerEnsemble]):
         **kwargs,
     ) -> None:
         # Figure out the correct version of the library
+        _v = 2
+
         if Path(path).is_file():
             try:
                 with open(path, "rb") as f:
@@ -101,8 +104,6 @@ class ConformerLibrary(Collection[ConformerEnsemble]):
             else:
                 if header.startswith(b"ML10Library"):
                     _v = 1
-        else:
-            _v = 2
 
         if _v == 1:
             self._serializer = _serialize_ens_v1
