@@ -12,7 +12,7 @@ import numpy as np
 import re
 import os
 
-from molli.parsing import extract_xtb_atomic_properties
+
 
 # exit()
 
@@ -137,8 +137,8 @@ class XTBDriver:
         self.nprocs = nprocs
         self.backup_dir = BACKUP_DIR
         self.scratch_dir = SCRATCH_DIR
-        self.backup_dir.mkdir(exist_ok=True)
-        self.scratch_dir.mkdir(exist_ok=True)
+        self.backup_dir.mkdir(exist_ok= True)
+        self.scratch_dir.mkdir(exist_ok= True)
         self.cache = Cache(self.backup_dir)
 
     def get_cache(self, k):
@@ -219,7 +219,7 @@ class XTBDriver:
     
     @atom_properties.post
     def atom_properties(self, out: JobOutput, M: Molecule, **kwargs):
-
+            from molli.parsing.xtbout import extract_xtb_atomic_properties
             if (pls := out.stdout):
                 # print(pls)
 
@@ -228,92 +228,3 @@ class XTBDriver:
                     for j, property in enumerate(outdf.columns):
                         a.attrib[property] = outdf.iloc[i, j]
                 return M
-
-
-# if __name__ == "__main__":
-
-#     '''
-#     To set the directories for scratch and backup, for now, use the following commands in the terminal as an example:
-
-#     export MOLLI_SCRATCH_DIR="/home/colen2/xtb_test/scratch_dir"
-#     export MOLLI_BACKUP_DIR="/home/colen2/xtb_test/backup_dir"
-
-#     Otherwise it defaults based to what is shown in the config.py file (~/.molli/*)
-
-#     '''
-
-#     ml.config.configure()
-
-#     print(f'Scratch files writing to: {ml.config.SCRATCH_DIR}')
-#     print(f'Backup files writing to: {ml.config.BACKUP_DIR}')
-
-#     # exit()
-    
-
-#     mlib = ml.MoleculeLibrary('cinchona_base.mli')
-
-#     print(len(mlib))
-
-    
-
-#     xtb = XTBDriver(nprocs=4)
-
-#     #Cinchonidine Charges = 1
-#     for m in mlib:
-#         m.charge = 1
-
-    
-#     ######################################
-#     # testing geom optimization
-#     ######################################
-
-
-#     # #Note, currently the cache is based on the molecule name
-#     # res = Parallel(n_jobs=32, verbose=50)(
-#     #     # delayed(crest.conformer_search)(m) for m in ml1_mols
-#     #     delayed(xtb.optimize)(
-#     #         M=m, 
-#     #         method="gff",
-#     #         ) for m in mlib)
-    
-#     # print(res)
-
-#     # exit()
-#     # with ml.MoleculeLibrary.new(f'./final.cli') as lib:
-#     #     for mol in res:
-#     #         if isinstance(mol, ml.Molecule):
-#     #             lib.append(mol.name, mol)
-
-
-#     ######################################
-#     # testing energies
-#     ######################################
-#     # res = Parallel(n_jobs=32, verbose=50)(
-#     #     # delayed(crest.conformer_search)(m) for m in ml1_mols
-#     #     delayed(xtb.energy)(
-#     #         M=m, 
-#     #         method="gfn2",
-#     #         ) for m in mlib)
-
-#     # print(res)
-#     # exit()
-
-#     ######################################
-#     # testing atom properties
-#     ######################################
-#     res = Parallel(n_jobs=32, verbose=50)(
-#         # delayed(crest.conformer_search)(m) for m in ml1_mols
-#         delayed(xtb.atom_properties)(
-#             M=m, 
-#             method="gfn2",
-#             ) for m in mlib)
-
-#     # print(res[0])
-#     for atom in res[0].atoms:
-#         print(atom.attrib)
-#     # print(res[0].columns)
-#     # for i in enumerate(res[0]):
-#     #     print(i)
-#     # with open('test.csv', 'w') as w:
-#     #     res[0].to_csv(w)
-#     # # exit()
