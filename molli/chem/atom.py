@@ -695,6 +695,8 @@ class Promolecule:
                     self._atoms = list(a.evolve(parent=self) for a in atoms)
                 else:
                     self._atoms = atoms
+                    for a in self._atoms:
+                        a.parent = self
 
             case [*atoms] if all(isinstance(a, ElementLike) for a in atoms):
                 self._atoms = list(Atom(a, parent=self) for a in atoms)
