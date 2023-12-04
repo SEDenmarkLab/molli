@@ -2,49 +2,45 @@ import unittest as ut
 
 import numpy as np
 import molli as ml
+import importlib.util
 
-try:
-    from rdkit.Chem.PropertyMol import PropertyMol
-except:
-    _RDKIT_INSTALLED = False
-else:
-    _RDKIT_INSTALLED = True
-try:
-    from rdkit.Chem.Draw import IPythonConsole
-except:
-    _IPYTHON_INSTALLED = False
-else:
-    from molli.external import _rdkit
-    _IPYTHON_INSTALLED = True
-
+def is_package_installed(pkg_name):
+    return importlib.util.find_spec(pkg_name) is not None
 
 class RDKitTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
 
-    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
-    @ut.skipUnless(_IPYTHON_INSTALLED, "IPython is not installed in current environment.")
+    @ut.skipUnless(is_package_installed('rdkit'), 'RDKit is not installed')
+    @ut.skipUnless(is_package_installed('IPython'), "IPython is not installed")
+    @ut.skipUnless(is_package_installed('openbabel'), 'Openbabel is not installed')
     def test_create_rdkit_mol(self):
+        from rdkit.Chem.PropertyMol import PropertyMol
+        from molli.external import _rdkit as mrd
+
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 molli_mol = ml.Molecule(s, name=s.name)
-                molli_mol_rdmol_dict = _rdkit.create_rdkit_mol(molli_mol)
+                molli_mol_rdmol_dict = mrd.create_rdkit_mol(molli_mol)
                 self.assertIsInstance(
                     molli_mol_rdmol_dict[molli_mol], PropertyMol
                 )
 
-    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
-    @ut.skipUnless(_IPYTHON_INSTALLED, "IPython is not installed in current environment.")
+    @ut.skipUnless(is_package_installed('rdkit'), 'RDKit is not installed')
+    @ut.skipUnless(is_package_installed('IPython'), "IPython is not installed")
+    @ut.skipUnless(is_package_installed('openbabel'), 'Openbabel is not installed')
     def test_molli_mol_reorder(self):
+        from rdkit.Chem.PropertyMol import PropertyMol
+        from molli.external import _rdkit as mrd
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 molli_mol = ml.Molecule(s, name=s.name)
-                molli_mol_rdmol_dict = _rdkit.create_rdkit_mol(molli_mol)
-                rd_can_mol, atom_reorder, bond_reorder = _rdkit.can_mol_order(
+                molli_mol_rdmol_dict = mrd.create_rdkit_mol(molli_mol)
+                rd_can_mol, atom_reorder, bond_reorder = mrd.can_mol_order(
                     molli_mol_rdmol_dict[molli_mol]
                 )
-                molli_can_rdkit_dict = _rdkit.reorder_molecule(
+                molli_can_rdkit_dict = mrd.reorder_molecule(
                     molli_mol,
                     can_rdkit_mol_w_h=rd_can_mol,
                     can_atom_reorder=atom_reorder,
@@ -61,13 +57,16 @@ class RDKitTC(ut.TestCase):
                         can_rdkit_atom_elem, new_molli_elem
                     )
 
-    @ut.skipUnless(_RDKIT_INSTALLED, "RDKit is not installed in current environment.")
-    @ut.skipUnless(_IPYTHON_INSTALLED, "IPython is not installed in current environment.")
+    @ut.skipUnless(is_package_installed('rdkit'), 'RDKit is not installed')
+    @ut.skipUnless(is_package_installed('IPython'), "IPython is not installed")
+    @ut.skipUnless(is_package_installed('openbabel'), 'Openbabel is not installed')
     def test_rdkit_atom_filter(self):
+        from rdkit.Chem.PropertyMol import PropertyMol
+        from molli.external import _rdkit as mrd
         m1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2, name="dendrobine")
 
-        molli_rdkit_dict = _rdkit.create_rdkit_mol(m1)
-        af_mol = _rdkit.rdkit_atom_filter(molli_rdkit_dict[m1])
+        molli_rdkit_dict = mrd.create_rdkit_mol(m1)
+        af_mol = mrd.rdkit_atom_filter(molli_rdkit_dict[m1])
 
         af_mol_sp2_bool = af_mol.sp2_type()
         num_sp2_atoms = np.count_nonzero(af_mol_sp2_bool)
