@@ -2,22 +2,26 @@ from ..chem import Molecule
 from typing import Dict
 
 import numpy as np
+import importlib.util
 
-try:
-    from rdkit import Chem
-    from rdkit.Chem import Draw
-    from rdkit.Chem.PropertyMol import PropertyMol
-    from rdkit.Chem import rdqueries as chemq
-    from rdkit import DataStructs
-    from rdkit.Chem import rdCIPLabeler
-    from rdkit.Chem import rdMolDescriptors
-    from rdkit.Chem.Draw import rdMolDraw2D
-except:
+def is_package_installed(pkg_name):
+    return importlib.util.find_spec(pkg_name) is not None
+
+if not is_package_installed('rdkit'):
     raise ImportError("RDKit is not installed in this environment")
-try:
-    from rdkit.Chem.Draw import IPythonConsole
-except:
+
+if not is_package_installed('IPython'):
     raise ImportError("IPython is not installed in this environment")
+
+from rdkit import Chem
+from rdkit.Chem import Draw
+from rdkit.Chem.PropertyMol import PropertyMol
+from rdkit.Chem import rdqueries as chemq
+from rdkit import DataStructs
+from rdkit.Chem import rdCIPLabeler
+from rdkit.Chem import rdMolDescriptors
+from rdkit.Chem.Draw import rdMolDraw2D
+from rdkit.Chem.Draw import IPythonConsole
 
 def visualize_mols(name: str, rdkit_mol_list: list, molsPerRow=5, prop:str='_Name', svg=True, png=False):
     '''
@@ -85,14 +89,16 @@ def canonicalize_rdkit_mol(rdkit_mol, sanitize=False) -> PropertyMol:
     
     Can indicate whether hydrogens should be removed from mol object or not.
 
-    Sanitizing will also remove hydrogens
+    Sanitizing will also remove hydrogens    
+    
+    The Current implementation will only add the "_Name" property
     '''
+    
     can_smiles = Chem.MolToSmiles(rdkit_mol, canonical=True)
-    original_rdkit_props = list(rdkit_mol.GetPropNames(includePrivate=True, includeComputed=True))
     can_rdkit_mol = Chem.MolFromSmiles(can_smiles, sanitize=sanitize)
 
-    for prop in original_rdkit_props:
-        can_rdkit_mol.SetProp(prop, rdkit_mol.GetProp(prop))
+    if rdkit_mol.HasProp("_Name"):
+        can_rdkit_mol.SetProp("_Name", rdkit_mol.GetProp("_Name"))
     
     return can_rdkit_mol
 
