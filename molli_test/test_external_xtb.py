@@ -8,7 +8,7 @@ from pathlib import Path
 import shutil
 
 from joblib import delayed,Parallel
-from molli.external import XTBDriver
+from molli.external.xtb import XTBDriver
 from molli.config import BACKUP_DIR
 from molli.config import SCRATCH_DIR
 
@@ -29,6 +29,8 @@ _TEST_SCRATCH_DIR: Path  = ml.config.HOME / "test_scratch"
 def prep_dirs():
     ml.config.BACKUP_DIR = _TEST_BACKUP_DIR
     ml.config.SCRATCH_DIR = _TEST_SCRATCH_DIR 
+    # _TEST_BACKUP_DIR.mkdir()
+    # _TEST_SCRATCH_DIR.mkdir()
 
 def cleanup_dirs():
     shutil.rmtree(_TEST_BACKUP_DIR)
@@ -43,34 +45,37 @@ class XTBTC(ut.TestCase):
     @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")
     def test_xtb_optimize(self):
 
-        prep_dirs()
-        
+        source = ml.MoleculeLibrary(ml.files.cinchonidines)
         # test with cinchonidine library
-
-        mlib1 = ml.MoleculeLibrary(ml.files.cinchonidines)
-        #Cinchonidine Charges = 1
-        for m in mlib1:
-            m.charge = 1
-
-        # testing in serial works fine
-        xtb = XTBDriver(nprocs=4)
-        res = [xtb.optimize(m) for m in mlib1]
-        for m1, m2 in zip(mlib1, res):
-            self.assertNotAlmostEqual(np.linalg.norm(m1.coords - m2.coords), 0) # make sure the atom coordinates have moved
-
-
-        # testing in parallel breaks it
-        with self.assertRaises(AttributeError):
+        # with ml.MoleculeLibrary.reading(ml.files.cinchonidines) as source:
+        with source.reading():
+            prep_dirs()
+            for m_name in source:
+                m = source[m_name]
+                m.charge = 1
+            
             xtb = XTBDriver(nprocs=4)
-            res = Parallel(n_jobs=32, verbose=50)(
-            delayed(xtb.optimize)(
-                M=m, 
-                method="gff",
-                ) for m in mlib1)
-            for m1, m2 in zip(mlib1, res):
+            res = [xtb.optimize(source[m_name]) for m_name in source]
+
+            for m1, m2 in zip([source[m_name] for m_name in source], res):
+                self.assertEqual(m1.name, m2.name, 'Names must be the same!')
                 self.assertNotAlmostEqual(np.linalg.norm(m1.coords - m2.coords), 0) # make sure the atom coordinates have moved
+
+            cleanup_dirs()
+            prep_dirs()
+            # testing in parallel breaks it
+            # with self.assertRaises(AttributeError):
+            xtb = XTBDriver(nprocs=4)
+            res = Parallel(n_jobs=32, verbose=50,prefer='threads')(
+            delayed(xtb.optimize)(
+                M=source[m_name], 
+                method="gff",
+                ) for m_name in source)
+            for m1, m2 in zip([source[m_name] for m_name in source], res):
+                self.assertEqual(m1.name, m2.name, 'Names must be the same!')
+                self.assertNotAlmostEqual(np.linalg.norm(m1.coords - m2.coords), 0) # make sure the atom coordinates have moved
+            cleanup_dirs()
         
-        cleanup_dirs()
     
     @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")
     def test_xtb_energy(self):
@@ -79,6 +84,7 @@ class XTBTC(ut.TestCase):
 
         # test with cinchonidine library
         mlib1 = ml.MoleculeLibrary(ml.files.cinchonidines)
+        print(mlib1) # ALEX LOOK AT THIS! AN EMPTY COLLECTION. WHY DOES NOTHING FAIL??
         #Cinchonidine Charges = 1
         for m in mlib1:
             m.charge = 1
