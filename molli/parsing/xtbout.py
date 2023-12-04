@@ -1,5 +1,4 @@
 import molli as ml
-import pandas as pd
 import numpy as np
 
 def get_xtbout_name(filestr: str):
@@ -69,6 +68,7 @@ def get_xtb_coef(filestr: str,outdict: dict):
 	This is meant to operate with dictionary of file sections from 
 	get_xtbout_sections()
 	"""
+	import pandas as pd
 	lines = filestr.split('\n')
 	st,end = outdict['coeff']
 	end+=1
@@ -87,6 +87,7 @@ def get_xtb_fukui(filestr: str,outdict: dict):
 	"""
 	This pulls out fukui incices and writes them to a dataframe
 	"""
+	import pandas as pd
 	lines = filestr.split('\n')
 	st,end = outdict['fukui']
 	end+=1
@@ -106,6 +107,7 @@ def get_xtb_wiberg(filestr: str,outdict: dict):
 	"""
 	Get MAX wiberg bond order for each atom
 	"""
+	import pandas as pd
 	lines = filestr.split('\n')
 	st,end = outdict['wiberg']
 	end+=1
@@ -131,6 +133,7 @@ def extract_xtb_atomic_properties(xtbout: str,xtb_coef = True,fukui = True, wibe
 	polarizabilitis 
 	fukui indices
 	"""
+	import pandas as pd
 	# with open(xtbout,'rb') as g:
 	# 	filestr = g.read().decode('utf-8')
 	filestr = xtbout
