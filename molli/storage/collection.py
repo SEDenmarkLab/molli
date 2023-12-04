@@ -11,6 +11,7 @@ from typing import (
     Type,
     Any,
     Literal,
+    ValuesView,
 )
 from pathlib import Path
 from contextlib import contextmanager
@@ -79,6 +80,9 @@ class Collection(MutableMapping[str, T]):
 
     def items(self) -> Generator[tuple[str, T], None, None]:
         return ((k, self._value_decoder(v)) for k, v in self._backend.items())
+
+    def values(self) -> Generator[T, None, None]:
+        yield from map(self.__getitem__, self.keys())
 
     def __getitem__(self, __key: str) -> T:
         value = self._backend.get(__key)

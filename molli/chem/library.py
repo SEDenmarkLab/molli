@@ -1,6 +1,6 @@
 # # A library is a dict-like object with a cached access to the elements
 from pathlib import Path
-from typing import Callable, Type
+from typing import Callable, Iterator, Type
 from molli.storage.backends import CollectionBackendBase
 from . import Molecule, ConformerEnsemble
 from .io import (
@@ -41,16 +41,21 @@ class MoleculeLibrary(Collection[Molecule]):
                 with open(path, "rb") as f:
                     header: bytes = f.read(16)
             except:
-                pass
+                _v = 2
             else:
                 if header.startswith(b"ML10Library"):
-                    raise ValueError(
-                        f"Detected a previous style molli collection. Please use molli recollect routine."
-                    )
+                    _v = 1
+        else:
+            _v = 2
 
-        self._serializer = _serialize_mol_v2
-        self._deserializer = _deserialize_mol_v2
-        self.descriptor = msgpack.dumps(DESCRIPTOR_MOL_V2)
+        if _v == 1:
+            self._serializer = _serialize_mol_v1
+            self._deserializer = _deserialize_mol_v1
+            self.descriptor = None
+        elif _v == 2:
+            self._serializer = _serialize_mol_v2
+            self._deserializer = _deserialize_mol_v2
+            self.descriptor = msgpack.dumps(DESCRIPTOR_MOL_V2)
 
         super().__init__(
             path,
@@ -70,8 +75,8 @@ class MoleculeLibrary(Collection[Molecule]):
     def _molecule_encoder(self, mol: Molecule) -> bytes:
         return msgpack.dumps(self._serializer(mol), use_single_float=True)
 
-    def _molecule_decoder(self, mb: bytes) -> Molecule:
-        return self._deserializer(msgpack.loads(mb, use_list=False))
+    def _molecule_decoder(self, molb: bytes) -> Molecule:
+        return self._deserializer(msgpack.loads(molb, use_list=False))
 
 
 class ConformerLibrary(Collection[ConformerEnsemble]):
@@ -86,7 +91,6 @@ class ConformerLibrary(Collection[ConformerEnsemble]):
         comment: str = None,
         **kwargs,
     ) -> None:
-        # Figure out the correct version of the library
         # Figure out the correct version of the library
         if Path(path).is_file():
             try:

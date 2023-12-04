@@ -9,6 +9,7 @@ import gc
 from time import sleep
 import joblib
 from io import UnsupportedOperation
+from numpy.testing import assert_allclose
 
 
 def _write1(i: int, collection: ml.storage.Collection):
@@ -160,3 +161,54 @@ class CollectionsTC(ut.TestCase):
             for n in collect.keys():
                 d = collect[n]
                 self.assertEqual(d["value"], (int(n[4:]) - 1) ** 2)
+
+    def test_molecule_lib(self):
+        source = ml.MoleculeLibrary(ml.files.fletcher_phosphoramidite, readonly=True)
+        destination = ml.MoleculeLibrary(
+            self.root / "test.mlib",
+            readonly=False,
+            comment="This is intended to test the molecule collection with implicit conversion between version 1 and 2",
+        )
+
+        with source.reading(), destination.writing():
+            for mol_name in source:
+                mol = source[mol_name]  # Read from source
+
+                # Save some attributes just so the benefits of the new style collections are
+                # immediately apparent
+                mol.attrib["name"] = mol.name  # strings are serializable by default
+                mol.attrib["coords"] = mol.coords  # coordinates are trickier
+                destination[mol_name] = mol  # Write into the destination
+
+        with destination.reading():
+            self.assertSetEqual(source.keys(), destination.keys())
+
+            for mol_name in destination:
+                mol = destination[mol_name]
+                self.assertEqual(mol.attrib["name"], mol.name)
+                assert_allclose(mol.attrib["coords"], mol.coords)
+
+    def test_ensemble_lib(self):
+        source = ml.ConformerLibrary(ml.files.cinchonidine_rd_conf, readonly=True)
+        destination = ml.ConformerLibrary(
+            self.root / "test.clib",
+            readonly=False,
+            comment="This is intended to test the ensemble collection with implicit conversion between version 1 and 2",
+        )
+
+        with source.reading(), destination.writing():
+            for ens_name in source:
+                ens = source[ens_name]  # Read from source
+                # Save some attributes just so the benefits of the new style collections are
+                # immediately apparent
+                ens.attrib["name"] = ens.name  # strings are serializable by default
+                ens.attrib["coords"] = ens.coords  # coordinates are trickier
+                destination[ens_name] = ens  # Write into the destination
+
+        with destination.reading():
+            self.assertSetEqual(source.keys(), destination.keys())
+
+            for ens_name in destination:
+                ens = destination[ens_name]
+                self.assertEqual(ens.attrib["name"], ens.name)
+                assert_allclose(ens.attrib["coords"], ens.coords)
