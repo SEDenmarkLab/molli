@@ -9,7 +9,7 @@ from . import (
     PromoleculeLike,
 )
 from dataclasses import dataclass, field, KW_ONLY
-from typing import Iterable, List, Generator, Tuple, Any
+from typing import Iterable, List, Generator, Tuple, Any, Callable
 from copy import deepcopy
 from enum import IntEnum
 from collections import deque
@@ -19,6 +19,7 @@ import attrs
 from bidict import bidict
 from functools import cache
 from weakref import ref, WeakKeyDictionary, WeakSet
+import networkx as nx
 
 
 class BondType(IntEnum):
@@ -110,7 +111,6 @@ class Bond:
         repr=False,
         converter=lambda x: x if x is None or isinstance(x, ref) else ref(x),
     )
-
 
     @property
     def parent(self):
