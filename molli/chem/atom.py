@@ -825,7 +825,7 @@ class Promolecule:
                 yield a
 
     def get_attachment_points(self):
-        return tuple(self.yield_attachment_points(self))
+        return tuple(self.yield_attachment_points())
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
         for a in self.atoms:
