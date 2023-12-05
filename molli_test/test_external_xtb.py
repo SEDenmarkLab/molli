@@ -43,28 +43,31 @@ class XTBTC(ut.TestCase):
 
 
     @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")
-    def test_xtb_optimize(self):
+    def test_xtb_optimize_series(self):
 
-        source = ml.MoleculeLibrary(ml.files.cinchonidines)
+        source = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
         # test with cinchonidine library
         # with ml.MoleculeLibrary.reading(ml.files.cinchonidines) as source:
         with source.reading():
+
             prep_dirs()
-            for m_name in source:
-                m = source[m_name]
-                m.charge = 1
-            
             xtb = XTBDriver(nprocs=4)
             res = [xtb.optimize(source[m_name]) for m_name in source]
 
             for m1, m2 in zip([source[m_name] for m_name in source], res):
                 self.assertEqual(m1.name, m2.name, 'Names must be the same!')
                 self.assertNotAlmostEqual(np.linalg.norm(m1.coords - m2.coords), 0) # make sure the atom coordinates have moved
-
             cleanup_dirs()
+                
+    @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")     
+    def test_xtb_optimize_parallel(self):
+
+        source = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+        # test with cinchonidine library
+        with source.reading():
+
             prep_dirs()
-            # testing in parallel breaks it
-            # with self.assertRaises(AttributeError):
+
             xtb = XTBDriver(nprocs=4)
             res = Parallel(n_jobs=32, verbose=50,prefer='threads')(
             delayed(xtb.optimize)(
@@ -75,33 +78,31 @@ class XTBTC(ut.TestCase):
                 self.assertEqual(m1.name, m2.name, 'Names must be the same!')
                 self.assertNotAlmostEqual(np.linalg.norm(m1.coords - m2.coords), 0) # make sure the atom coordinates have moved
             cleanup_dirs()
+            
         
     
     @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")
-    def test_xtb_energy(self):
+    def test_xtb_energy_series(self):
 
-        prep_dirs()
-
+        source = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
         # test with cinchonidine library
-        mlib1 = ml.MoleculeLibrary(ml.files.cinchonidines)
-        print(mlib1) # ALEX LOOK AT THIS! AN EMPTY COLLECTION. WHY DOES NOTHING FAIL??
-        #Cinchonidine Charges = 1
-        for m in mlib1:
-            m.charge = 1
+        # with ml.MoleculeLibrary.reading(ml.files.cinchonidines) as source:
+        with source.reading():
 
-        # testing in serial works fine
-        xtb = XTBDriver(nprocs=4)
-        res = [xtb.energy(m) for m in mlib1]
+            prep_dirs()
+            xtb = XTBDriver(nprocs=4)
+            res = [xtb.energy(source[m_name]) for m_name in source]
 
-        # we will spot check several of these based on output from separate call to xtb
-        for i, energy in enumerate(res):
-            if mlib1[i].name == '1_5_c':
-                self.assertEqual(energy, -105.591624613587)
-            if mlib1[i].name == '2_12_c':
-                self.assertEqual(energy, -102.911928497077)
-            if mlib1[i].name == '10_5_c':
-                self.assertEqual(energy, -116.035733938867)
+            # we will spot check several of these based on output from separate call to xtb
+            for i, name in enumerate(source):
+                if name == '1_5_c_cf0':
+                    self.assertEqual(res[i], -105.283692410825)
+                if name == '2_12_c_cf0':
+                    self.assertEqual(res[i], -102.602803640785)
+                if name == '10_5_c_cf0':
+                    self.assertEqual(res[i], -115.729089277128)
 
-        cleanup_dirs()
+
+            cleanup_dirs()
         
         
