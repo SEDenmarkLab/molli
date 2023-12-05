@@ -1,4 +1,4 @@
-from typing import Any, Generator, Callable
+from typing import Any, Generator, Callable, Literal, Generic, TypeVar
 from ..chem import Molecule
 from subprocess import run, PIPE
 from pathlib import Path
@@ -6,18 +6,31 @@ import attrs
 import shlex
 from tempfile import TemporaryDirectory, mkstemp
 import msgpack
+from hashlib import sha256
 from pprint import pprint
 from joblib import delayed, Parallel
 import numpy as np
 import re
 import os
+from ..storage import Collection
 
 
-@attrs.define(repr=True)
+@attrs.define(repr=True, frozen=True)
 class JobInput:
     jid: str  # job identifier
-    command: str
+    commands: list[str]
     files: dict[str, bytes] = None
+    envars: dict[str, str] = None
+
+    def sha256(self):
+        pass
+
+    def dump(self, f):
+        msgpack.dump(attrs.asdict(self), f)
+
+    @classmethod
+    def load(cls, f):
+        return cls(**msgpack.load(f))
 
 
 @attrs.define(repr=True)
@@ -110,3 +123,25 @@ class Job:
         result = self._post(self._instance, out, *args, **kwargs)
 
         return result
+
+
+def local_runner(inp: JobInput) -> JobOutput:
+    """This function executes a job on a local machine"""
+    pass
+
+
+def runner_sge_cluster(inp: JobInput) -> JobOutput:
+    """This function executes a job on a distributed SGE cluster"""
+    pass
+
+
+def jobmap(
+    job: Job,
+    source: Collection,
+    cache: Collection,
+    destination: Collection,
+    scheduler: Literal["local", "sge-cluster"] = "local",
+    keys: list[str] = None,
+    scratch_dir: str | Path = None,
+):
+    pass
