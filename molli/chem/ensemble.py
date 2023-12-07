@@ -249,7 +249,9 @@ class ConformerEnsemble(Connectivity):
                 return Conformer(self, _i)
 
             case slice() as _s:
-                return [Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))]
+                return [
+                    Conformer(self, _i) for _i in range(*_s.indices(self.n_conformers))
+                ]
 
             case _:
                 raise ValueError("Cannot use this locator")
@@ -335,6 +337,20 @@ class ConformerEnsemble(Connectivity):
             res.append_bond(Bond(atoms[a1], atoms[a2], *b_attr))
 
         return res
+
+    def extend(self, others: Iterable[CartesianGeometry]):
+        if isinstance(others, ConformerEnsemble):
+            other_coords = others.coords
+        else:
+            other_coords = np.array([g.coords for g in others])
+
+        self._coords = np.append(self._coords, other_coords, axis=0)
+
+    def append(self, other: CartesianGeometry):
+        if self._coords.shape == (0, 0, 3):
+            self._coords = other.coords[np.newaxis, :]
+        else:
+            self._coords = np.append(self._coords, [other.coords], axis=0)
 
     def scale(self, factor: float, allow_inversion=False):
         """
