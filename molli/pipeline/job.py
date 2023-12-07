@@ -6,7 +6,8 @@ import attrs
 import shlex
 from tempfile import TemporaryDirectory, mkstemp
 import msgpack
-from hashlib import sha256
+from hashlib import sha3_512
+import base64
 from pprint import pprint
 from joblib import delayed, Parallel
 import numpy as np
@@ -20,10 +21,15 @@ class JobInput:
     jid: str  # job identifier
     commands: list[str]
     files: dict[str, bytes] = None
+    return_files: tuple[str] = None
     envars: dict[str, str] = None
+    scratch_dir: str = None
+    timeout: float = None
 
-    def sha256(self):
-        pass
+    @property
+    def hash(self) -> str:
+        data = msgpack.dumps(attrs.asdict(self))
+        return base64.urlsafe_b64encode(sha3_512(data).digest())
 
     def dump(self, f):
         msgpack.dump(attrs.asdict(self), f)
@@ -35,10 +41,17 @@ class JobInput:
 
 @attrs.define(repr=True)
 class JobOutput:
-    stdout: str = None
-    stderr: str = None
+    stdout: tuple[str] = None
+    stderr: tuple[str] = None
     exitcode: int = None
     files: dict[str, bytes] = None
+
+    def dump(self, f):
+        msgpack.dump(attrs.asdict(self), f)
+
+    @classmethod
+    def load(cls, f):
+        return cls(**msgpack.load(f))
 
 
 class Job:
@@ -141,7 +154,7 @@ def jobmap(
     cache: Collection,
     destination: Collection,
     scheduler: Literal["local", "sge-cluster"] = "local",
-    keys: list[str] = None,
     scratch_dir: str | Path = None,
+    n_workers: int = None,
 ):
     pass
