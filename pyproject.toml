@@ -38,3 +38,5 @@ include = ["molli", "molli.*", "molli_test"]
 
 [project.scripts]
 molli = "molli.__main__:main"
+_molli_run = "molli.pipeline.runner:run_local"
+_molli_run_sched = "molli.pipeline.runner:run_sched"
