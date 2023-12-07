@@ -1,1 +1,1 @@
-from .job import JobInput, JobOutput, Job
+from .job import JobInput, JobOutput, Job, jobmap

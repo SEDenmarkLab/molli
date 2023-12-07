@@ -13,24 +13,15 @@ import numpy as np
 from joblib import Parallel, delayed
 
 from ..chem import Molecule
-from .job import Job, JobInput, JobOutput
+from .job import Job, JobMaker, JobInput, JobOutput
 
 
 class XTBDriver:
-    def __init__(self, nprocs: int = 1) -> None:
-        from ..config import BACKUP_DIR, SCRATCH_DIR
-
+    def __init__(self, nprocs: int = 1, scratch_dir=None) -> None:
         self.nprocs = nprocs
-        self.backup_dir = BACKUP_DIR
-        self.scratch_dir = SCRATCH_DIR
-        self.backup_dir.mkdir(exist_ok=True)
-        self.scratch_dir.mkdir(exist_ok=True)
-        self.cache = Cache(self.backup_dir)
+        self.scratch_dir = scratch_dir
 
-    def get_cache(self, k):
-        return self.cache
-
-    @Job(return_files=("xtbopt.xyz",)).prep
+    @JobMaker(return_files=("xtbopt.xyz",)).prep
     def optimize(
         self,
         M: Molecule,
@@ -42,8 +33,15 @@ class XTBDriver:
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
         inp = JobInput(
             M.name,
-            command=f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
+            commands=[
+                (
+                    f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
+                    "xtb1",
+                ),
+            ],
             files={"input.xyz": M.dumps_xyz().encode()},
+            return_files=self.return_files,
+            scratch_dir=self.scratch_dir,
         )
 
         return inp
@@ -61,7 +59,7 @@ class XTBDriver:
 
             return optimized
 
-    @Job().prep
+    @JobMaker().prep
     def energy(
         self,
         M: Molecule,
@@ -87,7 +85,7 @@ class XTBDriver:
                 ):
                     return float(m["eh"])
 
-    @Job(return_files=()).prep
+    @JobMaker(return_files=()).prep
     def atom_properties(
         self,
         M: Molecule,

@@ -145,14 +145,20 @@ def run_local():
         out.dump(f)
 
 
-def run_scheduled():
+def run_sched():
     # so what we are trying to do here is to submit an otherwise "local job" to the queue.
-    parsed = arg_parser.parse_known_args()
-    match parsed.scheduler:
+    parsed = arg_parser.parse_args()
+    match parsed.submit:
         case "sge":
+            _molli_run_path = Path(sys.executable).with_name("_molli_run")
+            print(_molli_run_path)
             res = run(
-                shlex.split(f"qsub -terse -sync yes -V - {parsed.nprocs} _molli_run")
-                + sys.argv[1:]
+                shlex.split(
+                    f"qsub -V -terse -sync yes -cwd -S {_molli_run_path.as_posix()}"
+                )
+                + sys.argv[1:],
+                stderr=DEVNULL,
+                stdout=DEVNULL,
             )
 
         case _:
