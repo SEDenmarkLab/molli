@@ -77,6 +77,13 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
         atexit.register(self.flush)
         # self.update_keys()
 
+    def __getstate__(self):
+        return (self._path, self._readonly, self._bufsize)
+
+    def __setstate__(self, state):
+        path, rdonly, bufsize = state
+        self.__init__(path, readonly=rdonly, bufsize=bufsize)
+
     def begin_read(self):
         pass
 
