@@ -16,10 +16,10 @@ import os
 from ..storage import Collection
 
 
-@attrs.define(repr=True, frozen=True)
+@attrs.define(repr=True)
 class JobInput:
     jid: str  # job identifier
-    commands: list[str]
+    commands: list[tuple[str, str | None]]
     files: dict[str, bytes] = None
     return_files: tuple[str] = None
     envars: dict[str, str] = None
@@ -41,8 +41,8 @@ class JobInput:
 
 @attrs.define(repr=True)
 class JobOutput:
-    stdout: tuple[str] = None
-    stderr: tuple[str] = None
+    stdouts: dict[str, str] = None
+    stderrs: dict[str, str] = None
     exitcode: int = None
     files: dict[str, bytes] = None
 
@@ -156,5 +156,7 @@ def jobmap(
     scheduler: Literal["local", "sge-cluster"] = "local",
     scratch_dir: str | Path = None,
     n_workers: int = None,
+    job_kwargs: dict = None,
 ):
+    """This function maps a Job call onto a collection of items"""
     pass
