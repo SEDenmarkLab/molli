@@ -210,7 +210,7 @@ class DirCollectionBackend(CollectionBackendBase):
         ext: str = ".dat",
         bufsize=0,
     ) -> None:
-        self.ext = ext
+        self.ext = ext or ".dat"
 
         path = path if isinstance(path, Path) else Path(path)
 
@@ -220,8 +220,9 @@ class DirCollectionBackend(CollectionBackendBase):
         super().__init__(path, bufsize=bufsize, readonly=readonly)
 
     def update_keys(self):
-        allpaths: list[str] = glob(f"*{self.ext}", root_dir=self._path)
-        self._keys = set(map(lambda x: x.removesuffix(self.ext), allpaths))
+        self._keys = set(
+            x.name.removesuffix(self.ext) for x in self._path.glob("*" + self.ext)
+        )
 
     def keys(self):
         return self._keys
