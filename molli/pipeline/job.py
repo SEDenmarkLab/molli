@@ -18,6 +18,9 @@ from ..storage import Collection
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
+T_in = TypeVar("T_in")
+T_out = TypeVar("T_out")
+
 
 @attrs.define(repr=True)
 class JobInput:
@@ -26,7 +29,6 @@ class JobInput:
     files: dict[str, bytes] = None
     return_files: tuple[str] = None
     envars: dict[str, str] = None
-    scratch_dir: str = None
     timeout: float = None
 
     @property
@@ -57,43 +59,28 @@ class JobOutput:
         return cls(**msgpack.load(f))
 
 
-@attrs.define(repr=True, slots=False)
-class Job:
-    inst: object
-    _prep: Callable
-    _post: Callable
-
-    def prep(self, *args, **kwds):
-        return self._prep(self.inst, *args, **kwds)
-
-    def post(self, out, *args, **kwds):
-        return self._post(self.inst, out, *args, **kwds)
-
-
-class JobMaker:
+class Job(Generic[T_in, T_out]):
     """
     A convenient way to wrap a call to an external program
     """
 
     def __init__(
         self,
-        prep: Callable[[Any], JobInput] = None,
+        prep: Callable[[T_in, Any], JobInput] = None,
         *,
-        post: Callable[[JobOutput], Any] = None,
-        envars: dict = None,
+        post: Callable[[JobOutput, Any], T_out] = None,
         return_files: list[str] = None,
+        executable: str | Path = None,
+        nprocs: int = 1,
+        envars: dict = None,
     ):
         """If no post"""
-        self._envars = envars
-        self._return_files = return_files
         self._prep = prep
         self._post = post
-
-    def __get__(self, instance, owner=None):
-        j = Job(instance, self._prep, self._post)
-        j.envars = self._envars
-        j.return_files = self._return_files
-        return j
+        self.return_files = return_files
+        self.executable = executable
+        self.nprocs = nprocs
+        self.envars = envars
 
     def prep(self, func):
         self._prep = func
@@ -103,6 +90,32 @@ class JobMaker:
         self._post = func
         return self
 
+    def __get__(self, obj, objtype=None):
+        executable = (
+            self.executable
+            or getattr(objtype, "executable", None)
+            or getattr(obj, "executable", None)
+        )
+        nprocs = (
+            self.nprocs
+            or getattr(objtype, "nprocs", None)
+            or getattr(obj, "nprocs", None)
+        )
+        envars = (
+            self.envars
+            or getattr(objtype, "envar_envars", None)
+            or getattr(obj, "envar_envars", None)
+        )
+
+        return type(self)(
+            prep=self._prep,
+            post=self._post,
+            return_files=self.return_files,
+            executable=executable,
+            nprocs=nprocs,
+            envars=envars,
+        )
+
 
 def worker(
     runner: Callable,
@@ -111,6 +124,7 @@ def worker(
     destination: Collection,
     keys: list[str],
     cache: Collection[JobOutput] | None,
+    error_cache: Collection[JobOutput] | None,
     scratch_dir: str | Path,
 ):
     with TemporaryDirectory(
@@ -118,13 +132,13 @@ def worker(
         prefix=f"molli-{runner.__name__}",
     ) as td:
         cwd = Path(td)
-        if cache:
+        if cache is not None:
             # This retrieves keys that are already cached
             with cache.reading():
                 cached = cache.keys() & set(keys)
                 for key in cached:
                     with open(cwd / (key + ".out"), "wb") as f:
-                        cached[key].dump(f)
+                        cache[key].dump(f)
         else:
             cached = set()
 
@@ -132,7 +146,7 @@ def worker(
         with source.reading():
             # This computes the values that are missing
             for key in set(keys) ^ cached:
-                inp = job.prep(source[key])
+                inp = job._prep(job, source[key])
                 # Paths to files with input and output
                 _inp_path = cwd / (key + ".inp")
                 _out_path = cwd / (key + ".out")
@@ -140,7 +154,7 @@ def worker(
                     inp.dump(f)
 
                 # this is where the job is actually submitted
-                code = runner(_inp_path, _out_path)
+                code = runner(_inp_path, _out_path, str(scratch_dir))
 
                 if code == 0:
                     success.append(key)
@@ -148,12 +162,19 @@ def worker(
         with cache.writing():
             for key in success:
                 _out_path = cwd / (key + ".out")
-                with open(_out_path, "wb") as f:
+                with open(_out_path, "rb") as f:
                     cache[key] = JobOutput.load(f)
 
             with destination.writing():
                 for key in set(success) & cached:
-                    destination[key] = job.post(cache[key])
+                    destination[key] = job._post(job, cache[key])
+
+        if error_cache is not None:
+            with error_cache.writing():
+                for key in set(keys) ^ set(success):
+                    _out_path = cwd / (key + ".out")
+                    with open(_out_path, "rb") as f:
+                        error_cache[key] = JobOutput.load(f)
 
         return len(success) + len(cached)
 
@@ -168,13 +189,13 @@ def batched(iterable, n):
         yield batch
 
 
-def _runner_local(fin, fout):
-    proc = run(["_molli_run", fin, "-o", fout])
+def _runner_local(fin, fout, scratch):
+    proc = run(["_molli_run", fin, "-o", fout, "--scratch", scratch])
     return proc.returncode
 
 
-def _runner_sge(fin, fout):
-    proc = run(["_molli_run_sched", fin, "-o", fout, "-s", "sge"])
+def _runner_sge(fin, fout, scratch):
+    proc = run(["_molli_run_sched", fin, "-o", fout, "-s", "sge", "--scratch", scratch])
     return proc.returncode
 
 
@@ -183,6 +204,7 @@ def jobmap(
     source: Collection,
     destination: Collection,
     cache: Collection = None,
+    error_cache: Collection = None,
     scheduler: Literal["local", "sge-cluster"] = "local",
     scratch_dir: str | Path = None,
     n_workers: int = None,
@@ -206,7 +228,7 @@ def jobmap(
     with source.reading():
         all_keys = source.keys()
 
-    if cache:
+    if cache is not None:
         with cache.reading():
             skip_keys = cache.keys()
     else:
@@ -223,18 +245,25 @@ def jobmap(
 
     parallel = Parallel(n_jobs=n_workers, return_as="generator")
 
+    match scheduler.lower():
+        case "local":
+            _runner = _runner_local
+        case "sge":
+            _runner = _runner_sge
+
     results = parallel(
         delayed(worker)(
-            _runner_sge,
+            _runner,
             job,
             source,
             destination,
             batch,
             cache,
+            error_cache,
             scratch_dir,
         )
         for batch in batches
     )
 
-    for res in tqdm(results):
+    for res in tqdm(results, total=len(batches)):
         pass

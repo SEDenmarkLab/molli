@@ -48,7 +48,18 @@ arg_parser.add_argument(
     choices=["sge", "slurm", "local"],
 )
 
-arg_parser.add_argument("--scheduler_params", action="store", type=str)
+arg_parser.add_argument(
+    "--scheduler_params",
+    action="store",
+    type=str,
+)
+
+arg_parser.add_argument(
+    "--scratch",
+    action="store",
+    default="local",
+    type=Path,
+)
 
 
 def run_local():
@@ -58,7 +69,7 @@ def run_local():
         job = ml.pipeline.JobInput.load(f)
 
     # 1. Create a scratch directory if that does not exist yet for some reason.
-    scratch_dir = Path(job.scratch_dir)
+    scratch_dir = Path(parsed.scratch)
     scratch_dir.mkdir(parents=True, exist_ok=True)
 
     _cwd_original = os.getcwd()
@@ -127,10 +138,9 @@ def run_local():
                 stdouts[name] = stdout.read()
                 stderrs[name] = stderr.read()
 
-        if proc.returncode == 0:
-            retfiles = {
-                f: f.read_bytes() for f in map(Path, job.return_files) if f.is_file()
-            }
+        retfiles = {
+            str(f): f.read_bytes() for f in map(Path, job.return_files) if f.is_file()
+        }
 
     os.chdir(_cwd_original)
 
@@ -138,9 +148,8 @@ def run_local():
         exitcode=proc.returncode,
         stdouts=stdouts,
         stderrs=stderrs,
-        files=retfiles,
+        files=retfiles or None,
     )
-
     with open(parsed.output, "wb") as f:
         out.dump(f)
 

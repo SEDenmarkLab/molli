@@ -13,15 +13,15 @@ import numpy as np
 from joblib import Parallel, delayed
 
 from ..chem import Molecule
-from .job import Job, JobMaker, JobInput, JobOutput
+from .job import Job, JobInput, JobOutput
 
 
 class XTBDriver:
-    def __init__(self, nprocs: int = 1, scratch_dir=None) -> None:
+    def __init__(self, executable="xtb", nprocs: int = 1) -> None:
+        self.executable = executable
         self.nprocs = nprocs
-        self.scratch_dir = scratch_dir
 
-    @JobMaker(return_files=("xtbopt.xyz",)).prep
+    @Job(return_files=("xtbopt.xyz",)).prep
     def optimize(
         self,
         M: Molecule,
@@ -36,12 +36,12 @@ class XTBDriver:
             commands=[
                 (
                     f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
-                    "xtb1",
+                    # "xtb1",
+                    None,
                 ),
             ],
             files={"input.xyz": M.dumps_xyz().encode()},
             return_files=self.return_files,
-            scratch_dir=self.scratch_dir,
         )
 
         return inp
@@ -59,7 +59,7 @@ class XTBDriver:
 
             return optimized
 
-    @JobMaker().prep
+    @Job().prep
     def energy(
         self,
         M: Molecule,
@@ -85,7 +85,7 @@ class XTBDriver:
                 ):
                     return float(m["eh"])
 
-    @JobMaker(return_files=()).prep
+    @Job(return_files=()).prep
     def atom_properties(
         self,
         M: Molecule,
