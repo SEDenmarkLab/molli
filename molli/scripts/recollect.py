@@ -106,7 +106,7 @@ arg_parser.add_argument(
     help="This option is required if reading from a <zip> or directory to indicate the File Type being searched for (<mol2>, <xyz>, etc.)",
 )
 
-def recollect(collect:Collection, lib, charge, mult, clib, mlib, dir):
+def recollect(collect:Collection, lib:Collection, charge, mult, clib, mlib, dir):
     '''
     Overarching function that recollects for different types of collections:
 
@@ -117,9 +117,10 @@ def recollect(collect:Collection, lib, charge, mult, clib, mlib, dir):
     with collect.reading(), lib.writing():
         #Currently needs an implementation to show how far it is using tqdm
         for name in collect:
+            # print(collect)
             res_list = collect[name]
+            # print(res_list)
             test_mol = res_list[0]
-            # print(test_mol)
             if isinstance(test_mol, ml.Molecule):
 
                 if clib:
@@ -128,33 +129,68 @@ def recollect(collect:Collection, lib, charge, mult, clib, mlib, dir):
                     # ens = ml.ConformerEnsemble(res_list)
                     ens.charge = charge
                     ens.mult = mult
-                    lib[test_mol.name] = ml.ConformerEnsemble(res_list)
+                    # lib[test_mol.name] = ml.ConformerEnsemble(res_list)
+                    lib[test_mol.name] = ens
 
                 elif mlib or dir:
-                    for m in res_list:
+                    for i,m in enumerate(res_list):
                         m.charge = charge
                         m.mult = mult
-                        lib[m.name] = m             
+                        if m.name in lib:
+                            print(f'{m.name} in library, renaming as {m.name}_{i}')
+                            lib[f'{m.name}_{i}'] = m
+                            # print(f'{m.name} already in library unable to ')
+                        else:
+                            lib[m.name] = m             
 
             else:
                 raise NotImplementedError(f'Currently unable to work directly from {type(test_mol)}.')
 
-    sys.exit(f'Finished recollecting')
+    sys.exit(f'Finished recollecting Zip/Dir')
 
-def recollect_legacy(zf: ZipFile, lib, charge, mult, mlib):
+def recollect_ukv(collect: Collection, lib:Collection, charge, mult, mlib, clib, dir):
+
+    with collect.reading(), lib.writing():
+        for name in collect:
+            m = collect[name]
+            m.charge = charge
+            m.mult = mult
+            if mlib:
+                lib[name] = m
+            elif clib or dir:
+                if isinstance(m, ml.ConformerEnsemble):
+                    lib[name] = m
+                elif isinstance(m, ml.Molecule):
+                    lib[name] = ml.ConformerEnsemble([m])
+                else:
+                    raise NotImplementedError(f'Recollect UKV does not currently support {type(lib[name])}')
+
+    sys.exit(f'Finished recollecting UKV')
+
+def recollect_legacy(file, lib, charge, mult, mlib):
     with lib.writing():
         #Currently needs an implementation to show how far it is using tqdm
-        for xml in zf.namelist():
-            if xml != '__molli__':
-                try:
-                    res = ml.chem.ensemble_from_molli_old_xml(zf.open(xml), mol_lib=mlib)
-                except SyntaxError:
-                    print(f'File {xml} in source collection cannot be read')
-                res.charge = charge
-                res.mult = mult
-                print(res.dumps_mol2())
-                print('hello')
-                lib[res.name] = res
+        if isinstance(file, ZipFile):
+            for xml in file.namelist():
+                if xml != '__molli__':
+                    try:
+                        res = ml.chem.ensemble_from_molli_old_xml(file.open(xml), mol_lib=mlib)
+                    except SyntaxError:
+                        print(f'File {xml} in source collection cannot be read')
+                    res.charge = charge
+                    res.mult = mult
+
+                    lib[res.name] = res
+        #Prototype for reading an xml
+        # else:
+        #     try:
+        #         res = ml.chem.ensemble_from_molli_old_xml(file, mol_lib=mlib)
+        #     except SyntaxError:
+        #         print(f'File {file} in source collection cannot be read')
+        #     res.charge = charge
+        #     res.mult = mult
+
+        #     lib[res.name] = res
     
     sys.exit(f'Finished recollecting legacy file')
 
@@ -198,16 +234,20 @@ def molli_main(args,  **kwargs):
 
     match parsed.parser:
         case 'molli':
-            decoding_method[f'xyz'] = ml.Molecule.loads_all_xyz
-            decoding_method[f'mol2'] = ml.Molecule.loads_all_mol2
+            decoding_method[f'xyz'] = lambda x: ml.Molecule.loads_all_xyz(x.decode())
+            decoding_method[f'mol2'] = lambda x: ml.Molecule.loads_all_mol2(x.decode())
             encoding_method[f'xyz'] = (lambda x: ml.Molecule.dumps_xyz(x).encode())
             encoding_method[f'mol2'] = (lambda x: ml.Molecule.dumps_mol2(x).encode())
         case 'obabel':
-            decoding_method[parsed.extension] = partial(mob.loads_obmol, input_ext=parsed.extension, connect_perceive=False, cls = ml.Molecule)
-            encoding_method[parsed.extension] = partial(mob.dumps_obmol, ftype=parsed.extension)
+            decoding_method[parsed.extension] = partial(mob.loads_all_obmol, ext=parsed.extension, connect_perceive=False, cls = ml.Molecule)
+            encoding_method[parsed.extension] = partial(mob.dumps_obmol, ftype=parsed.extension, encode=True)
         case _:
             raise NotImplementedError(f'{parsed.parser} not an available parser')
-
+    
+    if parsed.extension not in decoding_method:
+        decoding_method[parsed.extension] = partial(mob.loads_all_obmol, ext=parsed.extension, connect_perceive=False, cls = ml.Molecule)
+        encoding_method[parsed.extension] = partial(mob.dumps_obmol, ftype=parsed.extension, encode=True)
+    
     match ot:
         case 'mlib':
             lib = ml.chem.MoleculeLibrary(parsed.output, readonly=False, overwrite=True)
@@ -259,29 +299,23 @@ def molli_main(args,  **kwargs):
                 #Read Zip and Write New Library
                 recollect(zip_col, lib, charge=charge, mult=mult, clib=clib, mlib=mlib, dir=dir)
 
+        #Prototype for reading xml file
+        # case 'xml'|'XML_FILE':
+        #     with open(inp, 'rb') as f:
+        #         zf = BytesIO(f.read())
+        #         recollect_legacy(zf,lib,charge, mult, mlib)
+
         case 'mlib'|'mli':
             # print('mlib')
-            mlib = ml.MoleculeLibrary(inp)
-            assert parsed.molecules, f'This should be recollecting into an ml.MoleculeLibrary, This value must be True!'
+            mlib_collect = ml.MoleculeLibrary(inp)
             
-            with mlib.reading(), lib.writing():
-                for name in mlib:
-                    m = mlib[name]
-                    m.charge = charge
-                    m.mult = mult
-                    lib[name] = m
+            recollect_ukv(mlib_collect, lib, charge=charge, mult=mult, mlib=mlib, clib=clib, dir=dir)
         
         case 'clib'|'cli':
             # print('clib')
-            clib = ml.ConformerLibrary(inp)
-            assert parsed.conformers, f'This should be recollecting into an ml.ConformerLibrary, This value must be True!'
+            clib_collect = ml.ConformerLibrary(inp)
             
-            with clib.reading(), lib.writing():
-                for name in clib:
-                    ens = clib[name]
-                    ens.charge = charge
-                    ens.mult = mult
-                    lib[name] = ens
+            recollect_ukv(clib_collect, lib, charge=charge, mult=mult, mlib=mlib, clib=clib, dir=dir)
 
         case 'dir'|'Directory'|'directory':
             # print('dir')
