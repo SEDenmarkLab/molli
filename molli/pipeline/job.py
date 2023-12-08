@@ -145,8 +145,9 @@ def worker(
         success = []
         with source.reading():
             # This computes the values that are missing
+            objects = {key: source[key] for key in source}
             for key in set(keys) ^ cached:
-                inp = job._prep(job, source[key])
+                inp = job._prep(job, objects[key])
                 # Paths to files with input and output
                 _inp_path = cwd / (key + ".inp")
                 _out_path = cwd / (key + ".out")
@@ -166,8 +167,8 @@ def worker(
                     cache[key] = JobOutput.load(f)
 
             with destination.writing():
-                for key in set(success) & cached:
-                    destination[key] = job._post(job, cache[key])
+                for key in set(success) | cached:
+                    destination[key] = job._post(job, cache[key], objects[key])
 
         if error_cache is not None:
             with error_cache.writing():

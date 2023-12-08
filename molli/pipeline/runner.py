@@ -142,7 +142,7 @@ def run_local():
             str(f): f.read_bytes() for f in map(Path, job.return_files) if f.is_file()
         }
 
-    os.chdir(_cwd_original)
+        os.chdir(_cwd_original)
 
     out = ml.pipeline.JobOutput(
         exitcode=proc.returncode,
