@@ -25,6 +25,7 @@ from deprecated import deprecated
 import atexit
 from io import UnsupportedOperation
 import os
+from molli._aux import molli_aux_dir
 
 T = TypeVar("T")
 
@@ -62,7 +63,7 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
             raise ValueError("overwrite and readonly are mutually exclusive.")
 
         self._lock = InterProcessReaderWriterLock(
-            self._path.with_name(self._path.name + ".lock")
+            molli_aux_dir(self._path) / (self._path.name + ".lock")
         )
 
         self._bufsize = (
