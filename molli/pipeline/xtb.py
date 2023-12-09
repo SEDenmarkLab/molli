@@ -26,9 +26,9 @@ class XTBDriver:
         self,
         M: Molecule,
         method: str = "gff",
-        crit: str = "normal",
+        crit: str = "loose",
         xtbinp: str = "",
-        maxiter: int = 50,
+        maxiter: int = 500,
     ):
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
         inp = JobInput(
@@ -36,8 +36,7 @@ class XTBDriver:
             commands=[
                 (
                     f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
-                    # "xtb1",
-                    None,
+                    "xtb",
                 ),
             ],
             files={"input.xyz": M.dumps_xyz().encode()},

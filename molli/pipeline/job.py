@@ -103,8 +103,8 @@ class Job(Generic[T_in, T_out]):
         )
         envars = (
             self.envars
-            or getattr(objtype, "envar_envars", None)
-            or getattr(obj, "envar_envars", None)
+            or getattr(objtype, "envars", None)
+            or getattr(obj, "envars", None)
         )
 
         return type(self)(
@@ -129,7 +129,7 @@ def worker(
 ):
     with TemporaryDirectory(
         dir=scratch_dir,
-        prefix=f"molli-{runner.__name__}",
+        prefix=runner.__name__,
     ) as td:
         cwd = Path(td)
         if cache is not None:
@@ -143,6 +143,7 @@ def worker(
             cached = set()
 
         success = []
+
         with source.reading():
             # This computes the values that are missing
             objects = {key: source[key] for key in source}
@@ -155,20 +156,29 @@ def worker(
                     inp.dump(f)
 
                 # this is where the job is actually submitted
-                code = runner(_inp_path, _out_path, str(scratch_dir))
+                proc = runner(_inp_path, _out_path, scratch_dir)
 
-                if code == 0:
+                if proc.returncode == 0:
                     success.append(key)
+                    
+        if cache is not None:
+            with cache.writing():
+                for key in success:
+                    _out_path = cwd / (key + ".out")
+                    with open(_out_path, "rb") as f:
+                        cache[key] = JobOutput.load(f)
 
-        with cache.writing():
-            for key in success:
-                _out_path = cwd / (key + ".out")
-                with open(_out_path, "rb") as f:
-                    cache[key] = JobOutput.load(f)
-
-            with destination.writing():
-                for key in set(success) | cached:
-                    destination[key] = job._post(job, cache[key], objects[key])
+        with destination.writing():
+            for key in set(success) | cached:
+                with open(cwd / (key + ".out"), "rb") as f:
+                    out = JobOutput.load(f)
+                try:
+                    res = job._post(job, out, objects[key])
+                except Exception as xc:
+                    with error_cache.writing():
+                        error_cache[key] = out
+                else:
+                    destination[key] = res
 
         if error_cache is not None:
             with error_cache.writing():
@@ -191,13 +201,13 @@ def batched(iterable, n):
 
 
 def _runner_local(fin, fout, scratch):
-    proc = run(["_molli_run", fin, "-o", fout, "--scratch", scratch])
-    return proc.returncode
+    proc = run(["_molli_run", str(fin), "-o", str(fout), "--scratch", str(scratch)], capture_output=True)
+    return proc
 
 
 def _runner_sge(fin, fout, scratch):
-    proc = run(["_molli_run_sched", fin, "-o", fout, "-s", "sge", "--scratch", scratch])
-    return proc.returncode
+    proc = run(["_molli_run_sched", str(fin), "-o", str(fout), "-s", "sge", "--scratch", str(scratch)], capture_output=True)
+    return proc
 
 
 def jobmap(
@@ -241,10 +251,11 @@ def jobmap(
     print("Total number: ", len(all_keys))
     print("Cached: ", len(skip_keys))
     print("To be computed: ", len(to_be_done))
+    print("Scratch dir:", scratch_dir)
 
     batches = list(batched(sorted(all_keys), batch_size))
 
-    parallel = Parallel(n_jobs=n_workers, return_as="generator")
+    parallel = Parallel(n_jobs=n_workers, verbose=50)
 
     match scheduler.lower():
         case "local":
@@ -265,6 +276,3 @@ def jobmap(
         )
         for batch in batches
     )
-
-    for res in tqdm(results, total=len(batches)):
-        pass

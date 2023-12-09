@@ -123,7 +123,7 @@ def run_local():
                     encoding="utf8",
                 )
 
-            if proc.returncode:
+            if proc.returncode != 0:
                 fail = i
                 break
 
@@ -132,8 +132,8 @@ def run_local():
 
         for name in names:
             with (
-                open(cwd / f"{name}.out", "rt") as stdout,
-                open(cwd / f"{name}.err", "rt") as stderr,
+                open(f"{name}.out", "rt") as stdout,
+                open(f"{name}.err", "rt") as stderr,
             ):
                 stdouts[name] = stdout.read()
                 stderrs[name] = stderr.read()
@@ -144,14 +144,21 @@ def run_local():
 
         os.chdir(_cwd_original)
 
+    exitcode = None
+    
     out = ml.pipeline.JobOutput(
-        exitcode=proc.returncode,
+        exitcode=exitcode or proc.returncode,
         stdouts=stdouts,
         stderrs=stderrs,
-        files=retfiles or None,
+        files=retfiles,
     )
     with open(parsed.output, "wb") as f:
         out.dump(f)
+
+    if fail is not None or set(retfiles) != set(job.return_files):
+        exit(1)
+    else:
+        exit(proc.returncode)
 
 
 def run_sched():
