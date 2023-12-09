@@ -142,8 +142,6 @@ def worker(
         else:
             cached = set()
 
-        success = []
-
         with source.reading():
             # This computes the values that are missing
             objects = {key: source[key] for key in source}
@@ -155,12 +153,14 @@ def worker(
                 with open(_inp_path, "wb") as f:
                     inp.dump(f)
 
-                # this is where the job is actually submitted
-                proc = runner(_inp_path, _out_path, scratch_dir)
+        success = []
+        for key in set(keys) ^ cached:
+            # this is where the job is actually submitted
+            proc = runner(cwd / (key + ".inp"), cwd / (key + ".out"), scratch_dir)
 
-                if proc.returncode == 0:
-                    success.append(key)
-                    
+            if proc.returncode == 0:
+                success.append(key)
+
         if cache is not None:
             with cache.writing():
                 for key in success:
@@ -201,12 +201,27 @@ def batched(iterable, n):
 
 
 def _runner_local(fin, fout, scratch):
-    proc = run(["_molli_run", str(fin), "-o", str(fout), "--scratch", str(scratch)], capture_output=True)
+    proc = run(
+        ["_molli_run", str(fin), "-o", str(fout), "--scratch", str(scratch)],
+        capture_output=True,
+    )
     return proc
 
 
 def _runner_sge(fin, fout, scratch):
-    proc = run(["_molli_run_sched", str(fin), "-o", str(fout), "-s", "sge", "--scratch", str(scratch)], capture_output=True)
+    proc = run(
+        [
+            "_molli_run_sched",
+            str(fin),
+            "-o",
+            str(fout),
+            "-s",
+            "sge",
+            "--scratch",
+            str(scratch),
+        ],
+        capture_output=True,
+    )
     return proc
 
 
@@ -276,3 +291,7 @@ def jobmap(
         )
         for batch in batches
     )
+
+    n_success = sum(results)
+    print(f"Success: {n_success}")
+    print(f"Error: {len(all_keys) - n_success}")
