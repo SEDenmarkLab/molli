@@ -181,16 +181,6 @@ def recollect_legacy(file, lib, charge, mult, mlib):
                     res.mult = mult
 
                     lib[res.name] = res
-        #Prototype for reading an xml
-        # else:
-        #     try:
-        #         res = ml.chem.ensemble_from_molli_old_xml(file, mol_lib=mlib)
-        #     except SyntaxError:
-        #         print(f'File {file} in source collection cannot be read')
-        #     res.charge = charge
-        #     res.mult = mult
-
-        #     lib[res.name] = res
     
     sys.exit(f'Finished recollecting legacy file')
 
@@ -245,6 +235,7 @@ def molli_main(args,  **kwargs):
             raise NotImplementedError(f'{parsed.parser} not an available parser')
     
     if parsed.extension not in decoding_method:
+        print(f'{parsed.extension} not in molli parser, defaulting to obabel parser')
         decoding_method[parsed.extension] = partial(mob.loads_all_obmol, ext=parsed.extension, connect_perceive=False, cls = ml.Molecule)
         encoding_method[parsed.extension] = partial(mob.dumps_obmol, ftype=parsed.extension, encode=True)
     
@@ -298,12 +289,6 @@ def molli_main(args,  **kwargs):
                 )
                 #Read Zip and Write New Library
                 recollect(zip_col, lib, charge=charge, mult=mult, clib=clib, mlib=mlib, dir=dir)
-
-        #Prototype for reading xml file
-        # case 'xml'|'XML_FILE':
-        #     with open(inp, 'rb') as f:
-        #         zf = BytesIO(f.read())
-        #         recollect_legacy(zf,lib,charge, mult, mlib)
 
         case 'mlib'|'mli':
             # print('mlib')
