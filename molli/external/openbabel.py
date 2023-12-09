@@ -10,6 +10,7 @@ from warnings import warn
 from tempfile import NamedTemporaryFile
 import molli as ml
 import os
+from ctypes import POINTER, c_double
 
 try:
     from openbabel import openbabel as ob
@@ -173,17 +174,32 @@ def to_mol2_w_ob(mol: Molecule):
 
     return conv.WriteString(obm)
 
-def dumps_obmol(mol: Molecule, ftype: str, encode=False):
+def dumps_obmol(mol: Molecule | ConformerEnsemble, ftype: str, encode=False):
     """
     This returns basic file data when writing the file that would be expected using Avogadro/Openbabel
     """
-    obm = to_obmol(mol)
-    conv = ob.OBConversion()
-    conv.SetOutFormat(ftype)
-    if encode:
-        return conv.WriteString(obm).encode()
-    else:
-        return conv.WriteString(obm)
+    if isinstance(mol, Molecule):
+        obm = to_obmol(mol)
+        conv = ob.OBConversion()
+        conv.SetOutFormat(ftype)
+        if encode:
+            return conv.WriteString(obm).encode()
+        else:
+            return conv.WriteString(obm)
+        
+    elif isinstance(mol, ConformerEnsemble):
+        write = list()
+        for conf in mol:
+            obm = to_obmol(conf)
+            conv = ob.OBConversion()
+            conv.SetOutFormat(ftype)
+            write.append(conv.WriteString(obm))
+        write = ''.join(write)
+        if encode:
+            return write.encode()
+        else:
+            return write
+
 
 def obabel_optimize(
     mol: Molecule,
