@@ -98,8 +98,17 @@ arg_parser.add_argument(
 # )
 
 arg_parser.add_argument(
-    "-ext",
-    "--extension",
+    "-iext",
+    "--input_ext",
+    action="store",
+    default='mol2',
+    type=str,
+    help="This option is required if reading from a <zip> or directory to indicate the File Type being searched for (<mol2>, <xyz>, etc.)",
+)
+
+arg_parser.add_argument(
+    "-oext",
+    "--output_ext",
     action="store",
     default='mol2',
     type=str,
@@ -229,15 +238,18 @@ def molli_main(args,  **kwargs):
             encoding_method[f'xyz'] = (lambda x: ml.Molecule.dumps_xyz(x).encode())
             encoding_method[f'mol2'] = (lambda x: ml.Molecule.dumps_mol2(x).encode())
         case 'obabel':
-            decoding_method[parsed.extension] = partial(mob.loads_all_obmol, ext=parsed.extension, connect_perceive=False, cls = ml.Molecule)
-            encoding_method[parsed.extension] = partial(mob.dumps_obmol, ftype=parsed.extension, encode=True)
+            decoding_method[parsed.input_ext] = partial(mob.loads_all_obmol, ext=parsed.input_ext, connect_perceive=False, cls = ml.Molecule)
+            encoding_method[parsed.output_ext] = partial(mob.dumps_obmol, ftype=parsed.output_ext, encode=True)
         case _:
             raise NotImplementedError(f'{parsed.parser} not an available parser')
     
-    if parsed.extension not in decoding_method:
-        print(f'{parsed.extension} not in molli parser, defaulting to obabel parser')
-        decoding_method[parsed.extension] = partial(mob.loads_all_obmol, ext=parsed.extension, connect_perceive=False, cls = ml.Molecule)
-        encoding_method[parsed.extension] = partial(mob.dumps_obmol, ftype=parsed.extension, encode=True)
+    if parsed.input_ext not in decoding_method:
+        print(f'{parsed.input_ext} not in molli parser for input, defaulting to obabel parser')
+        decoding_method[parsed.input_ext] = partial(mob.loads_all_obmol, ext=parsed.input_ext, connect_perceive=False, cls = ml.Molecule)
+
+    if parsed.output_ext not in encoding_method:
+        print(f'{parsed.output_ext} not in molli parser for ouptut, defaulting to obabel parser')
+        encoding_method[parsed.output_ext] = partial(mob.dumps_obmol, ftype=parsed.output_ext, encode=True)
     
     match ot:
         case 'mlib':
@@ -250,8 +262,8 @@ def molli_main(args,  **kwargs):
             lib = ml.storage.Collection[dict](
                 parsed.output,
                 ml.storage.DirCollectionBackend,
-                ext=f".{parsed.extension}",
-                value_encoder=encoding_method[parsed.extension],
+                ext=f".{parsed.output_ext}",
+                value_encoder=encoding_method[parsed.output_ext],
                 # value_decoder=decoding_method[parsed.extension],
                 readonly=False,
                 overwrite=True
@@ -282,8 +294,8 @@ def molli_main(args,  **kwargs):
                 zip_col = ml.storage.Collection[dict](
                     inp,
                     ml.storage.ZipCollectionBackend,
-                    ext=f'.{parsed.extension}',
-                    value_decoder=decoding_method[parsed.extension],
+                    ext=f'.{parsed.input_ext}',
+                    value_decoder=decoding_method[parsed.input_ext],
                     readonly=True,
                     overwrite=False
                 )
@@ -307,8 +319,8 @@ def molli_main(args,  **kwargs):
             dir_collect = ml.storage.Collection[dict](
                 inp,
                 ml.storage.DirCollectionBackend,
-                ext=f".{parsed.extension}",
-                value_decoder=decoding_method[parsed.extension],
+                ext=f".{parsed.input_ext}",
+                value_decoder=decoding_method[parsed.input_ext],
                 readonly=True,
             )
 
