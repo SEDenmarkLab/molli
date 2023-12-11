@@ -17,6 +17,7 @@ import os
 from ..storage import Collection
 from joblib import Parallel, delayed
 from tqdm import tqdm
+import logging
 
 T_in = TypeVar("T_in")
 T_out = TypeVar("T_out")
@@ -118,76 +119,87 @@ class Job(Generic[T_in, T_out]):
 
 
 def worker(
+    name: str,
     runner: Callable,
     job: Job,
     source: Collection,
     destination: Collection,
     keys: list[str],
-    cache: Collection[JobOutput] | None,
-    error_cache: Collection[JobOutput] | None,
-    scratch_dir: str | Path,
+    cache: Collection[JobOutput] = None,
+    cache_error: Collection[JobOutput] = None,
+    scratch_dir: str | Path = None,
+    log_file: str | Path | None = None,
+    args: tuple = None,
+    kwargs: dict = None,
 ):
+
+    _name = f"{name}_{os.getpid()}"
+
+    logger = logging.getLogger("molli.pipeline")
+    if log_file is not None:
+        with open(log_file, "at") as f:
+            f.write(config.SPLASH)
+        _handler = logging.FileHandler(log_file)
+        logger.addHandler(_handler)
+    
+    if scratch_dir is None:
+        scratch_dir = config.SCRATCH_DIR
+    
+    args = args or ()
+    kwargs = kwargs or {}
+    
     with TemporaryDirectory(
         dir=scratch_dir,
-        prefix=runner.__name__,
+        prefix=_name + runner.__name__,
     ) as td:
         cwd = Path(td)
-        if cache is not None:
-            # This retrieves keys that are already cached
-            with cache.reading():
-                cached = cache.keys() & set(keys)
-                for key in cached:
-                    with open(cwd / (key + ".out"), "wb") as f:
-                        cache[key].dump(f)
-        else:
-            cached = set()
-
-        with source.reading():
-            # This computes the values that are missing
-            objects = {key: source[key] for key in source}
-            for key in set(keys) ^ cached:
-                inp = job._prep(job, objects[key])
-                # Paths to files with input and output
-                _inp_path = cwd / (key + ".inp")
-                _out_path = cwd / (key + ".out")
-                with open(_inp_path, "wb") as f:
+        logger.info(f"Worker {name} (pid={os.getpid()}) started in temporary directory: {cwd.as_posix()}")
+        logger.info(f"Following keys will be processed: {keys}")
+        for key in keys:
+            with source.reading():
+                obj = source[key]
+            # Now checking if the result of the computation is already available
+            out = None
+            if cache is not None:
+                with cache.reading():
+                    if key in cache:
+                        out = cache[key]
+                        logger.debug(f"{key}: found a cached result")
+            
+            if out is None:
+                inp = job._prep(job, obj, *args, **kwargs)
+                with open(cwd / (key + ".inp"), "wb") as f:
                     inp.dump(f)
+                proc = runner(cwd / (key + ".inp"), cwd / (key + ".out"), scratch_dir)
 
-        success = []
-        for key in set(keys) ^ cached:
-            # this is where the job is actually submitted
-            proc = runner(cwd / (key + ".inp"), cwd / (key + ".out"), scratch_dir)
-
-            if proc.returncode == 0:
-                success.append(key)
-
-        if cache is not None:
-            with cache.writing():
-                for key in success:
-                    _out_path = cwd / (key + ".out")
-                    with open(_out_path, "rb") as f:
-                        cache[key] = JobOutput.load(f)
-
-        with destination.writing():
-            for key in set(success) | cached:
                 with open(cwd / (key + ".out"), "rb") as f:
                     out = JobOutput.load(f)
-                try:
-                    res = job._post(job, out, objects[key])
-                except Exception as xc:
-                    with error_cache.writing():
-                        error_cache[key] = out
+            
+                if proc.returncode == 0: 
+                    if cache is not None:
+                        with cache.writing():
+                            cache[key] = out
+                            logger.debug(f"{key}: successfully computed and cached the intermediate step.")
+                    else:
+                        logger.debug(f"{key}: successfully computed the intermediate result.")
                 else:
-                    destination[key] = res
+                    if cache_error is not None:
+                        with cache_error.writing():
+                            cache_error[key] = out
+                            logger.debug(f"{key}: computation failed. Intermediate result cached.")
+                    else:
+                        logger.debug(f"{key}: computation failed.")
+                    break
+            
+            # At this point we have either successfully computed
+            # or retrieved a cached calculation
+            res = job._post(job, out, obj, *args, **kwargs)
 
-        if error_cache is not None:
-            with error_cache.writing():
-                for key in set(keys) ^ set(success):
-                    _out_path = cwd / (key + ".out")
-                    with open(_out_path, "rb") as f:
-                        error_cache[key] = JobOutput.load(f)
+            with destination.writing():
+                destination[key] = res
+                logger.info(f"{key}: completed! Result written in the destination.")                
 
-        return len(success) + len(cached)
+
 
 
 def batched(iterable, n):
@@ -230,7 +242,7 @@ def jobmap(
     source: Collection,
     destination: Collection,
     cache: Collection = None,
-    error_cache: Collection = None,
+    cache_error: Collection = None,
     scheduler: Literal["local", "sge-cluster"] = "local",
     scratch_dir: str | Path = None,
     n_workers: int = None,
@@ -280,18 +292,19 @@ def jobmap(
 
     results = parallel(
         delayed(worker)(
+            job._prep.__qualname__,
             _runner,
             job,
             source,
             destination,
             batch,
-            cache,
-            error_cache,
-            scratch_dir,
+            cache=cache,
+            cache_error=cache_error,
+            scratch_dir=scratch_dir,
+            args=args,
+            kwargs=kwargs
         )
         for batch in batches
     )
 
     n_success = sum(results)
-    print(f"Success: {n_success}")
-    print(f"Error: {len(all_keys) - n_success}")
