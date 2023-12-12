@@ -6,6 +6,7 @@ import sys
 
 T = TypeVar("T")
 
+
 def sglob(
     pattern: str,
     loader: Callable[[str | Path], T],
@@ -107,12 +108,14 @@ def dglob(
                     " file..."
                 )
 
-try:
-    from more_itertools import batched
-except:
-    if sys.version >= (3, 12):
-        from itertools import batched
-    else:
+
+if sys.version_info >= (3, 12):
+    from itertools import batched
+else:
+    try:
+        from more_itertools import batched
+    except:
+
         def batched(iterable, n):
             """This is from python documentation website.
             This version is a fallback in case `more_itertools` is not installed
@@ -125,3 +128,8 @@ except:
             it = iter(iterable)
             while batch := tuple(islice(it, n)):
                 yield batch
+
+
+def len_batched(iterable, n):
+    L = len(iterable)
+    return L // n + 1 if L % n else 0
