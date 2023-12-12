@@ -132,7 +132,6 @@ def worker(
     args: tuple = None,
     kwargs: dict = None,
 ):
-
     _name = f"{name}_{os.getpid()}"
 
     logger = logging.getLogger("molli.pipeline")
@@ -141,19 +140,21 @@ def worker(
             f.write(config.SPLASH)
         _handler = logging.FileHandler(log_file)
         logger.addHandler(_handler)
-    
+
     if scratch_dir is None:
         scratch_dir = config.SCRATCH_DIR
-    
+
     args = args or ()
     kwargs = kwargs or {}
-    
+
     with TemporaryDirectory(
         dir=scratch_dir,
         prefix=_name + runner.__name__,
     ) as td:
         cwd = Path(td)
-        logger.info(f"Worker {name} (pid={os.getpid()}) started in temporary directory: {cwd.as_posix()}")
+        logger.info(
+            f"Worker {name} (pid={os.getpid()}) started in temporary directory: {cwd.as_posix()}"
+        )
         logger.info(f"Following keys will be processed: {keys}")
         for key in keys:
             with source.reading():
@@ -165,41 +166,47 @@ def worker(
                     if key in cache:
                         out = cache[key]
                         logger.debug(f"{key}: found a cached result")
-            
+
             if out is None:
+                # Additional support for multiple job input is in order
                 inp = job._prep(job, obj, *args, **kwargs)
                 with open(cwd / (key + ".inp"), "wb") as f:
                     inp.dump(f)
+
                 proc = runner(cwd / (key + ".inp"), cwd / (key + ".out"), scratch_dir)
 
                 with open(cwd / (key + ".out"), "rb") as f:
                     out = JobOutput.load(f)
-            
-                if proc.returncode == 0: 
+
+                if proc.returncode == 0:
                     if cache is not None:
                         with cache.writing():
                             cache[key] = out
-                            logger.debug(f"{key}: successfully computed and cached the intermediate step.")
+                            logger.debug(
+                                f"{key}: successfully computed and cached the intermediate step."
+                            )
                     else:
-                        logger.debug(f"{key}: successfully computed the intermediate result.")
+                        logger.debug(
+                            f"{key}: successfully computed the intermediate result."
+                        )
                 else:
                     if cache_error is not None:
                         with cache_error.writing():
                             cache_error[key] = out
-                            logger.debug(f"{key}: computation failed. Intermediate result cached.")
+                            logger.debug(
+                                f"{key}: computation failed. Intermediate result cached."
+                            )
                     else:
                         logger.debug(f"{key}: computation failed.")
                     break
-            
+
             # At this point we have either successfully computed
             # or retrieved a cached calculation
             res = job._post(job, out, obj, *args, **kwargs)
 
             with destination.writing():
                 destination[key] = res
-                logger.info(f"{key}: completed! Result written in the destination.")                
-
-
+                logger.info(f"{key}: completed! Result written in the destination.")
 
 
 def batched(iterable, n):
@@ -302,9 +309,7 @@ def jobmap(
             cache_error=cache_error,
             scratch_dir=scratch_dir,
             args=args,
-            kwargs=kwargs
+            kwargs=kwargs,
         )
         for batch in batches
     )
-
-    n_success = sum(results)

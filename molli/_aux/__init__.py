@@ -12,4 +12,4 @@ from .version import (
     assert_molli_version_max,
     assert_molli_version_in_range,
 )
-from .iterators import sglob, dglob
+from .iterators import sglob, dglob, batched

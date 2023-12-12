@@ -47,7 +47,6 @@ from . import parsing
 from . import storage
 
 # from . import chem
-from . import descriptor
 from . import external
 from . import files
 from . import storage
@@ -55,3 +54,4 @@ from . import pipeline
 
 from .chem import *
 from .ftypes import *
+from . import descriptor
