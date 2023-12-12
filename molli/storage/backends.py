@@ -79,11 +79,16 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
         # self.update_keys()
 
     def __getstate__(self):
-        return (self._path, self._readonly, self._bufsize)
+        _self_dict = self.__dict__.copy()
+        if "_lock" in _self_dict:
+            del _self_dict["_lock"]
+        return _self_dict
 
     def __setstate__(self, state):
-        path, rdonly, bufsize = state
-        self.__init__(path, readonly=rdonly, bufsize=bufsize)
+        self.__dict__.update(state)
+        self._lock = InterProcessReaderWriterLock(
+            molli_aux_dir(self._path) / (self._path.name + ".lock")
+        )
 
     def begin_read(self):
         pass
@@ -339,13 +344,19 @@ class UkvCollectionBackend(CollectionBackendBase):
                     pass
 
     def begin_read(self):
-        self._ukvfile = UKVFile(self._path, mode="r")
+        if not hasattr(self, "_ukvfile"):
+            self._ukvfile = UKVFile(self._path, mode="r")
+        else:
+            self._ukvfile.open("r")
 
     def end_read(self):
         self._ukvfile.close()
 
     def begin_write(self):
-        self._ukvfile = UKVFile(self._path, mode="a")
+        if not hasattr(self, "_ukvfile"):
+            self._ukvfile = UKVFile(self._path, mode="a")
+        else:
+            self._ukvfile.open("a")
 
     def end_write(self):
         self._ukvfile.close()
