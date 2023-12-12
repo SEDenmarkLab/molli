@@ -1,5 +1,7 @@
 """
-Create a grid to be subsequently used in grid based descriptor calculations
+Create a grid to be subsequently used in grid based descriptor calculations.
+This routine creates an hdf5 file that also store intermediate calculation results
+such as grid
 """
 
 from argparse import ArgumentParser
@@ -9,46 +11,45 @@ import zipfile
 import msgpack
 import numpy as np
 from pathlib import Path
+from joblib import Parallel, delayed
 
 arg_parser = ArgumentParser(
     "molli grid",
     description="Read a molli library and calculate a grid",
 )
 
-source = arg_parser.add_mutually_exclusive_group()
-
-source.add_argument(
-    "--mlib",
+arg_parser.add_argument(
+    "library",
     action="store",
-    default=None,
-    help="Library file to perform the calculations on",
+    help="Conformer library file to perform the calculations on",
 )
-
-source.add_argument(
-    "--mol2_dir",
-    action="store",
-    default=None,
-    help="Directory of multi-conformer mol2 files to perform the calculations on",
-)
-
 
 arg_parser.add_argument(
     "-o",
     "--output",
     action="store",
     metavar="<fpath>",
-    default="grid.npy",
+    default="grid",
     help="Destination for calculation results",
 )
 
+# arg_parser.add_argument(
+#     "-f",
+#     "--format",
+#     action="store",
+#     # metavar="fmt",
+#     choices=("npy",),
+#     default="npy",
+#     help="Select the format that will be used for data storage.",
+# )
+
 arg_parser.add_argument(
-    "-f",
-    "--format",
+    "-n",
+    "--n_jobs",
     action="store",
-    # metavar="fmt",
-    choices=("npy",),
-    default="npy",
-    help="Select the format that will be used for data storage.",
+    default=1,
+    type=int,
+    help="Specifies the number of jobs for constructing a grid",
 )
 
 arg_parser.add_argument(
@@ -71,54 +72,67 @@ arg_parser.add_argument(
     help="Intervals at which the grid points will be placed",
 )
 
+arg_parser.add_argument(
+    "-b",
+    "--batchsize",
+    action="store",
+    default=32,
+    type=int,
+    help="Number of molecules to be treated simulateneously",
+)
 
-def molli_main(args,  **kwargs):
-    parsed = arg_parser.parse_args(args)
+arg_parser.add_argument(
+    "--prune",
+    action="store_true",
+    help="Obtain the pruning indices for each conformer ensemble",
+)
 
-    if parsed.mlib is not None:
-        mlib_path = Path(parsed.mlib)
-        if mlib_path.is_dir():
-            raise FileNotFoundError(
-                "This operation is only meant to work on .mlib files. Received a directory"
-            )
-        else:
-            library = tqdm(
-                ml.ConformerLibrary(mlib_path, readonly=True),
-                # total=len(names),
-                dynamic_ncols=True,
-            )
-        
-
-    elif parsed.mol2_dir is not None:
-        mol2_dir = Path(parsed.mol2_dir).absolute()
-        if mol2_dir.is_dir():
-            print("Performing calculation on a directory of mol2 files:")
-            print(mol2_dir)
-        else:
-            raise NotADirectoryError(
-                "This operation is only meant to work on directories"
-            )
-
-        names = list(ml.aux.sglob(str(mol2_dir / "*.mol2"), lambda x: x))
-        library = tqdm(
-            ml.aux.sglob(str(mol2_dir / "*.mol2"), ml.ConformerEnsemble.load_mol2),
-            total=len(names),
-            dynamic_ncols=True,
-        )
+arg_parser.add_argument(
+    "--indicator",
+    action="store_true",
+    help="Obtain the indicator indices for each conformer ensemble",
+)
 
 
-    mins = np.zeros((len(library), 3), dtype=np.float32)
-    maxs = np.zeros((len(library), 3), dtype=np.float32)
+@delayed
+def _min_max(_lib: ml.ConformerLibrary, keys: list[str]):
+    with _lib.reading():
+        ensembles = list(map(_lib.__getitem__, keys))
 
-    for i, ens in enumerate(library):
+    mins = np.empty((len(keys), 3), dtype=np.float32)
+    maxs = np.empty((len(keys), 3), dtype=np.float32)
+
+    for i, ens in enumerate(ensembles):
         mins[i] = np.min(ens._coords, axis=(0, 1))
         maxs[i] = np.max(ens._coords, axis=(0, 1))
 
-    q1, q2 = np.min(mins, axis=0), np.max(maxs, axis=0)
-    grid = ml.descriptor.rectangular_grid(q1, q2, parsed.padding, parsed.spacing)
-    print(grid.shape)
+    return np.min(mins, axis=0), np.max(maxs, axis=0)
 
-    np.save(parsed.output, grid, allow_pickle=False)
+
+def molli_main(args, **kwargs):
+    parsed = arg_parser.parse_args(args)
+
+    parallel = Parallel(n_jobs=parsed.n_jobs, backend="loky")
+    library = ml.ConformerLibrary(parsed.library, readonly=True)
+
+    with library.reading():
+        keys = sorted(library.keys())
+        
+    batches = list(ml._aux.batched(keys, parsed.batchsize))
+
+    qmin, qmax = np.zeros(3), np.zeros(3)
+
+    for cur_qmin, cur_qmax in tqdm(
+        parallel(_min_max(library, batch) for batch in batches),
+        total=len(batches),
+        desc="Calculating the bounding box",
+    ):
+        qmin = np.where(cur_qmin < qmin, cur_qmin, qmin)
+        qmax = np.where(cur_qmax > qmax, cur_qmax, qmax)
+
+    grid = ml.descriptor.rectangular_grid(qmin, qmax, parsed.padding, parsed.spacing)
+    print(f"Finished calculating the bounding box!")
+    print(f"Vectors: {qmin=}, {qmax=}. Number of grid points: {grid.shape[0]}")
 
     # np.save(parsed.output, grid, allow_pickle=False)
 
