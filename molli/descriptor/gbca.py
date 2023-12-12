@@ -41,7 +41,7 @@ def indicator(
     grid: np.ndarray,
     struct_or_ens: ml.ConformerEnsemble | ml.CartesianGeometry,
     dtype: np.dtype = np.int64,
-    max_dist: float | str = "vdw_radius",
+    max_dist: float = 2.0,
 ):
     """Returns an indicator array
     in the shape of (n_conformers, n_gridpoints) for ensembles
@@ -51,10 +51,6 @@ def indicator(
     Uses KDTree data structure to increase the rate of computations significantly
     """
     from scipy.spatial import KDTree
-
-    # This is to handle very specific cases
-    if isinstance(max_dist, str):
-        max_dist = np.array([getattr(a, max_dist) for a in struct_or_ens.atoms])
 
     if isinstance(struct_or_ens, ml.ConformerEnsemble):
         result = np.empty((struct_or_ens.n_conformers, grid.shape[0]), dtype=dtype)
