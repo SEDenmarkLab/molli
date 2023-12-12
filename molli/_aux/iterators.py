@@ -2,6 +2,7 @@ from glob import glob
 from typing import Callable, Iterable, TypeVar, Generator
 from pathlib import Path
 from warnings import warn
+import sys
 
 T = TypeVar("T")
 
@@ -105,3 +106,22 @@ def dglob(
                     f"An error occurred while loading {fn}: {xc}. Skipping the"
                     " file..."
                 )
+
+try:
+    from more_itertools import batched
+except:
+    if sys.version >= (3, 12):
+        from itertools import batched
+    else:
+        def batched(iterable, n):
+            """This is from python documentation website.
+            This version is a fallback in case `more_itertools` is not installed
+            and python is not >= 3.12
+            """
+            from itertools import islice
+
+            if n < 1:
+                raise ValueError("n must be at least one")
+            it = iter(iterable)
+            while batch := tuple(islice(it, n)):
+                yield batch
