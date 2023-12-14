@@ -195,11 +195,15 @@ class UKVFile:
         # File delimiters
         # If the file has already been opened, we do not need to reacquire all keys
         self._stream.seek(0, 2)
-        if self._eof == self._stream.tell() and self._eof == self._toc[self._last].end:
+        if self._eof == self._stream.tell() and self._eof == (
+            self._toc[self._last].end if self._last is not None else self._bof
+        ):
             return
 
         pos = self._bof
         self._stream.seek(pos)
+
+        key = None
 
         while blk_header := self._unpack_read(_BLOCK_HEADER, None):
             key_len, record_len = blk_header
