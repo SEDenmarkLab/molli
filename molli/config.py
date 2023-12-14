@@ -9,7 +9,7 @@ import os, sys
 from pathlib import Path
 import logging
 
-VERSION = "1.0.0b1"
+VERSION = "1.0.0b2"
 
 HOME: Path = Path("~/.molli").expanduser()
 USER_DATA_DIR: Path = HOME / "user_data"
