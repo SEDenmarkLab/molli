@@ -40,7 +40,6 @@ def rectangular_grid(
 def indicator(
     grid: np.ndarray,
     struct_or_ens: ml.ConformerEnsemble | ml.CartesianGeometry,
-    dtype: np.dtype = np.int64,
     max_dist: float = 2.0,
 ):
     """Returns an indicator array
@@ -53,7 +52,7 @@ def indicator(
     from scipy.spatial import KDTree
 
     if isinstance(struct_or_ens, ml.ConformerEnsemble):
-        result = np.empty((struct_or_ens.n_conformers, grid.shape[0]), dtype=dtype)
+        result = np.empty((struct_or_ens.n_conformers, grid.shape[0]), dtype=np.int64)
 
         for i, c in enumerate(struct_or_ens):
             ckd = KDTree(c.coords)
@@ -62,7 +61,7 @@ def indicator(
 
     elif isinstance(struct_or_ens, ml.CartesianGeometry):
         dd, ii = KDTree(struct_or_ens.coords).query(grid, distance_upper_bound=2.0, k=1)
-        result = np.asarray(np.where(dd <= 2.0, ii, -1), dtype=dtype)
+        result = np.where(dd <= 2.0, ii, -1)
 
     return result
 
@@ -70,8 +69,8 @@ def indicator(
 def prune(
     grid: np.ndarray,
     struct_or_ens: ml.ConformerEnsemble | ml.CartesianGeometry,
-    eps: float = 0.5,
     max_dist: float = 2.0,
+    eps: float = 0.5,
 ):
     """
     This function prunes the grid to return only the points closer than (max_dist + eps) from an ensemble or molecule.
@@ -84,4 +83,4 @@ def prune(
     else:
         kdt = KDTree(struct_or_ens.coords)
     dd, ii = kdt.query(grid, eps=eps, distance_upper_bound=max_dist)
-    return np.where(dd <= max_dist)[0]
+    return np.asarray(np.where(dd <= max_dist)[0])
