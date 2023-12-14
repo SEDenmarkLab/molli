@@ -13,6 +13,7 @@ import numpy as np
 from pathlib import Path
 from joblib import Parallel, delayed
 import h5py
+import fasteners
 
 arg_parser = ArgumentParser(
     "molli grid",
@@ -46,7 +47,7 @@ arg_parser.add_argument(
 
 arg_parser.add_argument(
     "-n",
-    "--n_jobs",
+    "--nprocs",
     action="store",
     default=1,
     type=int,
@@ -99,6 +100,20 @@ arg_parser.add_argument(
 )
 
 
+arg_parser.add_argument(
+    "--overwrite",
+    action="store_true",
+    help="Overwrite the existing grid file",
+)
+
+arg_parser.add_argument(
+    "--dtype",
+    type=np.dtype,
+    default="int32",
+    help="Specify the data format to be used for grid parameter storage.",
+)
+
+
 @delayed
 def _min_max(_lib: ml.ConformerLibrary, keys: list[str]):
     with _lib.reading():
@@ -136,23 +151,39 @@ def _pruning(
 @delayed
 def _indicator(
     _lib: ml.ConformerLibrary,
-    grid: np.ndarray,
-    pruned: dict[str, np.ndarray],
+    _gfpath: str | Path,
+    keys: list[str],
     max_dist=2.0,
+    dtype=np.int32,
 ):
+    _lk_path = ml.aux.molli_aux_dir(_gfpath) / (_gfpath.name + ".lock")
+    lock = fasteners.InterProcessReaderWriterLock(_lk_path)
+    with lock.read_lock():
+        with h5py.File(_gfpath, mode="r") as h5f:
+            grid = np.asarray(h5f["grid"])
+            if "grid_pruned" not in h5f.keys():
+                raise RuntimeError("Cannot work with grids that haven't been pruned")
+
+            if "indicator_pruned" in h5f.keys():
+                tbd = [k for k in keys if k not in h5f["indicator_pruned"].keys()]
+            else:
+                tbd = keys
+
+            pruned = {k: np.asarray(h5f["grid_pruned"][k]) for k in tbd}
+
     with _lib.reading():
-        ensembles = list(map(_lib.__getitem__, pruned))
+        ensembles = list(map(_lib.__getitem__, tbd))
 
     results = {
-        k: ml.descriptor.indicator(grid[prune_idx], ens, max_dist=max_dist)
-        for (k, prune_idx), ens in zip(pruned, ensembles)
+        k: ml.descriptor.indicator(grid[pruned[k]], ens, max_dist=max_dist)
+        for k, ens in zip(tbd, ensembles)
     }
 
-    return results
-
-
-def _get_pruned(g: h5py.Group, keys: list[str]):
-    return {k: np.asarray(g[k]) for k in keys}
+    with lock.write_lock():
+        with h5py.File(_gfpath, mode="a") as h5f:
+            g = h5f.require_group("indicator_pruned")
+            for k, ind in results.items():
+                g.create_dataset(k, data=ind, dtype=dtype)
 
 
 def molli_main(args, **kwargs):
@@ -167,7 +198,7 @@ def molli_main(args, **kwargs):
     print(f"Using output file: {out_path.as_posix()}")
 
     parallel = Parallel(
-        n_jobs=parsed.n_jobs,
+        n_jobs=parsed.nprocs,
         backend="loky",
         return_as="generator",
     )
@@ -177,7 +208,7 @@ def molli_main(args, **kwargs):
     with library.reading():
         keys = sorted(library.keys())
 
-    if out_path.is_file():
+    if not parsed.overwrite and out_path.is_file():
         with h5py.File(out_path, "r") as f:
             if "grid" in f.keys():
                 grid = np.asarray(f["grid"])
@@ -188,15 +219,13 @@ def molli_main(args, **kwargs):
 
     else:
         qmin, qmax = np.zeros(3), np.zeros(3)
-        for cmin, cmax in parallel(
-            tqdm(
-                (
-                    _min_max(library, batch)
-                    for batch in ml.aux.batched(keys, parsed.batchsize)
-                ),
-                desc="Computing a bounding box",
-                total=ml.aux.len_batched(keys, parsed.batchsize),
-            )
+        for cmin, cmax in tqdm(
+            parallel(
+                _min_max(library, batch)
+                for batch in ml.aux.batched(keys, parsed.batchsize)
+            ),
+            desc="Computing a bounding box",
+            total=ml.aux.len_batched(keys, parsed.batchsize),
         ):
             qmin = np.where(qmin < cmin, qmin, cmin)
             qmax = np.where(qmax > cmax, qmax, cmax)
@@ -206,7 +235,7 @@ def molli_main(args, **kwargs):
         )
         print(f"Finished calculating the bounding box!")
 
-        with h5py.File(out_name, mode="a") as f:
+        with h5py.File(out_name, mode="w" if parsed.overwrite else "a") as f:
             f.create_dataset("grid", data=grid, dtype="f4")
             f["grid"].attrs["bbox"] = [qmin, qmax]
 
@@ -222,47 +251,34 @@ def molli_main(args, **kwargs):
         print(f"Requested to calculate grid pruning with {max_dist=:0.3f} {eps=:0.3f}")
 
         with h5py.File(out_path, "a") as f:
-            g = f.create_group("grid_pruned_idx")
-            for result in parallel(
-                tqdm(
-                    (
-                        _pruning(library, grid, batch, max_dist=max_dist, eps=eps)
-                        for batch in ml.aux.batched(keys, parsed.batchsize)
-                    ),
-                    desc="Computing pruned grids",
-                    total=ml.aux.len_batched(keys, parsed.batchsize),
-                )
+            g = f.create_group("grid_pruned")
+            for result in tqdm(
+                parallel(
+                    _pruning(library, grid, batch, max_dist=max_dist, eps=eps)
+                    for batch in ml.aux.batched(keys, parsed.batchsize)
+                ),
+                desc="Computing pruned grids",
+                total=ml.aux.len_batched(keys, parsed.batchsize),
             ):
                 for key, pruned in result.items():
-                    g.create_dataset(key, data=pruned, dtype="i4")
+                    g.create_dataset(key, data=pruned, dtype=parsed.dtype)
 
     if parsed.indicator:
-        with h5py.File(out_path, "a") as f:
-            if "grid_pruned_idx" not in f.keys():
-                print(
-                    f"It seems that {out_path.as_posix()} does not contain pruned grid."
+        for result in tqdm(
+            parallel(
+                _indicator(
+                    library,
+                    out_path,
+                    batch,
+                    max_dist=2.0,
+                    dtype=parsed.dtype,
                 )
-                print("Indicator field is only computed for pruned grids")
-                exit(-1)
-
-            g = f["indicator_grid_pruned"]
-            for result in parallel(
-                tqdm(
-                    (
-                        _pruning(
-                            library,
-                            grid,
-                            _get_pruned(f["grid_pruned_idx"], keys),
-                            max_dist=2.0,
-                        )
-                        for batch in ml.aux.batched(keys, parsed.batchsize)
-                    ),
-                    desc="Computing indicator grids",
-                    total=ml.aux.len_batched(keys, parsed.batchsize),
-                )
-            ):
-                for key, indic in result.items():
-                    g.create_dataset(key, data=indic, dtype="i4")
+                for batch in ml.aux.batched(keys, parsed.batchsize)
+            ),
+            desc="Computing indicator grids",
+            total=ml.aux.len_batched(keys, parsed.batchsize),
+        ):
+            pass
 
     # np.save(parsed.output, grid, allow_pickle=False)
 
