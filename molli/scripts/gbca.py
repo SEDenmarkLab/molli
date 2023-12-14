@@ -9,7 +9,6 @@ from argparse import ArgumentParser
 import os
 import molli as ml
 from tqdm import tqdm
-from mpi4py import MPI
 import numpy as np
 import h5py
 from logging import getLogger
@@ -23,7 +22,7 @@ DESCRIPTOR_CHOICES = ["aso", "aeif"]
 OS_NCORES = os.cpu_count() // 2
 
 arg_parser = ArgumentParser(
-    "molli descriptor",
+    "molli gbca",
     description="This module can be used for standalone computation of descriptors",
 )
 
@@ -131,7 +130,7 @@ def _aso_worker(
     with lock.read_lock():
         with h5py.File(_gfpath, mode="r") as h5f:
             grid = np.asarray(h5f["grid"])
-            pruned = {k: np.asarray(h5f["grid_pruned"][k]) for k in keys}
+            pruned = {k: np.asarray(h5f["grid_pruned_idx"][k]) for k in keys}
 
     with _lib.reading():
         ensembles = {k: _lib[k] for k in keys}
@@ -140,7 +139,7 @@ def _aso_worker(
     for k, ens in ensembles.items():
         aso = np.zeros(grid.shape[0], dtype=dtype)
         where = pruned[k]
-        aso_pruned = ml.descriptor.aso2(ens, grid[where], weighted=weighted)
+        aso_pruned = ml.descriptor.aso(ens, grid[where], weighted=weighted)
         aso[where] = aso_pruned
         asos[k] = aso
 
@@ -165,8 +164,8 @@ def _aeif_worker(
     with lock.read_lock():
         with h5py.File(_gfpath, mode="r") as h5f:
             grid = np.asarray(h5f["grid"])
-            pruned = {k: np.asarray(h5f["grid_pruned"][k]) for k in keys}
-            indicator = {k: np.asarray(h5f["indicator_pruned"][k]) for k in keys}
+            pruned = {k: np.asarray(h5f["grid_pruned_idx"][k]) for k in keys}
+            nearest = {k: np.asarray(h5f["nearest_atom_idx"][k]) for k in keys}
 
     with _lib.reading():
         ensembles = {k: _lib[k] for k in keys}
@@ -176,7 +175,7 @@ def _aeif_worker(
         aeif = np.zeros(grid.shape[0], dtype=dtype)
         where = pruned[k]
         aeif_pruned = ml.descriptor.aeif(
-            ens, grid[where], proximal_atom_idx=indicator[k], weighted=weighted
+            ens, grid[where], nearest_atom_idx=nearest[k], weighted=weighted
         )
         aeif[where] = aeif_pruned
         aeifs[k] = aeif
@@ -214,11 +213,24 @@ def molli_main(args, verbosity: int = 0, **kwargs):
     with library.reading():
         if out_path.is_file():
             with h5py.File(out_path, mode="w" if parsed.overwrite else "r") as f:
-                keys = sorted(library.keys() ^ set(f.keys()))
+                existing = set(f.keys())
+            keys = sorted(library.keys() ^ existing)
         else:
+            existing = None
             keys = sorted(library.keys())
 
-    print(f"To be computed: {len(keys)}. Skipping {len(library) - len(keys)}")
+    logger.info(
+        f"To be computed: {len(keys)} ensembles. Skipping {len(library) - len(keys)}"
+    )
+
+    if existing:
+        logger.debug("Ensembles skipped:\n  -" + "\n  -".join(existing))
+    if keys:
+        logger.debug("Ensembles to be computed:\n  - " + "\n  - ".join(keys))
+
+    if len(keys) == 0:
+        logger.info("Nothing to compute. Exiting.")
+        exit(0)
 
     match parsed.descriptor:
         case "aso":

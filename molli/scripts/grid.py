@@ -1,14 +1,13 @@
 """
 Create a grid to be subsequently used in grid based descriptor calculations.
-This routine creates an hdf5 file that also store intermediate calculation results
-such as grid
+This routine creates an hdf5 file that also store additional grid parameters,
+such as pruning indices and nearest atom indices.
+A required first step in calculating the GBCA, Grid-Based Conformer Averaged Descriptors.
 """
 
 from argparse import ArgumentParser
 import molli as ml
 from tqdm import tqdm
-import zipfile
-import msgpack
 import numpy as np
 from pathlib import Path
 from joblib import Parallel, delayed
@@ -35,15 +34,6 @@ arg_parser.add_argument(
     help="Destination for calculation results",
 )
 
-# arg_parser.add_argument(
-#     "-f",
-#     "--format",
-#     action="store",
-#     # metavar="fmt",
-#     choices=("npy",),
-#     default="npy",
-#     help="Select the format that will be used for data storage.",
-# )
 
 arg_parser.add_argument(
     "-n",
@@ -94,9 +84,13 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "--indicator",
-    action="store_true",
-    help="Obtain the indicator indices for each conformer ensemble",
+    "--nearest",
+    nargs="?",
+    const="2.0",
+    type=float,
+    default=None,
+    action="store",
+    help="Obtain nearest atom indices for conformer ensembles. This is necessary for indicator field descriptors. Accepts up to 1 parameter which corresponds to the cutoff distance.",
 )
 
 
@@ -149,7 +143,7 @@ def _pruning(
 
 
 @delayed
-def _indicator(
+def _nearest(
     _lib: ml.ConformerLibrary,
     _gfpath: str | Path,
     keys: list[str],
@@ -161,27 +155,27 @@ def _indicator(
     with lock.read_lock():
         with h5py.File(_gfpath, mode="r") as h5f:
             grid = np.asarray(h5f["grid"])
-            if "grid_pruned" not in h5f.keys():
+            if "grid_pruned_idx" not in h5f.keys():
                 raise RuntimeError("Cannot work with grids that haven't been pruned")
 
-            if "indicator_pruned" in h5f.keys():
-                tbd = [k for k in keys if k not in h5f["indicator_pruned"].keys()]
+            if "nearest_atom_idx" in h5f.keys():
+                tbd = [k for k in keys if k not in h5f["nearest_atom_idx"].keys()]
             else:
                 tbd = keys
 
-            pruned = {k: np.asarray(h5f["grid_pruned"][k]) for k in tbd}
+            pruned = {k: np.asarray(h5f["grid_pruned_idx"][k]) for k in tbd}
 
     with _lib.reading():
         ensembles = list(map(_lib.__getitem__, tbd))
 
     results = {
-        k: ml.descriptor.indicator(grid[pruned[k]], ens, max_dist=max_dist)
+        k: ml.descriptor.nearest_atom_index(grid[pruned[k]], ens, max_dist=max_dist)
         for k, ens in zip(tbd, ensembles)
     }
 
     with lock.write_lock():
         with h5py.File(_gfpath, mode="a") as h5f:
-            g = h5f.require_group("indicator_pruned")
+            g = h5f.require_group("nearest_atom_idx")
             for k, ind in results.items():
                 g.create_dataset(k, data=ind, dtype=dtype)
 
@@ -251,7 +245,7 @@ def molli_main(args, **kwargs):
         print(f"Requested to calculate grid pruning with {max_dist=:0.3f} {eps=:0.3f}")
 
         with h5py.File(out_path, "a") as f:
-            g = f.create_group("grid_pruned")
+            g = f.create_group("grid_pruned_idx")
             for result in tqdm(
                 parallel(
                     _pruning(library, grid, batch, max_dist=max_dist, eps=eps)
@@ -263,10 +257,10 @@ def molli_main(args, **kwargs):
                 for key, pruned in result.items():
                     g.create_dataset(key, data=pruned, dtype=parsed.dtype)
 
-    if parsed.indicator:
+    if parsed.nearest:
         for result in tqdm(
             parallel(
-                _indicator(
+                _nearest(
                     library,
                     out_path,
                     batch,
@@ -275,23 +269,7 @@ def molli_main(args, **kwargs):
                 )
                 for batch in ml.aux.batched(keys, parsed.batchsize)
             ),
-            desc="Computing indicator grids",
+            desc="Finding nearest atoms to the pruned grid points.",
             total=ml.aux.len_batched(keys, parsed.batchsize),
         ):
             pass
-
-    # np.save(parsed.output, grid, allow_pickle=False)
-
-    # with ml.chem.ConformerLibrary(parsed.library, readonly=True) as lib:
-    #     mins = np.zeros((len(lib), 3), dtype=np.float32)
-    #     maxs = np.zeros((len(lib), 3), dtype=np.float32)
-
-    #     for i, ens in enumerate(tqdm(lib, dynamic_ncols=True)):
-    #         mins[i] = np.min(ens._coords, axis=(0, 1))
-    #         maxs[i] = np.max(ens._coords, axis=(0, 1))
-
-    # q1, q2 = np.min(mins, axis=0), np.max(maxs, axis=0)
-    # grid = ml.descriptor.rectangular_grid(q1, q2, parsed.padding, parsed.spacing)
-    # print(grid.shape)
-
-    # np.save(parsed.output, grid, allow_pickle=False)
