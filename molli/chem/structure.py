@@ -34,7 +34,15 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 
 class Structure(CartesianGeometry, Connectivity):
-    """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
+    """
+    Combines the functionality of `CartesianGeometry` andd `Connectivity`
+    'CartesianGeometry' gives the molecular data structure features of a 3d coordinate matrix
+    'Connectivity' gives the molecular data structure features of a undirected graph
+
+    Args:
+        CartesianGeometry (cls): inherited class for performing geometric operations
+        Connectivity (cls): inherited class for establishing bonds between individual atoms
+    """
 
     def __init__(
         self,
@@ -91,7 +99,9 @@ class Structure(CartesianGeometry, Connectivity):
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 res.scale(DistanceUnit[source_units].value)
 
-            if block.header.chrg_type != "NO_CHARGES" and hasattr(res, "atomic_charges"):
+            if block.header.chrg_type != "NO_CHARGES" and hasattr(
+                res, "atomic_charges"
+            ):
                 res.atomic_charges = [a.charge for a in block.atoms]
 
             yield res
@@ -162,7 +172,7 @@ class Structure(CartesianGeometry, Connectivity):
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ):
+    ) -> CartesianGeometry:
         """Load mol2 file from string"""
         stream = StringIO(input)
         with stream:
@@ -183,7 +193,7 @@ class Structure(CartesianGeometry, Connectivity):
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ):
+    ) -> List[CartesianGeometry]:
         """Load all components in a mol2 file from a multimol2 file"""
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -340,34 +350,91 @@ class Structure(CartesianGeometry, Connectivity):
 
     @property
     def heavy(self) -> Substructure:
+        """
+        Returns a substructure containing only heavy atoms.
+
+        Returns:
+            Substructure: The substructure containing only heavy atoms.
+
+        Example Usage:
+            >>> my_compound = ml.Structure("Ethyl Aceate") # CH3COOCH2CH3
+            >>> print(my_compound.heavy) # Substructure(Molecule(C2O2C2), [Atom(C), Atom(O), Atom(O), Atom(C), Atom(C), Atom(C), Atom(C)]
+
+        """
         return Substructure(self, [a for a in self.atoms if a.element != Element.H])
 
     def bond_length(self, b: Bond) -> float:
+        """
+        Returns the length of a bond.
+
+        Args:
+            b (Bond): The bond to measure.
+
+        Returns:
+            float: The length of the bond.
+
+        Example Usage:
+            >>> my_compound = ml.Structure(H2O)
+            >>> print(my_compound.bond_length(mol.bonds[0])) # 0.9572
+        """
         return self.distance(b.a1, b.a2)
 
     def bond_vector(self, b: Bond) -> np.ndarray:
+        """
+        Returns the vector between the two atoms in a bond.
+
+        Args:
+            b (Bond): The bond to measure.
+
+        Returns:
+            np.ndarray: The vector between the two atoms in the bond.
+
+        Example Usage:
+            >>> my_compound = ml.Structure(H2O)
+            >>> print(my_compound.bond_vector(mol.bonds[0])) # array([0.9572, 0., 0.])
+        """
         i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
         return self.coords[i2] - self.coords[i1]
 
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
+        """
+        Returns the coordinates of the two atoms in a bond.
+
+        Args:
+            b (Bond): The bond to measure.
+
+        Returns:
+            tuple[np.ndarray]: The coordinates of the two atoms in the bond.
+
+        Example Usage:
+            >>> my_compound = ml.Structure(H2O)
+            >>> print(my_compound.bond_coords(mol.bonds[0])) # (array([0., 0., 0.]), array([0.9572, 0., 0.]))
+        """
         return self.coord_subset((b.a1, b.a2))
 
     def __or__(self, other: Structure) -> Structure:
+        """
+        This function concatenates two structures
+
+        Args:
+            other (Structure): The other structure to concatenate with.
+
+        Returns:
+            Structure: The concatenated structure.
+
+        Example Usage:
+            >>> compound_1 = ml.Structure(H2)
+            >>> compound_2 = ml.Structure(Cl2)
+            >>> print(compound_1 | compound_2) # Structure(2HCl)
+        """
         return Structure.concatenate(self, other)
 
     def perceive_atom_properties(self, _a: AtomLike) -> None:
         """# `perceive_atom_properties`
         This function analyzes atomic types
 
-        ## Returns
-
-        `_type_`
-            _description_
-
-        ## Yields
-
-        `_type_`
-            _description_
+        Raises:
+            NotImplementedError: This function is not implemented.
         """
         a = self.get_atom(_a)
         n_bonds = self.n_bonds_with_atom(a)
@@ -381,22 +448,26 @@ class Structure(CartesianGeometry, Connectivity):
                 a.atype = AtomType.MainGroup_sp2
 
     def perceive_bond_properties(self) -> None:
-        """# `perceive_bond_properties`
-        This function analyzes bond properties
+        """
+        This function analyzes bond types
 
-        ## Returns
-
-        `_type_`
-            _description_
-
-        ## Yields
-
-        `_type_`
-            _description_
+        Raises:
+            NotImplementedError: This function is not implemented.
         """
         raise NotImplementedError
 
     def del_atom(self, _a: AtomLike):
+        """
+        This function deletes an atom from the structure.
+
+        Args:
+            _a (AtomLike): The atom to delete.
+
+        Example Usage:
+            >>> my_compound = ml.Structure(H2O)
+            >>> my_compound.del_atom(O)
+            >>> print(my_compound) # Structure(2H)
+        """
         a = self.get_atom(_a)
         super().del_atom(a)
 
@@ -419,7 +490,9 @@ class Structure(CartesianGeometry, Connectivity):
                     vec = mean_plane(self.coord_subset(neighbors))
                     cent = np.average(self.coord_subset(neighbors), axis=0)
                     align = np.dot(vec, cent - a_coord)
-                    if abs(align) > 0.05:  # Note that this threshold is completely arbitrary.
+                    if (
+                        abs(align) > 0.05
+                    ):  # Note that this threshold is completely arbitrary.
                         vec *= align
                 else:
                     vec = np.average(self.coord_subset(neighbors) - a_coord, axis=0)
@@ -435,7 +508,9 @@ class Structure(CartesianGeometry, Connectivity):
                 elif diff == 2:
                     if len(neighbors) == 2:
                         r1, r2 = self.coord_subset(neighbors) - a_coord
-                        z = np.cross(r1, r2)  # this is a vector that is orthogonal to neighbors
+                        z = np.cross(
+                            r1, r2
+                        )  # this is a vector that is orthogonal to neighbors
                         z /= np.linalg.norm(z)
                     else:
                         z = np.cross(vec, [0.0, 0.0, 1.0])
@@ -458,6 +533,11 @@ class Structure(CartesianGeometry, Connectivity):
 
 
 class Substructure(Structure):
+    """
+    This class represents a substructure of a structure. It pulls the atoms and bonds from the parent structure, and allows for manipulation of
+    the a subset of atoms within the initial structure.
+    """
+
     def __init__(self, parent: Structure, atoms: Iterable[AtomLike]):
         self._parent = parent
         self._atoms = [parent.get_atom(a) for a in atoms]
@@ -467,25 +547,80 @@ class Substructure(Structure):
             if b.a1 in self.atoms and b.a2 in self.atoms:
                 self._bonds.append(b)
 
-    def yield_parent_atom_indices(self, atoms: Iterable[AtomLike]) -> Generator[int, None, None]:
+    def yield_parent_atom_indices(
+        self, atoms: Iterable[AtomLike]
+    ) -> Generator[int, None, None]:
+        """
+        This function yields the indices of the atoms in the parent structure.
+
+        Args:
+            atoms (Iterable[AtomLike]): The atoms to yield the indices of.
+
+        Yields:
+            Generator[int, None, None]: The indices of the atoms in the parent structure.
+
+        Example Usage:
+            >>> mol = Molecule(H20)
+        """
         yield from map(self._parent.get_atom_index, atoms)
 
     def __repr__(self):
         return f"""{type(self).__name__}(parent={self._parent!r}, atoms={self.parent_atom_indices!r})"""
 
     @property
-    def parent_atom_indices(self):
+    def parent_atom_indices(self) -> list[int]:
+        """
+        Returns the indices of the atoms in the parent structure.
+
+        Returns:
+            list[int]: The indices of the atoms in the parent structure.
+
+        Example Usage:
+            >>> my_compound = Structure(H2O)
+            >>> compound_hydrogens = Substructure(H2)
+            >>> print(compound_hydrogens.parent_atom_indices) # [0, 1, 2]
+        """
         return list(self.yield_parent_atom_indices(self._atoms))
 
     @property
-    def coords(self):
+    def coords(self) -> np.ndarray:
+        """
+        Returns the coordinates of the atoms in the substructure.
+
+        Returns:
+            np.ndarray: The coordinates of the atoms in the substructure.
+
+        Example Usage:
+            >>> compound_hydrogens = ml.Substructure(H2)
+            >>> print(compound_hydrogens.coords) # [[0., 0., 0.], [0.9572, 0., 0.]]
+        """
         return self._parent.coords[self.parent_atom_indices]
 
     @coords.setter
     def coords(self, other):
+        """
+        Sets the coordinates of the atoms in the substructure.
+
+        Args:
+            other (np.ndarray): The new coordinates.
+        """
         self._parent.coords[self.parent_atom_indices] = other
 
     def __or__(self, other: Substructure | Structure):
+        """
+        This function concatenates two structures.
+
+        Args:
+            other (Substructure | Structure): The other structure to concatenate with.
+
+        Returns:
+            Substructure | Structure: The concatenated structure.
+
+        Example Usage:
+            >>> compound_1 = ml.Structure(H2)
+            >>> compound_2 = ml.Structure(Cl2)
+            >>> print(compound_1 | compound_2) # Structure(2HCl)
+        """
         if isinstance(other, Substructure) and other.parent == self._parent:
             return Substructure(self._parent, chain(self.atoms, other.atoms))
         else:
