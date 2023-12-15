@@ -69,12 +69,15 @@ def molli_main(args,  **kwargs):
                 print("Unknown input format: {iformat}")
             exit(1)
 
-    with ml.MoleculeLibrary.new(opath, overwrite=parsed.overwrite) as lib:
+    lib = ml.MoleculeLibrary(opath, overwrite=parsed.overwrite, readonly=False)
+    with lib.writing():
         for k in tqdm(input_file.keys()):
             try:
                 mol = input_file[k]
                 if parsed.hadd:
                     mol.add_implicit_hydrogens()
-                lib.append(mol.name, mol)
+                lib[mol.name] = mol
             except Exception as e:
+                if isinstance(e, KeyError):
+                    raise FileExistsError(f"File {opath} already exists! To overwrite file use option --overwrite")
                 raise RuntimeError(f"Unable to parse {k}") from e
