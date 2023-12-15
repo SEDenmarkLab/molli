@@ -24,6 +24,7 @@ dummy_xyz = ROOT / "dummy.xyz"
 
 substituents_cdxml = ROOT / "substituents.cdxml"
 parser_demo_cdxml = ROOT / "parser_demo.cdxml"
+parser_demo2_cdxml = ROOT / "parser_demo2.cdxml"
 
 oldstyle_xml = ROOT / "oldstyle.xml"
 
