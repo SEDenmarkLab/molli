@@ -3,6 +3,7 @@ from io import StringIO
 import py3Dmol
 
 BGCOLOR = "black"
+WIDTH = "100%"
 HEIGHT = 500
 STYLE_BALLNSTICK = {"stick": {"radius": 0.1}, "sphere": {"scale": 0.15}}
 STYLE_WIREFRAME = {"line": {}}
