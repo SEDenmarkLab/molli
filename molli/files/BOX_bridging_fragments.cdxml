@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE CDXML SYSTEM "http://www.cambridgesoft.com/xml/cdxml.dtd" >
+<CDXML
+ CreationProgram="ChemDraw 19.1.0.8"
+ Name="BOX_bridging_fragments.cdxml"
+ BoundingBox="80.95 87.27 305.60 129.42"
+ WindowPosition="0 0"
+ WindowSize="858980352 858980352"
+ WindowIsZoomed="yes"
+ FractionalWidths="yes"
+ InterpretChemically="yes"
+ ShowAtomQuery="yes"
+ ShowAtomStereo="no"
+ ShowAtomEnhancedStereo="yes"
+ ShowAtomNumber="no"
+ ShowResidueID="no"
+ ShowBondQuery="yes"
+ ShowBondRxn="yes"
+ ShowBondStereo="no"
+ ShowTerminalCarbonLabels="no"
+ ShowNonTerminalCarbonLabels="no"
+ HideImplicitHydrogens="no"
+ Magnification="666"
+ LabelFont="3"
+ LabelSize="6"
+ LabelFace="96"
+ CaptionFont="3"
+ CaptionSize="6"
+ CaptionFace="96"
+ HashSpacing="1.70"
+ MarginWidth="1.19"
+ LineWidth="0.60"
+ BoldWidth="1.56"
+ BondLength="10.80"
+ BondSpacing="18"
+ ChainAngle="120"
+ LabelJustification="Auto"
+ CaptionJustification="Left"
+ AminoAcidTermini="HOH"
+ ShowSequenceTermini="yes"
+ ShowSequenceBonds="yes"
+ ShowSequenceUnlinkedBranches="no"
+ ResidueWrapCount="40"
+ ResidueBlockCount="10"
+ ResidueZigZag="yes"
+ NumberResidueBlocks="no"
+ PrintMargins="50.88 55.84 50.88 55.84"
+ MacPrintInfo="00030000004800480000000002DE0240FFEEFFEE030602520367052803FC00020000004800480000000002DE0240000100000064000000010001010100000001270F000100010000000000000000000000000002001901900000000000600000000000000000000100000000000000000000000000000000"
+ ChemPropName=""
+ ChemPropFormula="Chemical Formula: "
+ ChemPropExactMass="Exact Mass: "
+ ChemPropMolWt="Molecular Weight: "
+ ChemPropMOverZ="m/z: "
+ ChemPropAnalysis="Elemental Analysis: "
+ ChemPropBoilingPt="Boiling Point: "
+ ChemPropMeltingPt="Melting Point: "
+ ChemPropCritTemp="Critical Temp: "
+ ChemPropCritPres="Critical Pres: "
+ ChemPropCritVol="Critical Vol: "
+ ChemPropGibbs="Gibbs Energy: "
+ ChemPropLogP="Log P: "
+ ChemPropMR="MR: "
+ ChemPropHenry="Henry&apos;s Law: "
+ ChemPropEForm="Heat of Form: "
+ ChemProptPSA="tPSA: "
+ ChemPropCLogP="CLogP: "
+ ChemPropCMR="CMR: "
+ ChemPropLogS="LogS: "
+ ChemPropPKa="pKa: "
+ ChemPropID=""
+ ChemPropFragmentLabel=""
+ color="0"
+ bgcolor="1"
+ RxnAutonumberStart="1"
+ RxnAutonumberConditions="no"
+ RxnAutonumberStyle="Roman"
+ RxnAutonumberFormat="(#)"
+><colortable>
+<color r="1" g="1" b="1"/>
+<color r="0" g="0" b="0"/>
+<color r="0.0706" g="0.0706" b="0.0706"/>
+<color r="0.7255" g="0.0510" b="0.1255"/>
+<color r="0.9608" g="0.7451" b="0.3608"/>
+<color r="0" g="0.4353" b="0.2000"/>
+<color r="0" g="0.4510" b="0.5373"/>
+<color r="0" g="0.1608" b="0.3451"/>
+<color r="0.3451" g="0.2902" b="0.5059"/>
+<color r="0.4000" g="0.4000" b="1"/>
+<color r="0.7961" g="0.9020" b="1"/>
+<color r="0.9255" g="0.8667" b="0.9255"/>
+<color r="1" g="0" b="1"/>
+<color r="0.2353" g="0.5255" b="0.4000"/>
+<color r="0.7451" g="0.7451" b="0.7451"/>
+<color r="0.9216" g="0.9216" b="0.9216"/>
+<color r="0.5020" g="0" b="0.5020"/>
+<color r="0.9961" g="0.9961" b="0.9804"/>
+<color r="0.9961" g="0.9804" b="0.2157"/>
+</colortable><fonttable>
+<font id="3" charset="iso-8859-1" name="Arial"/>
+</fonttable><page
+ id="375773"
+ BoundingBox="0 0 510.24 680.32"
+ HeaderPosition="36"
+ FooterPosition="36"
+ PrintTrimMarks="yes"
+ HeightPages="1"
+ WidthPages="1"
+><fragment
+ id="375723"
+ BoundingBox="80.95 87.27 136.42 111.85"
+ Z="38"
+><n
+ id="375720"
+ p="102.51 95.30"
+ Z="36"
+ AS="N"
+/><n
+ id="375722"
+ p="102.51 106.10"
+ Z="37"
+ AS="N"
+/><n
+ id="375724"
+ p="111.86 111.50"
+ Z="39"
+ AS="N"
+/><n
+ id="375726"
+ p="121.22 106.10"
+ Z="40"
+ AS="N"
+/><n
+ id="375728"
+ p="121.22 95.30"
+ Z="41"
+ AS="N"
+/><n
+ id="375730"
+ p="111.86 89.90"
+ Z="42"
+ AS="N"
+/><n
+ id="375738"
+ p="93.16 111.50"
+ Z="49"
+ AS="N"
+/><n
+ id="375742"
+ p="130.57 89.90"
+ Z="52"
+ NodeType="Nickname"
+ NeedsClean="yes"
+ AS="N"
+><fragment
+ id="375774"
+><n
+ id="375755"
+ p="130.57 89.90"
+ Z="11"
+/><n
+ id="375756"
+ p="121.26 95.27"
+ Z="12"
+ NodeType="ExternalConnectionPoint"
+/><b
+ id="375757"
+ Z="13"
+ B="375756"
+ E="375755"
+/></fragment><t
+ p="128.07 92.22"
+ BoundingBox="128.07 87.27 136.42 92.27"
+ LabelJustification="Left"
+ LabelAlignment="Left"
+><s font="3" size="6" color="0" face="96">Me</s></t></n><n
+ id="375740"
+ p="83.80 106.10"
+ Z="60"
+ NodeType="ExternalConnectionPoint"
+ ExternalConnectionType="Diamond"
+ ExternalConnectionNum="1"
+ AS="N"
+/><b
+ id="375732"
+ Z="43"
+ B="375720"
+ E="375722"
+ Order="2"
+ BS="N"
+ BondCircularOrdering="375737 0 375739 375733"
+/><b
+ id="375733"
+ Z="44"
+ B="375722"
+ E="375724"
+ BS="N"
+/><b
+ id="375734"
+ Z="45"
+ B="375724"
+ E="375726"
+ Order="2"
+ BS="N"
+ BondCircularOrdering="375733 0 0 375735"
+/><b
+ id="375735"
+ Z="46"
+ B="375726"
+ E="375728"
+ BS="N"
+/><b
+ id="375736"
+ Z="47"
+ B="375728"
+ E="375730"
+ Order="2"
+ BS="N"
+ BondCircularOrdering="375735 375743 0 375737"
+/><b
+ id="375737"
+ Z="48"
+ B="375730"
+ E="375720"
+ BS="N"
+/><b
+ id="375739"
+ Z="50"
+ B="375722"
+ E="375738"
+ BS="N"
+/><b
+ id="375741"
+ Z="51"
+ B="375738"
+ E="375740"
+ BS="N"
+/><b
+ id="375743"
+ Z="53"
+ B="375728"
+ E="375742"
+ BS="N"
+/></fragment><fragment
+ id="375745"
+ BoundingBox="214.91 105.06 232.96 115.94"
+ Z="54"
+><n
+ id="375746"
+ p="227.11 107.69"
+ Z="55"
+ NodeType="Nickname"
+ NeedsClean="yes"
+ AS="N"
+><fragment
+ id="375775"
+><n
+ id="375760"
+ p="227.11 107.69"
+ Z="27"
+/><n
+ id="375761"
+ p="217.80 113.06"
+ Z="28"
+ NodeType="ExternalConnectionPoint"
+/><b
+ id="375762"
+ Z="29"
+ B="375761"
+ E="375760"
+/></fragment><t
+ p="224.61 110.01"
+ BoundingBox="224.61 105.06 232.96 110.06"
+ LabelJustification="Left"
+ LabelAlignment="Left"
+><s font="3" size="6" color="0" face="96">Me</s></t></n><n
+ id="375744"
+ p="217.76 113.09"
+ Z="61"
+ NodeType="ExternalConnectionPoint"
+ ExternalConnectionType="Diamond"
+ ExternalConnectionNum="1"
+ AS="N"
+/><b
+ id="375747"
+ Z="56"
+ B="375744"
+ E="375746"
+ BS="N"
+/></fragment><fragment
+ id="375749"
+ BoundingBox="291.23 100.66 305.60 111.54"
+ Z="57"
+><n
+ id="375750"
+ p="303.43 103.29"
+ Z="58"
+ Element="1"
+ NumHydrogens="0"
+ NeedsClean="yes"
+ AS="N"
+><t
+ p="301.25 105.61"
+ BoundingBox="301.25 100.66 305.60 105.61"
+ LabelJustification="Left"
+><s font="3" size="6" color="0" face="96">H</s></t></n><n
+ id="375748"
+ p="294.08 108.69"
+ Z="62"
+ NodeType="ExternalConnectionPoint"
+ ExternalConnectionType="Diamond"
+ ExternalConnectionNum="1"
+ AS="N"
+/><b
+ id="375751"
+ Z="59"
+ B="375748"
+ E="375750"
+ BS="N"
+/></fragment><fragment
+ id="375768"
+ BoundingBox="295.28 116.28 299.63 123.43"
+ Z="68"
+><n
+ id="375767"
+ p="297.45 119.55"
+ Z="67"
+ Warning="An atom in this label has an invalid valence."
+ Element="1"
+ NumHydrogens="0"
+ NeedsClean="yes"
+ AS="N"
+><t
+ id="375766"
+ p="295.28 121.88"
+ BoundingBox="295.28 116.28 299.63 123.43"
+ Z="66"
+ LabelJustification="Left"
+ LabelLineHeight="auto"
+ LineHeight="auto"
+><s font="3" size="6" color="0" face="1">H</s></t></n></fragment><fragment
+ id="375770"
+ BoundingBox="215.36 122.27 223.71 129.42"
+ Z="70"
+><n
+ id="375769"
+ p="217.86 125.55"
+ Z="69"
+ Warning="An atom in this label has an invalid valence."
+ NodeType="Nickname"
+ NeedsClean="yes"
+ AS="N"
+><fragment
+ id="375776"
+><n
+ id="375777"
+ p="260.11 359.40"
+ NumHydrogens="3"
+/></fragment><t
+ id="375764"
+ p="215.36 127.87"
+ BoundingBox="215.36 122.27 223.71 129.42"
+ Z="64"
+ LabelJustification="Left"
+ LabelLineHeight="auto"
+ LineHeight="auto"
+ LabelAlignment="Left"
+><s font="3" size="6" color="0" face="1">Me</s></t></n></fragment><t
+ id="375763"
+ p="97.48 123.08"
+ BoundingBox="97.48 117.48 114.82 124.63"
+ Z="63"
+ Warning="Chemical Interpretation is not possible for this label"
+ LineHeight="auto"
+><s font="3" size="6" color="0" face="1">MeTol</s></t><annotation
+ Keyword="Fragment Label"
+ Content="[II]"
+/><annotation
+ Keyword="GUID"
+ Content="9457195a-c4e7-4083-90e7-b9e76ab5ab4a"
+/><annotation
+ Keyword="Name"
+ Content="Microbalance"
+/></page></CDXML>
