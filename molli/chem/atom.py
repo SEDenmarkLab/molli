@@ -8,9 +8,6 @@
 # ================================================================================
 
 
-"""
-This file defines all constituent elements of 
-"""
 from __future__ import annotations
 from typing import Any, List, Iterable, Generator, Callable
 from enum import Enum, IntEnum
@@ -28,27 +25,36 @@ from weakref import ref
 
 
 class Element(IntEnum):
-    """
-    Enumerates through elements of the periodic table
+    """The Element class is an Enumeration class used for calling elements
+    in the periodic table
+
+    Parameters
+    ----------
+    IntEnum :
+        A parameter that accepts an integer enumeration from 0-118,
+        with 0 being defined as an "Unknown" element
     """
 
     @classmethod
     def get(cls, elt: ElementLike) -> Element:
-        """
-        Class method that provides more universial way of retrieving element instances.
+        """Class method that used to instantiate Molli Elements
 
-        Args:
-            elt (ElementLike): Desired element
-            'int' will be interpreted as atomic number
-            'str' will be interpreted as element name
+        Parameters
+        ----------
+        elt : ElementLike | int | str
+            - 'int' will be interpreted as atomic number (used as callable)
+            - 'str' will be interpreted as element name (retrieved with indexing)
 
-        Returns:
-            Element: Element instance
+        Returns
+        -------
+        Element
 
-        Example Usage:
-            >>> o = Element(8) # oxygen
-            >>> f = Element["F"] # fluorine
-            >>> f == Element.F # True
+        Examples
+        -------
+            >>> o = ml.Element(8) # Oxygen
+            >>> f = ml.Element["F"] # Fluorine
+            >>> f == ml.Element.F # True
+
         """
         match elt:
             case Element() | int():
@@ -62,48 +68,46 @@ class Element(IntEnum):
     @property
     def symbol(self) -> str:
         """
-        The symbol of the element
+        Returns
+        -------
+        str
+            A string representing the symbol of the element
 
-        Returns:
-            str: A string representing the symbol of the element
-        Example Usage:
-            >>> my_element = Element(6) # carbon
-            >>> print(my_element.symbol) # C
+        Examples
+        -------
+            >>> ml.Element.C.symbol
+            >>> 'C'
         """
         return self.name
 
     @property
     def z(self) -> int:
         """
-        Atomic number of the element
+        Returns
+        -------
+        int
+            An integer representing the atomic number of the element
 
-        Returns:
-            int: An interger representing the atomic number of the element
-
-        Example Usage:
-            >>> my_element = Element('C') # carbon
-            >>> print(my_element.z) # 6
+        Examples
+        -------
+            >>> ml.Element.C.z
+            >>> 6
         """
         return self.value
 
     def get_property_value(self, property_name: str) -> int | str | float:
-        """
-        Retrieves desired value from dictionary key
+        """Retrieves desired property value from dictionary key
 
-        Args:
-            property_name (str): Name of the property to be retrieved
+        Parameters
+        ----------
+        str
+            Name of the property to be retrieved
 
-        Returns:
-            int | str | float: Value of the property
+        Returns
+        -------
+        property_value : int | str | float
+            Value of the Property
 
-            *float* when asked for atomic weight, covalent radius, or Van der Waals radius
-
-            *str* when asked for CPK coloring
-
-            *int* when group value is requested
-
-        Example Usage:
-            >>> get_property_value("symbol") # C
         """
         prop_val = data.get("element", property_name, self.name, noexcept=True)
 
@@ -111,122 +115,158 @@ class Element(IntEnum):
 
     def __repr__(self) -> str:
         """
-        Prints the name of the element
+        Returns
+        -------
+        str
+           Name of the element
 
-        Returns:
-            str: Name of the element
-
-        Example Usage:
-            >>> my_element = Element("C") # carbon
-            >>> my_element # carbon
+        Examples
+        -------
+            >>> ml.Element(1)
+            >>> H
         """
         return self.name
 
     @property
     def atomic_weight(self) -> float:
         """
-        The atomic weight of the element
-
-        Returns:
-            float: A float representing the atomic weight of the element
-
-        Example Usage:
-            >>> my_element = Element("C") # carbon
-            >>> print(my_element.atomic_weight) # 12.011
+        Returns
+        -------
+        float
+            Atomic weight of the element
+        Examples
+        -------
+            >>> ml.Element["C"].atomic_weight
+            >>> 12.011
         """
+
         return self.get_property_value("atomic_weight")
 
     @property
     def cov_radius_1(self) -> float:
         """
-        The covalent radius of a single bond
-
-        Returns:
-            float: A float representing the covalent radius of a single bond
-
-        Example Usage:
-            >>> my_element = Element("C") # carbon
-
+        Returns
+        -------
+        float
+            Represents the covalent radius of a single bond (based on DOI: 10.1021/jp5065819)
+        Examples
+        -------
+            >>> ml.Element["Pb"].cov_radius_1
+            >>> 1.44
         """
         return self.get_property_value("covalent_radius_1")
 
     @property
     def cov_radius_2(self) -> float:
-        """
-        The covalent radius of a double bond
+        """Currently Not Implemented
 
-        Returns:
-            float: A float representing the covalent radius of a double bond
+        Returns
+        -------
+        float
+            A float representing the covalent radius of a double bond
         """
+
+        raise NotImplementedError(
+            "Covalent Radius of Double Bonds Currently Not Implemented"
+        )
+
         return self.get_property_value("covalent_radius_2")
 
     @property
     def cov_radius_3(self) -> float:
-        """
-        The covalent radius of a triple bond
+        """Currently Not Implemented
 
-        Returns:
-            float: A float representing the covalent radius of a triple bond
+        Returns
+        -------
+        float
+            A float representing the covalent radius of a triple bond
         """
+
+        raise NotImplementedError(
+            "Covalent Radius of Triple Bonds Currently Not Implemented"
+        )
+
         return self.get_property_value("covalent_radius_3")
 
     @property
     def cov_radius_grimme(self) -> float:
-        """
-        This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
+        """This is the same definition of covalent radii; however, any metal element has been scaled down by 10% to allow for use
         with grimme's implementation of dftd-coordination number. (See DOI: 10.1063/1.3382344)
 
-        Returns:
-            float: A float representing the covalent radius of a single bond
+        Returns
+        -------
+        float
+            Represents the covalent radius of a single bond by the Grimme Definition
 
+        Examples
+        -------
+            >>> ml.Element["Pb"].cov_radius_grimme
+            >>> 1.3
         """
+
         return self.get_property_value("covalent_radius_grimme")
 
     @property
     def vdw_radius(self) -> float:
-        """
-        The Van der Waals radius
+        '''
+        Returns
+        -------
+        float
+            The Bondi Van der Waals radius in Angstroms (based on DOIs: 10.1021/jp8111556 , 10.1021/j100785a001
 
-        Returns:
-            float: A float representing the Van der Waals radius
+        Examples
+        -------
+            >>> ml.Element["Pb"].vdw_radius
+            >>> 2.02
+        '''
 
-        Example Usage:
-            >>> my_element = Element("C") # carbon
-            >>> print(my_element.vdw_radius) # 170 pm
-        """
         return self.get_property_value("vdw_radius")
 
     @property
     def en_pauling(self) -> float:
-        """
-        The element's Pauling electronegativity
+        ''' Currently Not Implemented
 
-        Returns:
-            float: A float representing the element's Pauling electronegativity
+        Returns
+        -------
+        float
+            Represents the element's Pauling electronegativity
 
-        Example Usage:
-            >>> my_element = Element("C") # carbon
-            >>> print(my_element.en_pauling) # 2.55
-        """
+        '''
+
+        raise NotImplementedError('Pauling Electronegativity Currently Not Implemented')
+
         return self.get_property_value("en_pauling")
 
     @property
     def color_cpk(self) -> str:
-        """
-        The color of the element based on its classification according to the CPK color scheme
+        '''
+        Returns
+        -------
+        str
+            Hex color code based on the CPK color scheme
 
-        Returns:
-            str: A string representing the color of the element
+        Examples
+        -------
+            >>> ml.Element["F"].color_cpk
+            >>> '#daa520'
+        '''
 
-        Example Usage:
-            >>> my_element = Element("C") # carbon
-            >>> print(my_element.color_cpk) # black
-        """
         return self.get_property_value("color_cpk")
 
     @property
     def group(self) -> int:
-        """element group identifier"""
+        '''
+        Returns
+        -------
+        int
+            Group number from the periodic table
+
+        Examples
+        -------
+            >>> ml.Element["He"].group
+            >>> 18
+        '''
+
         return self.get_property_value("group")
 
     def _serialize(self) -> int:
@@ -395,14 +435,19 @@ IMPLICIT_VALENCE = {
 
 
 class AtomType(IntEnum):
-    """
-    Enumerates through atom groups, hybridizations, and classifications.
+    '''The AtomType class is an Enumeration class for assigning atom
+    types
 
-    Example Usage:
+    Parameters
+    ----------
+    IntEnum : 
+        Accepts integer enumerations for different atom types
 
-        >>> ring = AtomType(2)  # Aromatic
-        >>> ring == AtomType.Aromatic # True
-    """
+    Examples
+    -------
+        >>> ml.AtomType(2) == ml.AtomType.Aromatic
+        >>> True
+    '''
 
     Unknown = 0
     Regular = 1
@@ -433,13 +478,19 @@ class AtomType(IntEnum):
 
 
 class AtomStereo(IntEnum):
-    """
-    Enumerates through stereogenic categories
+    '''The AtomStereo class is an Enumeration class used for stereogenic atom
+    assignment
 
-    Example Usage:
-        >>> r = AtomStereo(10) # R
-        >>> r == AtomStereo.R # True
-    """
+    Parameters
+    ----------
+    IntEnum : 
+        Accepts integer enumerations for different stereogenic assignments
+
+    Examples
+    -------
+        >>> ml.AtomStereo(10) == ml.AtomStereo.R
+        >>> True
+    '''
 
     Unknown = 0
     NotStereogenic = 1
@@ -452,15 +503,19 @@ class AtomStereo(IntEnum):
 
 
 class AtomGeom(IntEnum):
-    """
-    Enumerates through atom geometries
+    '''The AtomGeom class is an Enumeration class for assigning atom geometries
 
-    Example Usage:
-        >>> a = ml.Atom("Si", isotope=29, geom=ml.AtomGeom.R4_Tetrahedral)
-        >>> print(a.geom) # AtomGeom.R4_Tetrahedral
+    Parameters
+    ----------
+    IntEnum : 
+        Accepts integer enumerations for different atom geometries
 
-    """
-
+    Examples
+    -------
+        >>> ml.AtomGeom(21) == ml.AtomGeom.R2_Linear
+        >>> True
+    '''
+    
     Unknown = 0
     R1 = 10
 
@@ -1255,7 +1310,7 @@ class Promolecule:
             if a.element == Element.get(elt):
                 yield a
 
-    def yield_attachment_points(self) -> Generator[Atom,None,None]:
+    def yield_attachment_points(self) -> Generator[Atom, None, None]:
         """
         Yields atoms that contain attachment points
 
