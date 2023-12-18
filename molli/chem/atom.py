@@ -208,7 +208,7 @@ class Element(IntEnum):
 
     @property
     def vdw_radius(self) -> float:
-        '''
+        """
         Returns
         -------
         float
@@ -218,28 +218,28 @@ class Element(IntEnum):
         -------
             >>> ml.Element["Pb"].vdw_radius
             2.02
-        '''
+        """
 
         return self.get_property_value("vdw_radius")
 
     @property
     def en_pauling(self) -> float:
-        ''' Currently Not Implemented
+        """Currently Not Implemented
 
         Returns
         -------
         float
             Represents the element's Pauling electronegativity
 
-        '''
+        """
 
-        raise NotImplementedError('Pauling Electronegativity Currently Not Implemented')
+        raise NotImplementedError("Pauling Electronegativity Currently Not Implemented")
 
         return self.get_property_value("en_pauling")
 
     @property
     def color_cpk(self) -> str:
-        '''
+        """
         Returns
         -------
         str
@@ -249,13 +249,13 @@ class Element(IntEnum):
         -------
             >>> ml.Element["F"].color_cpk
             '#daa520'
-        '''
+        """
 
         return self.get_property_value("color_cpk")
 
     @property
     def group(self) -> int:
-        '''
+        """
         Returns
         -------
         int
@@ -265,7 +265,7 @@ class Element(IntEnum):
         -------
             >>> ml.Element["He"].group
             18
-        '''
+        """
 
         return self.get_property_value("group")
 
@@ -435,19 +435,19 @@ IMPLICIT_VALENCE = {
 
 
 class AtomType(IntEnum):
-    '''The AtomType class is an Enumeration class for assigning atom
+    """The AtomType class is an Enumeration class for assigning atom
     types
 
     Parameters
     ----------
-    IntEnum : 
+    IntEnum :
         Accepts integer enumerations for different atom types
 
     Examples
     -------
         >>> ml.AtomType(2) == ml.AtomType.Aromatic
         True
-    '''
+    """
 
     Unknown = 0
     Regular = 1
@@ -478,19 +478,19 @@ class AtomType(IntEnum):
 
 
 class AtomStereo(IntEnum):
-    '''The AtomStereo class is an Enumeration class used for stereogenic atom
+    """The AtomStereo class is an Enumeration class used for stereogenic atom
     assignment
 
     Parameters
     ----------
-    IntEnum : 
+    IntEnum :
         Accepts integer enumerations for different stereogenic assignments
 
     Examples
     -------
         >>> ml.AtomStereo(10) == ml.AtomStereo.R
         True
-    '''
+    """
 
     Unknown = 0
     NotStereogenic = 1
@@ -503,18 +503,18 @@ class AtomStereo(IntEnum):
 
 
 class AtomGeom(IntEnum):
-    '''The AtomGeom class is an Enumeration class for assigning atom geometries
+    """The AtomGeom class is an Enumeration class for assigning atom geometries
 
     Parameters
     ----------
-    IntEnum : 
+    IntEnum :
         Accepts integer enumerations for different atom geometries
 
     Examples
     -------
         >>> ml.AtomGeom(21) == ml.AtomGeom.R2_Linear
         True
-    '''
+    """
 
     Unknown = 0
     R1 = 10
@@ -546,7 +546,7 @@ class AtomGeom(IntEnum):
 
 @attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Atom:
-    '''The Atom class is the most fundamental class a molecule can have'''
+    """The Atom class is the most fundamental class a molecule can have"""
 
     element: Element = attrs.field(
         default=Element.Unknown,
@@ -607,31 +607,25 @@ class Atom:
         self._parent = other
 
     def evolve(self, **changes) -> Atom:
-        '''Evolves the atom into a new atom with the changes specified in the 
-        `changes` dictionary.
+        """Evolves the atom into a new atom with the changes specified
 
-        Parameters
-        ----------
-        changes : kwargs
-            Parameter changes to the Atom class
+            Returns
+            -------
+            Atom
+                A new Atom instance with the changes specified
 
-        Returns
+        Examples
         -------
-        Atom
-            A new Atom Instance with the changes specified
-
-    Examples
-    -------
-        >>> my_atom = ml.Atom(element = 'C', atype = ml.AtomType.Regular)
-        >>> new_atom = my_atom.evolve(atype = ml.AtomType.Aromatic)
-        >>> new_atom.atype
-        <AtomType.Aromatic: 2>
-        '''
+            >>> my_atom = ml.Atom(element = 'C', atype = ml.AtomType.Regular)
+            >>> new_atom = my_atom.evolve(atype = ml.AtomType.Aromatic)
+            >>> new_atom.atype
+            <AtomType.Aromatic: 2>
+        """
 
         return attrs.evolve(self, **changes)
 
     def as_dict(self, schema: List[str] = None) -> dict:
-        '''Returns the atom as a dictionary
+        """Returns the atom as a dictionary
 
         Parameters
         ----------
@@ -649,14 +643,14 @@ class Atom:
             {'element': C, 'isotope': None, ...}
             >>> ml.Atom(element='C').as_dict(['element','label','attrib'])
             {'element': C, 'label': None, 'attrib': {}}
-        '''
+        """
         if schema is None:
             return attrs.asdict(self)
         else:
             return {a: getattr(self, a, None) for a in schema}
 
     def as_tuple(self, schema: List[str] = None) -> tuple:
-        '''Returns the atom as a tuple
+        """Returns the atom as a tuple
 
         Parameters
         ----------
@@ -674,7 +668,7 @@ class Atom:
             {C, None, ...}
             >>> ml.Atom(element='C').as_tuple(['element','label','attrib'])
             {C, None, {}}
-        '''
+        """
 
         if schema is None:
             return attrs.astuple(self)
@@ -683,7 +677,7 @@ class Atom:
 
     @property
     def is_dummy(self) -> bool:
-        '''Checks if the atom type is Unknown or a Dummy
+        """Checks if the atom type is Unknown or a Dummy
 
         Returns
         -------
@@ -694,13 +688,13 @@ class Atom:
             >>> a = ml.Atom(element='Unknown', atype=ml.AtomType.Dummy)
             >>> a.is_dummy
             True
-        '''
+        """
 
         return self.atype == AtomType.Dummy
 
     @property
     def is_attachment_point(self) -> bool:
-        '''Checks if the atom is an attachment point
+        """Checks if the atom is an attachment point
 
         Returns
         -------
@@ -711,13 +705,13 @@ class Atom:
             >>> a = ml.Atom(element='Unknown', atype=ml.AtomType.AttachmentPoint)
             >>> a.is_attachment_point
             True
-        '''
+        """
 
         return self.atype == AtomType.AttachmentPoint
 
     @property
     def idx(self) -> int | None:
-        '''Returns the index of the atom if associated with a Molecule
+        """Returns the index of the atom if associated with a Molecule
 
         Returns
         -------
@@ -729,14 +723,14 @@ class Atom:
         The index is undefined with no parent molecule
             >>> a = ml.Atom(element='C')
             >>> a.idx
-            None  
+            None
 
         The index is defined with dendrobine as the parent molecule
             >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
             >>> dendrobine.add_atom(a, coord=[0,0,0])
             >>> a.idx
-            44 # 
-        '''
+            44 #
+        """
 
         if self.parent is None:
             return None
@@ -747,7 +741,7 @@ class Atom:
     #     return f"Atom([{self.isotope or ''}{self.element!r}], label={self.label!r}, atype={self.atype!r})"
 
     def __eq__(self, other: AtomLike) -> bool:
-        '''Checks if two atoms are equal
+        """Checks if two atoms are equal
 
         Parameters
         ----------
@@ -765,7 +759,7 @@ class Atom:
             >>> new_o = ml.Atom(element='O')
             >>> o == new_o
             False
-        '''
+        """
 
         return self is other
 
@@ -775,7 +769,7 @@ class Atom:
 
     @property
     def implicit_valence(self) -> int:
-        '''
+        """
         Returns
         -------
         int
@@ -786,12 +780,12 @@ class Atom:
             >>> ml.Atom(element='C').implicit_valence
             4
 
-        '''
+        """
         return IMPLICIT_VALENCE[self.element.group]
 
     @property
     def Z(self) -> int:
-        '''
+        """
         Returns
         -------
         int
@@ -801,7 +795,7 @@ class Atom:
         -------
             >>> ml.Atom(element='C').Z
             6
-        '''
+        """
 
         return self.element.z
 
@@ -821,7 +815,7 @@ class Atom:
 
     @property
     def vdw_radius(self) -> float:
-        '''
+        """
         Returns
         -------
         float
@@ -831,7 +825,7 @@ class Atom:
         -------
             >>> ml.Atom(element='Pb').vdw_radius
             2.02
-        '''
+        """
         return self.element.vdw_radius
 
     @property
@@ -898,7 +892,7 @@ class Atom:
 
     @property
     def color_cpk(self) -> str:
-        '''
+        """
         Returns
         -------
         str
@@ -908,7 +902,7 @@ class Atom:
         -------
             >>> ml.Atom(element='F').color_cpk
             '#daa520'
-        '''
+        """
         return self.element.color_cpk
 
     def set_mol2_type(self, m2t: str):
@@ -988,7 +982,7 @@ class Atom:
                 raise NotImplementedError(f"Cannot interpret mol2 type {m2t!r}")
 
     def get_mol2_type(self) -> str:
-        '''Used to return the Sybyl Mol2 Type of an atom
+        """Used to return the Sybyl Mol2 Type of an atom
 
         Returns
         -------
@@ -999,7 +993,7 @@ class Atom:
         -------
             >>> unknown_molli_atom.get_mol2_type()
             >>> 'C.1' # Indicates it was ml.AtomType.MainGroup_sp
-        '''
+        """
         match self.element, self.atype, self.geom:
             case _, AtomType.Regular, _:
                 return f"{self.element.symbol}"
@@ -1080,11 +1074,11 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 
 class Promolecule:
-    '''This is a parent class that only employs methods that work on a *list of 
-    disconnected atoms with no structure or geometry assigned to them*. Any class 
+    """This is a parent class that only employs methods that work on a *list of
+    disconnected atoms with no structure or geometry assigned to them*. Any class
     that adds functionality on top of atom list should inherit this class
     for API compatibility reasons.
-    '''
+    """
 
     __slots__ = (
         "_name",
@@ -1113,12 +1107,6 @@ class Promolecule:
         attrib: dict = None,
         **kwds,  # mostly just for subclassing compatibility
     ):
-        """
-        Initialization of promolecule pre-allocates storage space.
-
-        n_atoms is ignored in cas
-        """
-
         self.name = name
         self.charge = charge or 0
         self.mult = mult or 1
@@ -1164,7 +1152,7 @@ class Promolecule:
 
     @property
     def attachment_points(self) -> List[Atom]:
-        '''
+        """
         Returns
         -------
         List[Atom]
@@ -1180,13 +1168,13 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.attachment_points
             [] #There are no attachment points in the dendrobine file
-        '''
+        """
 
         return [a for a in self.atoms if a.atype == AtomType.AttachmentPoint]
 
     @property
     def n_attachment_points(self) -> int:
-        '''
+        """
         Returns
         -------
         int
@@ -1202,13 +1190,13 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.n_attachment_points
             0 #There are no attachment points in the dendrobine file
-        '''
+        """
 
         return len(self.attachment_points)
 
     @property
     def name(self) -> str:
-        '''
+        """
         Returns
         -------
         str
@@ -1220,7 +1208,7 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.name
             dendrobine
-        '''
+        """
 
         return self._name
 
@@ -1238,54 +1226,54 @@ class Promolecule:
 
     @property
     def atoms(self) -> List[Atom]:
-        '''
+        """
         Returns
         -------
         List[Atom]
-            Returns an ordered list of the atoms in the promolecule
+            Returns an ordered list of the atoms in the Promolecule instance
 
         Examples
         -------
         The Molecule class inherits atoms
             >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
             >>> dendrobine.atoms
-            [Atom(element=N, ...),Atom(element=C, ...), ...] 
+            [Atom(element=N, ...),Atom(element=C, ...), ...]
         If desired, one can work directly with Promolecule class instead
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.atoms
-            [Atom(element=N, ...),Atom(element=C, ...), ...] 
-        '''
+            [Atom(element=N, ...),Atom(element=C, ...), ...]
+        """
 
         return self._atoms
 
     @property
     def elements(self) -> List[Element]:
-        '''
+        """
         Returns
         -------
         List[Element]
-            Returns an ordered list of the elements in the promolecule
+            Returns an ordered list of the elements in the Promolecule instance
         Examples
         -------
         The Molecule class inherits elements
             >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
             >>> dendrobine.elements
-            [N, C, C, C, C, ...] 
+            [N, C, C, C, C, ...]
         If desired, one can work directly with Promolecule class instead
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.elements
-            [N, C, C, C, C, ...] 
-        '''
+            [N, C, C, C, C, ...]
+        """
 
         return [a.element for a in self.atoms]
 
     @property
     def n_atoms(self) -> int:
-        '''
+        """
         Returns
         -------
         int
-            Returns the total number of atoms in the promolecule
+            Returns the total number of atoms in the Promolecule instance
 
         Examples
         -------
@@ -1297,23 +1285,23 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.n_atoms
             44
-        '''
+        """
 
         return len(self.atoms)
 
     def get_atom(self, _a: AtomLike) -> Atom:
-        '''Fetches an atom from the promolecule
+        """Fetches an atom from the Promolecule instance
 
         Parameters
         ----------
         _a : AtomLike
-            An atom, index, label, or Element. This will only return the first
+            An Atom, index, label, or Element. This will only return the first
             instance of the label or Element found.
 
         Returns
         -------
         Atom
-            Returns the atom instance
+            Returns the Atom instance
 
         Examples
         -------
@@ -1325,7 +1313,7 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.get_atom(10)
             Atom(element=O, isotope=None, label='O', formal_charge=0, formal_spin=0)
-        '''
+        """
 
         match _a:
             case Atom():
@@ -1344,12 +1332,12 @@ class Promolecule:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
     def get_atoms(self, *_atoms: AtomLike) -> tuple[Atom]:
-        '''Fetches a tuple of Atoms from the Promolecule
+        """Fetches a tuple of Atoms from the Promolecule instance
 
         Returns
         -------
         tuple[Atom]
-            Returns a Tuple of Atoms 
+            Returns a Tuple of Atoms
 
         Examples
         -------
@@ -1367,12 +1355,12 @@ class Promolecule:
         Here is an example of getting atoms by element
             >>> promol.get_atoms(*promol.yield_atoms_by_element("H"))
             (Atom(element=H,...),Atom(element=H,...),Atom(element=H,...), ...)
-        '''
+        """
 
         return tuple(map(self.get_atom, _atoms))
 
     def get_atom_index(self, _a: AtomLike) -> int:
-        '''Fetches the atom index from the promolecule
+        """Fetches the atom index from the promolecule
 
         Parameters
         ----------
@@ -1395,7 +1383,7 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.get_atom_index("N")
             0
-        '''
+        """
 
         match _a:
             case Atom():
@@ -1417,7 +1405,7 @@ class Promolecule:
                 raise ValueError(f"Unable to fetch an atom with {type(_a)}: {_a}")
 
     def get_atom_indices(self, *_atoms: AtomLike) -> tuple[int]:
-        '''Fetches a tuple of indices from the Promolecule
+        """Fetches a tuple of indices from the Promolecule
 
         Returns
         -------
@@ -1434,12 +1422,12 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.get_atom_indices(*promol.yield_atoms_by_element("H"))
             (16, 17, 18, 19, 23, 24, 25, ...)
-        '''
+        """
 
         return tuple(map(self.get_atom_index, _atoms))
 
     def del_atom(self, _a: AtomLike) -> None:
-        '''Deletes an atom from the promolecule
+        """Deletes an atom from the promolecule
 
         Parameters
         ----------
@@ -1460,12 +1448,12 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.del_atom(0)
             Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
-        '''
+        """
 
         self._atoms.remove(_a)
 
     def append_atom(self, a: Atom) -> None:
-        '''Appends an atom to the promolecule
+        """Appends an atom to the Promolecule instance
 
         Parameters
         ----------
@@ -1484,18 +1472,18 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.append_atom(new_atom)
             Atom(element=H, isotope=None, label=None, formal_charge=0, formal_spin=0)
-        '''
+        """
 
         self._atoms.append(a)
         a.parent = self
 
     def index_atom(self, _a: Atom) -> int:
-        '''Fetches the atom index from the promolecule
+        """Fetches the atom index from the Promolecule Instance
 
         Parameters
         ----------
         _a : Atom
-            Must be an atom in the promolecule list rather than AtomLike
+            Must be an atom in the Promolecule instance list rather than AtomLike
 
         Returns
         -------
@@ -1513,7 +1501,7 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.index_atom(atom)
             0
-        '''
+        """
         return self._atoms.index(_a)
 
     # def yield_atom_indices(
@@ -1527,10 +1515,8 @@ class Promolecule:
     # ) -> Generator[Atom, None, None]:
     #     return map(self.get_atom, atoms)
 
-    def yield_atoms_by_element(
-        self, elt: ElementLike
-    ) -> Generator[Atom, None, None]:
-        '''Yields atoms based on their element
+    def yield_atoms_by_element(self, elt: ElementLike) -> Generator[Atom, None, None]:
+        """Yields atoms based on their element
 
         Parameters
         ----------
@@ -1552,14 +1538,14 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> generator = promol.yield_atoms_by_element("H")
             <generator object Promolecule.yield_atoms_by_element at ...>
-        '''
+        """
 
         for a in self.atoms:
             if a.element == Element.get(elt):
                 yield a
 
     def yield_attachment_points(self) -> Generator[Atom, None, None]:
-        '''Yields atoms that are attachment points
+        """Yields atoms that are attachment points
 
         Yields
         ------
@@ -1576,14 +1562,14 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> generator = promol.yield_attachment_points()
             <generator object Promolecule.yield_attachment_points at ...>
-        '''
+        """
 
         for a in self.atoms:
             if a.atype == AtomType.AttachmentPoint:
                 yield a
 
     def get_attachment_points(self) -> tuple[Atom]:
-        '''Gets tuple of atoms that are attachment points
+        """Gets tuple of atoms that are attachment points
 
         Returns
         -------
@@ -1600,12 +1586,12 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> generator = promol.get_attachment_points()
             () #Dendrobine does not have attachment points
-        '''
+        """
 
         return tuple(self.yield_attachment_points())
 
     def yield_atoms_by_label(self, lbl: str) -> Generator[Atom, None, None]:
-        '''Yields atoms based on their labels
+        """Yields atoms based on their labels
 
         Parameters
         ----------
@@ -1627,8 +1613,8 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> generator = promol.yield_atoms_by_label("H")
             <generator object Promolecule.yield_atoms_by_label at ...>
-        '''
-        
+        """
+
         for a in self.atoms:
             if a.label == lbl:
                 yield a
@@ -1642,7 +1628,7 @@ class Promolecule:
 
     @property
     def formula(self) -> str:
-        '''
+        """
         Returns
         -------
         str
@@ -1658,7 +1644,7 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.formula
             C16 H25 N1 O2
-        '''
+        """
 
         if self.n_atoms > 0:
             ctr = Counter(x.element.symbol for x in self.atoms)
@@ -1677,7 +1663,7 @@ class Promolecule:
 
     @property
     def molecular_weight(self) -> float:
-        '''Molecular weight of the molecule
+        """Molecular weight of the molecule
 
         **Warning**: currently there is no support for isotopic masses.
 
@@ -1696,12 +1682,12 @@ class Promolecule:
             >>> promol = ml.Promolecule(dendrobine)
             >>> promol.molecular_weight
             263.381
-        '''
+        """
 
         return sum(a.atomic_weight for a in self.atoms)
 
     def label_atoms(self, template: str = "{e}{n0}"):
-        '''Allows for unique labeling scheme of atoms in the promolecule
+        """Allows for unique labeling scheme of atoms in the Promolecule instance
 
         Parameters
         ----------
@@ -1722,7 +1708,7 @@ class Promolecule:
             >>> promol.label_atoms('{e}{n1}')
             >>> promol.atoms
             [Atom(...,label='N1'), Atom(...,label='C2'), Atom(...,label='C3')]
-        '''
+        """
         """
         **Format code**:
         >>> `n0`: atom number (begin with 0)
