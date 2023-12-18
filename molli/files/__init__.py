@@ -15,6 +15,8 @@ dummy_mol2 = ROOT / "dummy.mol2"
 fxyl_mol2 = ROOT / "fxyl.mol2"
 bpa_backbone_mol2 = ROOT / "bpa_core.mol2"
 box_backbone_mol2 = ROOT / "box_alignment_core.mol2"
+benzene_mol2 = ROOT / "benzene.mol2"
+dmf_mol2 = ROOT / "dmf.mol2"
 
 
 dendrobine_xyz = ROOT / "dendrobine.xyz"
