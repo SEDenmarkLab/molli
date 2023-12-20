@@ -3,20 +3,7 @@ from numpy.typing import ArrayLike
 
 
 class Substituent(Structure):
-    """
-    Substituent is a structure with only one(!) predefined attachment point
-
-    Args:
-        other (Structure, optional): Another Structure object to initialize from.
-        n_atoms (int, optional): The number of atoms in the substituent.
-        name (str, optional): The name of the substituent.
-        coords (ArrayLike, optional): The coordinates of the substituent's atoms.
-        copy_atoms (bool, optional): Flag indicating whether to copy the atoms from `other`.
-        charge (int, optional): The charge of the substituent.
-        mult (int, optional): The multiplicity of the substituent.
-        attachment_point (AtomLike): The predefined attachment point of the substituent.
-        kwds: Additional keyword arguments to pass to the parent class.
-    """
+    """Substituent is a structure with only one(!) predefined attachment point"""
 
     def __init__(
         self,
@@ -32,6 +19,27 @@ class Substituent(Structure):
         attachment_point=AtomLike,
         **kwds,
     ):
+        """
+        Parameters
+        ----------
+        other : Structure, optional
+            Another Structure object to initialize from, by default None
+        n_atoms : int, optional
+            The number of atoms in the substituent, by default 0
+        name : str, optional
+            The name of the substituent, by default None
+        coords : ArrayLike, optional
+            The coordinates of the substituent's atoms, by default None
+        copy_atoms : bool, optional
+            Flag indicating whether to copy the atoms from `other`,
+            by default False
+        charge : int, optional
+            The charge of the substituent, by default None
+        mult : int, optional
+            The multiplicity of the substituent, by default None
+        attachment_point : _type_, optional
+            The predefined attachment point of the substituent, by default AtomLike
+        """
         super().__init__(
             other,
             n_atoms=n_atoms,
