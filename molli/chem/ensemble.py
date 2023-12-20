@@ -328,7 +328,22 @@ class ConformerEnsemble(Connectivity):
             )
 
         return res
+    
+    def dump_mol2(self, stream: StringIO = None):
+        if stream is None:
+            stream = StringIO()
+            
+        for conf in self:
+            conf.dump_mol2(stream)
 
+    def dumps_mol2(self) -> str:
+        """
+        This returns a mol2 file as a string
+        """
+        stream = StringIO()
+        self.dump_mol2(stream)
+        return stream.getvalue()
+    
     @property
     def n_conformers(self) -> int:
         '''

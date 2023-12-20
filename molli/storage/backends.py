@@ -239,48 +239,70 @@ class DirCollectionBackend(CollectionBackendBase):
 
 
 class ZipCollectionBackend(CollectionBackendBase):
-    pass
-    # def __init__(
-    #     self,
-    #     path,
-    #     *,
-    #     ext: str = ".dat",
-    #     mode: Literal["r", "w", "a", "x"] = "r",
-    #     bufsize=0,
-    # ) -> None:
-    #     self.ext = ext
-    #     super().__init__(path, mode=mode, bufsize=bufsize)
-    #     self._zipfile = ZipFile(self._path, mode="a")
+    # pass
+    def __init__(
+        self,
+        path,
+        *,
+        overwrite: bool = False,
+        readonly: bool = True,
+        ext: str = ".mol2",
+        mode: Literal["r", "w", "a", "x"] = "r",
+        bufsize=0,
+    ) -> None:
+        self.ext = ext
+        super().__init__(path, mode=mode, bufsize=bufsize, readonly=readonly)
 
-    # def update_keys(self):
-    #     if is_zipfile(str(self._path)):
-    #         with ZipFile(self._path) as f:
-    #             allnames: list[str] = filter(
-    #                 lambda x: x.endswith(self.ext), f.namelist()
-    #             )
+        with self._lock.write_lock():
+            if not self._path.is_file():
+                with ZipFile(
+                self._path,
+                mode='x',          
+                ):
+                    pass
+            elif overwrite:
+                with ZipFile(
+                    self._path,
+                    mode='w',
+                ):
+                    pass
 
-    #         keys = map(lambda x: x.removesuffix(self.ext).encode(), allnames)
-    #         self._keys = set(keys)
+    def lock_acquire(self):
+        self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
+        self._plock.acquire()
 
-    # def lock_acquire(self):
-    #     self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
-    #     self._plock.acquire()
+    def lock_release(self):
+        self._zipfile.close()
+        self._plock.release()
 
-    # def lock_release(self):
-    #     self._zipfile.close()
-    #     self._plock.release()
+    def begin_read(self):
+        if is_zipfile(str(self._path)):
+            self._zipfile = ZipFile(self._path, mode='r')
+    
+    def end_read(self):
+        self._zipfile.close()
+    
+    def begin_write(self):
+        self._zipfile = ZipFile(self._path, mode='a')
 
-    # def get_path(self, key: bytes):
-    #     s_key = key.decode()
-    #     return f"{s_key}{self.ext}"
+    def end_write(self):
+        self._zipfile.close()
+        
+    def get_path(self, key: str):
+        return f"{key}"
 
-    # def write(self, key: bytes, value: bytes):
-    #     with self._zipfile.open(self.get_path(key), "w") as f:
-    #         f.write(value)
+    def update_keys(self):
+        self._keys = {name for name in self._zipfile.namelist() if name.endswith(self.ext)}
 
-    # def read(self, key: bytes) -> bytes:
-    #     with self._zipfile.open(self.get_path(key), "r") as f:
-    #         return f.read()
+    def _write(self, key: str, value: bytes):
+        self._zipfile.writestr(f'{self.get_path(key)}{self.ext}', value)
+
+    def _read(self, key: str) -> bytes:
+        with self._zipfile.open(key) as f:
+            return f.read()
+
+    def _truncate(self, key: bytes) -> bytes:
+        self._zipfile.remove(key)
 
 
 @deprecated(
