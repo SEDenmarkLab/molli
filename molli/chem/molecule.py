@@ -23,7 +23,10 @@ from . import (
 
 
 class Molecule(Structure):
-    """Fundamental class of the MOLLI Package."""
+    """This is the fundamental class of the Molli package. This class
+    inherits different methods from Promolecule, Connectivity,
+    CartesianGeometry, and Structure.
+    """
 
     def __init__(
         self,
@@ -64,29 +67,24 @@ class Molecule(Structure):
 
     @property
     def atomic_charges(self) -> np.ndarray:
-        """
-        The atomic charges of the molecule.
+        """The atomic charges of the Molecule in shape (n_atoms,)
 
-        Returns:
-            np.ndarray: The atomic charges of the molecule.
+        Returns
+        -------
+        np.ndarray
+            Returns the atomic charges of the Molecule
 
-        Example Usage:
-            >>> mol = ml.Molecule(H20)
-            >>> print(mol.atomic_charges) # [1,1,-2]
+        Examples
+        -------
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.atomic_charges
+            array([-0.2981,  0.0024, ...
         """
+
         return self._atomic_charges
 
     @atomic_charges.setter
     def atomic_charges(self, other: ArrayLike):
-        """
-        Sets the atomic charges of the molecule.
-
-        Args:
-            other (ArrayLike): The atomic charges of the molecule.
-
-        Raises:
-            ValueError: Inappropriate shape of atomic charge array
-        """
         if other is Ellipsis:
             self._atomic_charges = np.zeros(self.n_atoms)
         else:
@@ -99,13 +97,25 @@ class Molecule(Structure):
                     f" {(self.n_atoms,)}"
                 )
 
-    def dump_mol2(self, stream: StringIO = None):
-        """
-        Writes the molecule to a mol2 file.
+    def dump_mol2(self, stream: StringIO = None) -> None:
+        """Dumps the mol2 block into the output stream
 
-        Args:
-            stream (StringIO, optional): The stream to write to. Defaults to None.
+        Parameters
+        ----------
+        stream : StringIO, optional
+            Output stream, by default None
+
+        Examples
+        -------
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> with open('dendrobine.mol2', 'w') as f:
+            >>>     dendrobine.dump_mol2(f)
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            dendrobine
+            ...
         """
+
         if stream is None:
             stream = StringIO()
 
@@ -132,21 +142,72 @@ class Molecule(Structure):
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {btype:>10}\n")
 
     def dumps_mol2(self) -> str:
-        """
-        Returns a mol2 file as a string.
+        """Dumps the mol2 block as a string
 
-        Returns:
-            str: The mol2 file as a string.
+        Returns
+        -------
+        str
+            The mol2 block
+
+        Examples
+        -------
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.dumps_mol2()
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            dendrobine
+            ...
         """
+
         stream = StringIO()
         self.dump_mol2(stream)
         return stream.getvalue()
 
-    def add_atom(self, a: Atom, coord: ArrayLike, charge: float = None):
+    def add_atom(self, a: Atom, coord: ArrayLike, charge: float = None) -> None:
+        """Adds atom to Molecule
+
+        Parameters
+        ----------
+        a : Atom
+            Atom to add
+        coord : ArrayLike
+            Coordinates to add
+        charge : float, optional
+            Charge of atom, by default None
+
+        Examples
+        -------
+        The Molecule class inherits add_atom()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.n_atoms
+            44
+            >>> new_atom = ml.Atom("C")
+            >>> dendrobine.add_atom(new_atom, [0,0,0])
+            >>> dendrobine.n_atoms
+            45
+        """
         super().add_atom(a, coord)
         self._atomic_charges = np.append(self._atomic_charges, [charge], axis=0)
 
-    def del_atom(self, _a: AtomLike):
+    def del_atom(self, _a: AtomLike) -> None:
+        """Deletes an atom from the Molecule
+
+        Parameters
+        ----------
+        _a : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+
+        Examples
+        -------
+        The Molecule class inherits del_atom()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.get_atom(0)
+            Atom(element=N, isotope=None, label='N', formal_charge=0, formal_spin=0)
+            >>> dendrobine.del_atom(0)
+            >>> dendrobine.get_atom(0)
+            Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
+        """
         _i = self.get_atom_index(_a)
         super().del_atom(_a)
         self._atomic_charges = np.delete(self._atomic_charges, _i, axis=0)
@@ -208,3 +269,6 @@ class Molecule(Structure):
 
 
 StructureLike = Molecule | Structure | Substructure
+"""
+StructureLike can be a Molecule, Structure, or Substructure
+"""
