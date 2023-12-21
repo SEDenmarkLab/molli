@@ -130,6 +130,6 @@ else:
                 yield batch
 
 
-def len_batched(iterable, n):
-    L = len(iterable)
-    return L // n + 1 if L % n else 0
+def len_batched(iterable: Iterable | int, n: int) -> int:
+    L = iterable if isinstance(iterable, int) else len(iterable)
+    return L // n + (1 if L % n else 0)
