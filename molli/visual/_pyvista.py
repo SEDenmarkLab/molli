@@ -71,6 +71,7 @@ def draw_wireframe(
     plt=None,
     line_width: int = 2,
     opacity: float = 1.0,
+    color_darkness: int = 0.0,
 ):
     _tobeshown = False
     if plt is None:
@@ -86,7 +87,7 @@ def draw_wireframe(
                 lines.extend((2, i1 + s.n_atoms * i, i2 + s.n_atoms * i))
 
         colors = [ImageColor.getrgb(a.color_cpk) for a in s.atoms] * s.n_conformers
-        colors = np.array(colors) / 255
+        colors = np.clip((np.array(colors) - color_darkness) / 255, 0, 1)
 
         data = pv.PolyData(
             s.coords.reshape((s.n_atoms * s.n_conformers, 3)),
@@ -132,16 +133,29 @@ def draw_wireframe(
 def plot_descriptor(
     grid: np.ndarray,
     values: np.ndarray,
+    plt: pv.Plotter,
+    name: str = "descriptor",
     style="spheres",
-    isovalue=0.2,
+    radius: float = 0.5,
+    factor: float = 1.0,
+    opacity: float = 1.0,
+    box: bool = True,
     cmap=None,
 ):
     match style:
         case "spheres":
-            pass
+            sph = pv.Sphere(radius)
+            pd = pv.PolyData(grid)
+            pd.point_data[name] = values
+            gly = pd.glyph(geom=sph, scale=name, factor=factor)
+            plt.add_mesh(gly, scalars=name, opacity=opacity)
 
-        case "isocontour":
-            pass
+            if box:
+                x1, y1, z1 = np.min(grid, axis=0)
+                x2, y2, z2 = np.max(grid, axis=0)
+
+                bbox = pv.Cube(bounds=(x1, x2, y1, y2, z1, z2))
+                plt.add_mesh(bbox, style="wireframe", line_width=1)
 
         case _:
             raise NotImplementedError
