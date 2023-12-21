@@ -57,16 +57,15 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "--scratch",
     action="store",
-    default="local",
-    type=Path,
+    default=None,
 )
 
 
 def run_local():
     parsed = arg_parser.parse_args()
 
-    with open(parsed.job, "rb") as f:
-        job = ml.pipeline.JobInput.load(f)
+    job = ml.pipeline.JobInput.load(parsed.job)
+    job_hash = job.hash
 
     # 1. Create a scratch directory if that does not exist yet for some reason.
     scratch_dir = Path(parsed.scratch)
@@ -144,21 +143,21 @@ def run_local():
 
         os.chdir(_cwd_original)
 
-    exitcode = None
-    
-    out = ml.pipeline.JobOutput(
-        exitcode=exitcode or proc.returncode,
-        stdouts=stdouts,
-        stderrs=stderrs,
-        files=retfiles,
-    )
-    with open(parsed.output, "wb") as f:
-        out.dump(f)
+        exitcode = None
 
-    if fail is not None or set(retfiles) != set(job.return_files):
-        exit(1)
-    else:
-        exit(proc.returncode)
+        out = ml.pipeline.JobOutput(
+            input_hash=job_hash,
+            exitcode=exitcode or proc.returncode,
+            stdouts=stdouts,
+            stderrs=stderrs,
+            files=retfiles,
+        )
+        out.dump(parsed.output)
+
+        if fail is not None or set(retfiles) != set(job.return_files):
+            exit(1)
+        else:
+            exit(proc.returncode)
 
 
 def run_sched():
