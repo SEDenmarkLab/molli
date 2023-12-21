@@ -329,7 +329,7 @@ class ConformerEnsemble(Connectivity):
         return res
 
     def dump_mol2(self, stream: StringIO = None) -> None:
-        '''Dumps the multi-mol2 block into the output stream
+        """Dumps the multi-mol2 block into the output stream
 
         Parameters
         ----------
@@ -345,7 +345,7 @@ class ConformerEnsemble(Connectivity):
             @<TRIPOS>MOLECULE
             pentane
             ...
-        '''
+        """
         if stream is None:
             stream = StringIO()
 
@@ -353,7 +353,7 @@ class ConformerEnsemble(Connectivity):
             conf.dump_mol2(stream)
 
     def dumps_mol2(self) -> str:
-        '''Dumps the multi-mol2 block as a string 
+        """Dumps the multi-mol2 block as a string
 
         Returns
         -------
@@ -368,7 +368,7 @@ class ConformerEnsemble(Connectivity):
             @<TRIPOS>MOLECULE
             pentane
             ...
-        '''
+        """
 
         stream = StringIO()
         self.dump_mol2(stream)
