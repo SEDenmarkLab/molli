@@ -24,6 +24,43 @@ import gc
 
 
 class MoleculeLibrary(Collection[Molecule]):
+    """This class is an overarching storage system for molecules
+    for that allows for both serialization and deserialization.
+    Reading and writing takes place using keys as placeholders for
+    retrieval
+
+    Examples
+    -------
+    A MoleculeLibrary can be serialized from existing Molecules
+        >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+        >>> mlib = ml.MoleculeLibrary('test.mlib', readonly=False)
+        >>> with mlib.writing():
+        >>>     lib[dendrobine.name] = dendrobine
+        >>> mlib
+        MoleculeLibrary(backend=UkvCollectionBackend('test.mlib'), n_items=1)
+    A MoleculeLibrary can be deserialized and iterated over
+        >>> mlib = ml.MoleculeLibrary('test.mlib')
+        >>> with mlib.reading():
+        >>>     for key in mlib:
+        >>>         mol = mlib[key]
+        >>> mol
+        Molecule(name='dendrobine', formula='C16 H25 N1 O2')
+        >>> mlib
+        MoleculeLibrary(backend=UkvCollectionBackend('test.mlib'), n_items=1)
+    These actions can be done at the same time to transfer structures
+        >>> mlib1 = ml.MoleculeLibrary('test1.mlib')
+        >>> mlib2 = ml.MoleculeLibrary('test2.mlib', readonly=False)
+        >>> with mlib1.reading(), mlib2.writing():
+        >>>     for key in mlib1:
+        >>>         mol = mlib1[key]
+        >>>         mlib2[mol.name] = mol
+
+    Notes
+    -----
+    The default behavior with writing will be appending structures, which
+    can be changed with the use of `overwrite`
+    """
+
     def __init__(
         self,
         path: Path | str,
@@ -81,6 +118,43 @@ class MoleculeLibrary(Collection[Molecule]):
 
 
 class ConformerLibrary(Collection[ConformerEnsemble]):
+    """This class is an overarching storage system for ConformerEnsembles
+    for that allows for both serialization and deserialization.
+    Reading and writing takes place using keys as placeholders for
+    retrieval
+
+    Examples
+    -------
+    A ConformerLibrary can be serialized from existing Molecules
+        >>> ens = ml.Molecule.load_mol2(ml.files.ens_mol2)
+        >>> clib = ml.ConformerLibrary('test.clib', readonly=False)
+        >>> with clib.writing():
+        >>>     lib[ens.name] = ens
+        >>> clib
+        ConformerLibrary(backend=UkvCollectionBackend('test.clib'), n_items=1)
+    A ConformerLibrary can be deserialized and iterated over
+        >>> clib = ml.ConformerLibrary('test.clib')
+        >>> with clib.reading():
+        >>>     for key in clib:
+        >>>         ens = clib[key]
+        >>> ens
+        ConformerEnsemble(name='pentane', formula='C5 H12')
+        >>> clib
+        ConformerLibrary(backend=UkvCollectionBackend('test.clib'), n_items=1)
+    These actions can be done at the same time to transfer structures
+        >>> clib1 = ml.ConformerLibrary('test1.clib')
+        >>> clib2 = ml.ConformerLibrary('test2.clib', readonly=False)
+        >>> with clib1.reading(), clib2.writing():
+        >>>     for key in clib1:
+        >>>         ens = clib1[key]
+        >>>         clib2[ens.name] = ens
+
+    Notes
+    -----
+    The default behavior with writing will be appending structures, which
+    can be changed with the use of `overwrite`
+    """
+
     def __init__(
         self,
         path: Path | str,
