@@ -165,7 +165,7 @@ def aso(
     With large grids can be relatively memory intensive, so breaking up the grid into smaller pieces is recommended
     (see "chunky" calculation strategy)
     """
-    alldist = molli_xt.cdist32_eu2(ens._coords, grid)
+    alldist = molli_xt.cdist32f_eu2(ens._coords, grid)
     vdwr2s = np.array([a.vdw_radius for a in ens.atoms]) ** 2
     diff = alldist <= vdwr2s[:, None]
 
