@@ -27,10 +27,10 @@ from pathlib import Path
 
 
 class ConformerEnsemble(Connectivity):
-    '''This is a fundamental class of Molli that employs methods that work on
+    """This is a fundamental class of Molli that employs methods that work on
     a collection of conformers. This is built to treat all conformers as having
     a single Connectivity and various coordinates associated with the
-    atoms of each Conformer. The ensemble supports iteration and collective 
+    atoms of each Conformer. The ensemble supports iteration and collective
     transformations.
 
     Examples
@@ -42,7 +42,8 @@ class ConformerEnsemble(Connectivity):
         >>> mol_list = ml.Molecule.load_all_mol2(ml.files.pentane_confs_mol2)
         >>> ml.ConformerEnsemble(mol_list)
         ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
-    '''
+    """
+
     # old one
     # def __init__(
     #     self,
@@ -104,8 +105,6 @@ class ConformerEnsemble(Connectivity):
         copy_atoms: bool = False,
         **kwds,
     ):
-        
-
         if isinstance(other, list) and isinstance(other[0], Structure):
             super().__init__(
                 other[0],
@@ -156,7 +155,7 @@ class ConformerEnsemble(Connectivity):
 
     @property
     def coords(self) -> np.ndarray:
-        '''Set of atomic positions in shape (n_confs, n_atoms, 3)
+        """Set of atomic positions in shape (n_confs, n_atoms, 3)
 
         Returns
         -------
@@ -168,7 +167,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
             >>> ens.coords
             array([[[-2.8045e+00,  3.9964e+00, -1.4128e+00],...
-        '''
+        """
         return self._coords
 
     @coords.setter
@@ -177,7 +176,7 @@ class ConformerEnsemble(Connectivity):
 
     @property
     def weights(self) -> np.ndarray:
-        '''The weights of conformers in the ensemble in shape (n_confs,)
+        """The weights of conformers in the ensemble in shape (n_confs,)
 
         Returns
         -------
@@ -189,7 +188,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
             >>> ens.weights
             array([1., 1., 1., 1., 1., 1., 1.])
-        '''
+        """
 
         return self._weights
 
@@ -199,7 +198,7 @@ class ConformerEnsemble(Connectivity):
 
     @property
     def atomic_charges(self) -> np.ndarray:
-        '''The atomic charges of the ensemble in shape (n_confs,n_atoms)
+        """The atomic charges of the ensemble in shape (n_confs,n_atoms)
 
         Returns
         -------
@@ -211,7 +210,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
             >>> ens.atomic_charges
             array([[-0.0653, -0.0559, ...], [-0.0653, -0.0559, ...], ...
-        '''
+        """
 
         return self._atomic_charges
 
@@ -248,7 +247,7 @@ class ConformerEnsemble(Connectivity):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> ConformerEnsemble:
-        '''Loads mol2 from a file path, string, or stream
+        """Loads mol2 from a file path, string, or stream
 
         Parameters
         ----------
@@ -270,7 +269,7 @@ class ConformerEnsemble(Connectivity):
         -------
             >>> ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
             ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
-        '''
+        """
 
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -294,7 +293,7 @@ class ConformerEnsemble(Connectivity):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> ConformerEnsemble:
-        '''Loads mol2 from a string
+        """Loads mol2 from a string
 
         Parameters
         ----------
@@ -317,7 +316,7 @@ class ConformerEnsemble(Connectivity):
             >>> with open(ml.files.pentane_confs_mol2, 'r') as f:
             >>>     ml.ConformerEnsemble.loads_mol2(f.read())
             ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
-        '''
+        """
 
         stream = StringIO(input)
         with stream:
@@ -328,25 +327,56 @@ class ConformerEnsemble(Connectivity):
             )
 
         return res
-    
-    def dump_mol2(self, stream: StringIO = None):
+
+    def dump_mol2(self, stream: StringIO = None) -> None:
+        '''Dumps the multi-mol2 block into the output stream
+
+        Parameters
+        ----------
+        stream : StringIO, optional
+            Output stream, by default None
+
+        Examples
+        -------
+            >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+            >>> with open('test.mol2', 'w') as f:
+            >>>     ens.dump_mol2(f)
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            pentane
+            ...
+        '''
         if stream is None:
             stream = StringIO()
-            
+
         for conf in self:
             conf.dump_mol2(stream)
 
     def dumps_mol2(self) -> str:
-        """
-        This returns a mol2 file as a string
-        """
+        '''Dumps the multi-mol2 block as a string 
+
+        Returns
+        -------
+        str
+            The multi-mol2 block
+
+        Examples
+        -------
+            >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+            >>> ens.dumps_mol2()
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            pentane
+            ...
+        '''
+
         stream = StringIO()
         self.dump_mol2(stream)
         return stream.getvalue()
-    
+
     @property
     def n_conformers(self) -> int:
-        '''
+        """
         Returns
         -------
         int
@@ -357,7 +387,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
             >>> ens.n_conformers
             7
-        '''
+        """
 
         return self._coords.shape[0]
 
@@ -470,12 +500,12 @@ class ConformerEnsemble(Connectivity):
         return res
 
     def extend(self, others: ConformerEnsemble | Iterable[CartesianGeometry]) -> None:
-        '''Extends ConformerEnsemble
+        """Extends ConformerEnsemble
 
         Parameters
         ----------
         others : ConformerEnsemble | Iterable[CartesianGeometry]
-            Iterable object with a `coords` property 
+            Iterable object with a `coords` property
 
         Examples
         -------
@@ -484,7 +514,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens1.extend(ens2)
             >>> ens1
             ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=14)
-        '''
+        """
         if isinstance(others, ConformerEnsemble):
             other_coords = others.coords
         else:
@@ -493,7 +523,7 @@ class ConformerEnsemble(Connectivity):
         self._coords = np.append(self._coords, other_coords, axis=0)
 
     def append(self, other: CartesianGeometry) -> None:
-        '''_summary_
+        """_summary_
 
         Parameters
         ----------
@@ -506,15 +536,15 @@ class ConformerEnsemble(Connectivity):
             >>> mol = ens[0]
             >>> ens.append(mol)
             >>> ens
-            ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=8) 
-        '''
+            ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=8)
+        """
         if self._coords.shape == (0, 0, 3):
             self._coords = other.coords[np.newaxis, :]
         else:
             self._coords = np.append(self._coords, [other.coords], axis=0)
 
     def scale(self, factor: float, allow_inversion=False) -> None:
-        '''Scale the coordinates by a factor. This also scales the atomic charges
+        """Scale the coordinates by a factor. This also scales the atomic charges
 
         Parameters
         ----------
@@ -531,7 +561,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens.scale(0.5)
             >>> ens.coords
             array([[[-1.40225e+00,  1.99820e+00, -7.06400e-01],...
-        '''
+        """
 
         if factor < 0 and not allow_inversion:
             raise ValueError(
@@ -545,7 +575,7 @@ class ConformerEnsemble(Connectivity):
         self._coords *= factor
 
     def invert(self) -> None:
-        '''Coordinates are inverted wrt the origin. This also inverts
+        """Coordinates are inverted wrt the origin. This also inverts
         inverts the absolute stereochemistry
 
         Examples
@@ -556,7 +586,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens.invert
             >>> ens.coords
             array([[[ 2.8045e+00, -3.9964e+00,  1.4128e+00],...
-        '''
+        """
 
         self.scale(-1, allow_inversion=True)
 
@@ -597,7 +627,7 @@ class ConformerEnsemble(Connectivity):
 
     # NOTE: this function is different to translate function from geometry! (explain why)
     def translate(self, vector: ArrayLike):
-        '''Translates coordinates by a set amount
+        """Translates coordinates by a set amount
 
         Parameters
         ----------
@@ -613,7 +643,7 @@ class ConformerEnsemble(Connectivity):
             >>> ens.coords
             array([[[-1.8045,  4.9964, -0.4128],
 
-        '''
+        """
         v = np.array(vector)
         match v.ndim:
             case 1:
@@ -624,7 +654,7 @@ class ConformerEnsemble(Connectivity):
                 raise ValueError("wrong shape of vector")
 
     def rotate(self, rotation_matrix: np.ndarray) -> np.ndarray:
-        '''Rotates coordinates by a set rotation matrix
+        """Rotates coordinates by a set rotation matrix
 
         Parameters
         ----------
@@ -639,11 +669,11 @@ class ConformerEnsemble(Connectivity):
             >>> ens.rotate(np.array([[1,0,0],[0,0,-1],[0,1,0]])) #90 deg Rot X-axis
             >>> ens.coords
             array([[[-2.8045e+00, -1.4128e+00, -3.9964e+00],
-        '''
+        """
         self.coords = self.coords @ rotation_matrix
 
     def center_at_atom(self, _a: Atom):
-        '''Translates coordinates of ensemble placing an atom at the origin
+        """Translates coordinates of ensemble placing an atom at the origin
 
         Parameters
         ----------
@@ -655,7 +685,7 @@ class ConformerEnsemble(Connectivity):
             >>> a = ens.get_atom(0)
             >>> ens.center_at_atom(a)
             array([[[0,0,0],...
-        '''
+        """
 
         atom_ind = self.index_atom(_a)
 
@@ -794,8 +824,8 @@ class ConformerEnsemble(Connectivity):
 
 
 class Conformer(Molecule):
-    '''Conformer class behaves like a molecule, yet is completely virtual.
-    More documentation about the use of this class can be found 
+    """Conformer class behaves like a molecule, yet is completely virtual.
+    More documentation about the use of this class can be found
     in the `Molecule` documentation
 
     Examples
@@ -803,7 +833,7 @@ class Conformer(Molecule):
         >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
         >>> ens[0]
         Conformer(name='pentane', conf_id=0)
-    '''
+    """
 
     def __init__(self, parent: ConformerEnsemble, conf_id: int):
         self._parent = parent
@@ -811,7 +841,7 @@ class Conformer(Molecule):
 
     @property
     def name(self) -> str:
-        '''Name of the Conformer
+        """Name of the Conformer
 
         Returns
         -------
@@ -822,7 +852,7 @@ class Conformer(Molecule):
             >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
             >>> ens[0].name
             pentane
-        '''
+        """
 
         return self._parent.name
 

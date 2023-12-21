@@ -276,6 +276,11 @@ class CartesianGeometry(Promolecule):
         ----------
         write_header : bool, optional
             Whether to write the header, by default True
+        
+        Returns
+        -------
+        str
+            The xyz block
 
         Examples
         -------
