@@ -84,9 +84,18 @@ void molli::_init_distance(py::module_ &m)
     m.def("cdist22_eu", &cdist22<double, euclidean<double, 3>>, "Computes a Euclidean distance matrix between (M,3) and (N,3) in float64 precision");
     m.def("cdist22_eu2", &cdist22<float, euclidean2<float, 3>>, "Computes a Squared Euclidean distance matrix between (M,3) and (N,3) in float32 precision");
     m.def("cdist22_eu2", &cdist22<double, euclidean2<double, 3>>, "Computes a Squared Euclidean distance matrix between (M,3) and (N,3) in float64 precision");
-
     m.def("cdist32_eu", &cdist32<float, euclidean<float, 3>>, "Computes a Euclidean distance matrix between (X,M,3) and (N,3) in float32 precision");
     m.def("cdist32_eu", &cdist32<double, euclidean<double, 3>>, "Computes a Euclidean distance matrix between (X,M,3) and (N,3) in float64 precision");
     m.def("cdist32_eu2", &cdist32<float, euclidean2<float, 3>>, "Computes a Squared Euclidean distance matrix between (X,M,3) and (N,3) in float32 precision");
     m.def("cdist32_eu2", &cdist32<double, euclidean2<double, 3>>, "Computes a Squared Euclidean distance matrix between (X,M,3) and (N,3) in float64 precision");
+
+    m.def("cdist22f_eu", &cdist22<float, euclidean<float, 3>>, "Computes a Euclidean distance matrix between (M,3) and (N,3) in float32 precision");
+    m.def("cdist22d_eu", &cdist22<double, euclidean<double, 3>>, "Computes a Euclidean distance matrix between (M,3) and (N,3) in float64 precision");
+    m.def("cdist22f_eu2", &cdist22<float, euclidean2<float, 3>>, "Computes a Squared Euclidean distance matrix between (M,3) and (N,3) in float32 precision");
+    m.def("cdist22d_eu2", &cdist22<double, euclidean2<double, 3>>, "Computes a Squared Euclidean distance matrix between (M,3) and (N,3) in float64 precision");
+
+    m.def("cdist32f_eu", &cdist32<float, euclidean<float, 3>>, "Computes a Euclidean distance matrix between (X,M,3) and (N,3) in float32 precision");
+    m.def("cdist32d_eu", &cdist32<double, euclidean<double, 3>>, "Computes a Euclidean distance matrix between (X,M,3) and (N,3) in float64 precision");
+    m.def("cdist32f_eu2", &cdist32<float, euclidean2<float, 3>>, "Computes a Squared Euclidean distance matrix between (X,M,3) and (N,3) in float32 precision");
+    m.def("cdist32d_eu2", &cdist32<double, euclidean2<double, 3>>, "Computes a Squared Euclidean distance matrix between (X,M,3) and (N,3) in float64 precision");
 }
