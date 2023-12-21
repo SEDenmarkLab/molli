@@ -14,12 +14,11 @@ from joblib import Parallel, delayed
 
 from ..chem import Molecule
 from .job import Job, JobInput, JobOutput
+from .driver import DriverBase
 
 
-class XTBDriver:
-    def __init__(self, executable="xtb", nprocs: int = 1) -> None:
-        self.executable = executable
-        self.nprocs = nprocs
+class XTBDriver(DriverBase):
+    default_executable = "xtb"
 
     @Job(return_files=("xtbopt.xyz",)).prep
     def optimize(
@@ -39,7 +38,9 @@ class XTBDriver:
                     "xtb",
                 ),
             ],
-            files={"input.xyz": M.dumps_xyz().encode()},
+            files={
+                "input.xyz": M.dumps_xyz().encode(),
+            },
             return_files=self.return_files,
         )
 
