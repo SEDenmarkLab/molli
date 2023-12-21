@@ -167,13 +167,12 @@ def run_sched():
         case "sge":
             _molli_run_path = Path(sys.executable).with_name("_molli_run")
             print(_molli_run_path)
+
+            sge_inp = _molli_run_path.as_posix() + " " + shlex.join(sys.argv[1:])
             res = run(
-                shlex.split(
-                    f"qsub -V -terse -sync yes -cwd -S {_molli_run_path.as_posix()}"
-                )
-                + sys.argv[1:],
-                stderr=DEVNULL,
-                stdout=DEVNULL,
+                shlex.split(f"qsub -V -terse -sync yes -cwd -N molli"),
+                encoding="utf8",
+                input=sge_inp,
             )
 
         case _:

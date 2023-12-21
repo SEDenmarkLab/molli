@@ -170,7 +170,7 @@ def worker(
     with (
         TemporaryDirectory(
             dir=scratch_dir,
-            prefix=_name + runner.__name__,
+            prefix=f"molli_{runner.__name__}_{_name}",
         ) as td,
         ThreadPoolExecutor(n_jobs_per_worker) as executor,
     ):
@@ -267,7 +267,8 @@ def worker(
                 if cache_dir is not None:
                     shutil.copy(cwd / f"{k}.out", cache_dir)
             elif error_dir is not None:
-                shutil.copy(cwd / f"{k}.out", error_dir)
+                if (cwd / f"{k}.out").exists():
+                    shutil.copy(cwd / f"{k}.out", error_dir)
 
         success = []
         failure = []
