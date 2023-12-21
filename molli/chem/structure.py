@@ -91,7 +91,9 @@ class Structure(CartesianGeometry, Connectivity):
             if DistanceUnit[source_units] != DistanceUnit.Angstrom:
                 res.scale(DistanceUnit[source_units].value)
 
-            if block.header.chrg_type != "NO_CHARGES" and hasattr(res, "atomic_charges"):
+            if block.header.chrg_type != "NO_CHARGES" and hasattr(
+                res, "atomic_charges"
+            ):
                 res.atomic_charges = [a.charge for a in block.atoms]
 
             yield res
@@ -279,7 +281,9 @@ class Structure(CartesianGeometry, Connectivity):
         atom_map = dict(zip(atoms, result.atoms))
         for j, b in enumerate(chain(struct1.bonds, struct2.bonds)):
             if a1 not in b and a2 not in b:
-                result.append_bond(b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]))
+                result.append_bond(
+                    b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=result)
+                )
 
         result.append_bond(
             nb := Bond(
@@ -419,7 +423,9 @@ class Structure(CartesianGeometry, Connectivity):
                     vec = mean_plane(self.coord_subset(neighbors))
                     cent = np.average(self.coord_subset(neighbors), axis=0)
                     align = np.dot(vec, cent - a_coord)
-                    if abs(align) > 0.05:  # Note that this threshold is completely arbitrary.
+                    if (
+                        abs(align) > 0.05
+                    ):  # Note that this threshold is completely arbitrary.
                         vec *= align
                 else:
                     vec = np.average(self.coord_subset(neighbors) - a_coord, axis=0)
@@ -435,7 +441,9 @@ class Structure(CartesianGeometry, Connectivity):
                 elif diff == 2:
                     if len(neighbors) == 2:
                         r1, r2 = self.coord_subset(neighbors) - a_coord
-                        z = np.cross(r1, r2)  # this is a vector that is orthogonal to neighbors
+                        z = np.cross(
+                            r1, r2
+                        )  # this is a vector that is orthogonal to neighbors
                         z /= np.linalg.norm(z)
                     else:
                         z = np.cross(vec, [0.0, 0.0, 1.0])
@@ -467,7 +475,9 @@ class Substructure(Structure):
             if b.a1 in self.atoms and b.a2 in self.atoms:
                 self._bonds.append(b)
 
-    def yield_parent_atom_indices(self, atoms: Iterable[AtomLike]) -> Generator[int, None, None]:
+    def yield_parent_atom_indices(
+        self, atoms: Iterable[AtomLike]
+    ) -> Generator[int, None, None]:
         yield from map(self._parent.get_atom_index, atoms)
 
     def __repr__(self):
