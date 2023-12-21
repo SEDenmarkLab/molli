@@ -47,3 +47,10 @@ class ConnectivityTC(ut.TestCase):
         self.assertEqual(cn.bonded_valence(o3), 2.0)
 
         self.assertEqual(h1, b1 % o3)
+
+    def test_bond_pickle_serialization(self):
+        import pickle
+
+        b1 = ml.Bond(1, 2)
+        b_pkl = pickle.dumps(b1)
+        b2 = pickle.loads(b_pkl)

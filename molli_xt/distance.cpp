@@ -80,13 +80,13 @@ carray<T> molli::cdist32(const carray<T> &arr1, const carray<T> &arr2)
 
 void molli::_init_distance(py::module_ &m)
 {
-    m.def("cdist22_eu_f3", &cdist22<float, euclidean<float, 3>>, "A function that adds all elements of an array.");
-    m.def("cdist22_eu_d3", &cdist22<double, euclidean<double, 3>>, "A function that adds all elements of an array.");
-    m.def("cdist22_eu2_f3", &cdist22<float, euclidean2<float, 3>>, "A function that adds all elements of an array.");
-    m.def("cdist22_eu2_d3", &cdist22<double, euclidean2<double, 3>>, "A function that adds all elements of an array.");
+    m.def("cdist22_eu", &cdist22<float, euclidean<float, 3>>, "Computes a Euclidean distance matrix between (M,3) and (N,3) in float32 precision");
+    m.def("cdist22_eu", &cdist22<double, euclidean<double, 3>>, "Computes a Euclidean distance matrix between (M,3) and (N,3) in float64 precision");
+    m.def("cdist22_eu2", &cdist22<float, euclidean2<float, 3>>, "Computes a Squared Euclidean distance matrix between (M,3) and (N,3) in float32 precision");
+    m.def("cdist22_eu2", &cdist22<double, euclidean2<double, 3>>, "Computes a Squared Euclidean distance matrix between (M,3) and (N,3) in float64 precision");
 
-    m.def("cdist32_eu_f3", &cdist32<float, euclidean<float, 3>>, "A function that adds all elements of an array.");
-    m.def("cdist32_eu_d3", &cdist32<double, euclidean<double, 3>>, "A function that adds all elements of an array.");
-    m.def("cdist32_eu2_f3", &cdist32<float, euclidean2<float, 3>>, "A function that adds all elements of an array.");
-    m.def("cdist32_eu2_d3", &cdist32<double, euclidean2<double, 3>>, "A function that adds all elements of an array.");
+    m.def("cdist32_eu", &cdist32<float, euclidean<float, 3>>, "Computes a Euclidean distance matrix between (X,M,3) and (N,3) in float32 precision");
+    m.def("cdist32_eu", &cdist32<double, euclidean<double, 3>>, "Computes a Euclidean distance matrix between (X,M,3) and (N,3) in float64 precision");
+    m.def("cdist32_eu2", &cdist32<float, euclidean2<float, 3>>, "Computes a Squared Euclidean distance matrix between (X,M,3) and (N,3) in float32 precision");
+    m.def("cdist32_eu2", &cdist32<double, euclidean2<double, 3>>, "Computes a Squared Euclidean distance matrix between (X,M,3) and (N,3) in float64 precision");
 }

@@ -36,7 +36,6 @@ class PromoleculeTC(ut.TestCase):
         with self.assertRaises(ValueError):
             pm = ml.Promolecule(n_atoms=-1)
 
-
     def test_promolecule_list_constructor(self):
         """Tests constructing promolecule from lists of ElementLike or Atoms"""
         # This more or less just tests if all elements can end up in the promolecule upon such a creation
@@ -64,7 +63,6 @@ class PromoleculeTC(ut.TestCase):
 
         for a1, a2 in zip(pm1._atoms, pm2._atoms):
             self.assertNotEqual(id(a1), id(a2))
-
 
     def test_new_atom(self):
         """Tests programmatic creation of a simple water promolecule"""
@@ -102,12 +100,12 @@ class PromoleculeTC(ut.TestCase):
         """Tests the names property setter, with user warning"""
         pm = ml.Promolecule()
 
-        self.assertEqual(pm.name, 'unknown')
+        self.assertEqual(pm.name, "unknown")
         # the " " is not allowed in a name, should be replaced with "_"
         with self.assertWarns(UserWarning):
-            pm.name = 'awesome promolecule'
+            pm.name = "awesome promolecule"
 
-        self.assertEqual(pm.name, 'awesome_promolecule')
+        self.assertEqual(pm.name, "awesome_promolecule")
 
     def test_get_atom(self):
         """Tests get atom functionality"""
@@ -132,9 +130,9 @@ class PromoleculeTC(ut.TestCase):
 
         # get some nonsense, should raise error
         with self.assertRaises(ValueError):
-            got = pm.get_atom(ml.Promolecule()) # promolecule
-            got = pm.get_atom(3) # index out of range
-            got = pm.get_atom(None) # No input
+            got = pm.get_atom(ml.Promolecule())  # promolecule
+            got = pm.get_atom(3)  # index out of range
+            got = pm.get_atom(None)  # No input
 
     def test_get_atoms(self):
         """Tests get atoms functionality"""
@@ -146,7 +144,7 @@ class PromoleculeTC(ut.TestCase):
         pm.append_atom(h2)
         pm.append_atom(ml.Atom(8, label="O3"))
 
-        got = pm.get_atoms(0,1)
+        got = pm.get_atoms(0, 1)
         self.assertEqual(id(got[0]), id(h1))
         self.assertEqual(id(got[1]), id(h2))
 
@@ -170,14 +168,14 @@ class PromoleculeTC(ut.TestCase):
             got = pm.get_atom_index(3)
 
         # get as atom label
-        got = pm.get_atom_index('O3')
+        got = pm.get_atom_index("O3")
         self.assertEqual(got, 2)
 
         # get some nonsense, should raise error
         with self.assertRaises(ValueError):
-            got = pm.get_atom_index(ml.Promolecule()) # promolecule
-            got = pm.get_atom_index(3) # index out of range
-            got = pm.get_atom_index(None) # No input
+            got = pm.get_atom_index(ml.Promolecule())  # promolecule
+            got = pm.get_atom_index(3)  # index out of range
+            got = pm.get_atom_index(None)  # No input
 
     def test_get_atom_indices(self):
         """Tests get atom indices functionality"""
@@ -189,7 +187,7 @@ class PromoleculeTC(ut.TestCase):
         pm.append_atom(h2)
         pm.append_atom(ml.Atom(8, label="O3"))
 
-        got = pm.get_atom_indices(h1,h2)
+        got = pm.get_atom_indices(h1, h2)
         self.assertEqual(got[0], 0)
         self.assertEqual(got[1], 1)
 
@@ -203,19 +201,19 @@ class PromoleculeTC(ut.TestCase):
 
         natoms1 = pm.n_atoms
 
-        oxygenatom = pm.get_atom('O3')
+        oxygenatom = pm.get_atom("O3")
         pm.del_atom(oxygenatom)
 
         self.assertEqual(natoms1 - 1, pm.n_atoms)
         with self.assertRaises(StopIteration):
-            pm.get_atom('O3')
+            pm.get_atom("O3")
             pm.get_atom(2)
 
     def test_append_atoms(self):
         """Test appending atom functionality"""
 
         pm = ml.Promolecule()
-        self.assertEqual(pm.n_atoms,0)
+        self.assertEqual(pm.n_atoms, 0)
         pm.append_atom(ml.Atom(ml.Element.H, label="H1"))
         self.assertEqual(pm.n_atoms, 1)
         pm.append_atom(ml.Atom("H", label="H2"))
@@ -274,7 +272,7 @@ class PromoleculeTC(ut.TestCase):
 
         pm = ml.Promolecule([h1, h2, o3])
 
-        hs = pm.yield_atoms_by_element('H')
+        hs = pm.yield_atoms_by_element("H")
 
         self.assertEqual(id(next(hs)), id(h1))
         self.assertEqual(id(next(hs)), id(h2))
@@ -315,7 +313,7 @@ class PromoleculeTC(ut.TestCase):
 
         pm = ml.Promolecule([h1, h2, o3])
 
-        os = pm.yield_atoms_by_label('O3')
+        os = pm.yield_atoms_by_label("O3")
 
         self.assertEqual(id(next(os)), id(o3))
         with self.assertRaises(StopIteration):
@@ -324,3 +322,17 @@ class PromoleculeTC(ut.TestCase):
     @ut.skip("promolecule.sort_atoms has not been implemented.")
     def test_sort_atoms(self):
         return None
+
+    def test_pickle_serialization(self):
+        import pickle
+
+        a1 = ml.Atom("H")
+        a_pkl = pickle.dumps(a1)
+        a2 = pickle.loads(a_pkl)
+
+        self.assertNotEqual(a1, a2)
+        self.assertEqual(a1.element, a2.element)
+
+        pm1 = ml.Promolecule([1, 8, 1])  # water promolecule
+        pm_pkl = pickle.dumps(pm1)
+        pm2 = pickle.loads(pm_pkl)

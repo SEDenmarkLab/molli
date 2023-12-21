@@ -86,8 +86,19 @@ class UKVFile:
         self.h2 = h2 or b""
         self.b0 = b0 or b""
         self._toc: dict[bytes, UKVRecord] = dict()
+        self._last: bytes = None
+        self._eof = None
         self._closed = True
         self.open()
+
+    def __getstate__(self):
+        _self_dict = self.__dict__.copy()
+        if "_stream" in _self_dict:
+            del _self_dict["_stream"]
+        return _self_dict
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
     @property
     def closed(self):
@@ -97,7 +108,7 @@ class UKVFile:
     def writable(self):
         return not self.closed and self._stream.writable()
 
-    def open(self):
+    def open(self, mode=None):
         # self._tlock.acquire()
 
         # if self.process_safe:
@@ -108,6 +119,8 @@ class UKVFile:
 
         if not self._closed:
             return
+
+        self.mode = mode or self.mode
 
         try:
             match self.mode:
@@ -180,8 +193,17 @@ class UKVFile:
 
     def map_blocks(self):
         # File delimiters
+        # If the file has already been opened, we do not need to reacquire all keys
+        self._stream.seek(0, 2)
+        if self._eof == self._stream.tell() and self._eof == (
+            self._toc[self._last].end if self._last is not None else self._bof
+        ):
+            return
+
         pos = self._bof
         self._stream.seek(pos)
+
+        key = None
 
         while blk_header := self._unpack_read(_BLOCK_HEADER, None):
             key_len, record_len = blk_header
@@ -194,6 +216,7 @@ class UKVFile:
             # Skip over the record for the purposes of mapping blocks
             self._stream.seek(record_len, 1)
 
+        self._last = key
         self._eof = pos
 
     def get(self, key: bytes):

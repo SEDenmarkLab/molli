@@ -201,3 +201,10 @@ class ConformerEnsembleTC(ut.TestCase):
         ens.invert()
         ens.invert()
         self.assertTrue(np.allclose(ens.coords, old_coords))
+
+    def test_ens_pickle_serialization(self):
+        import pickle
+
+        m1 = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+        m_pkl = pickle.dumps(m1)
+        m2 = pickle.loads(m_pkl)

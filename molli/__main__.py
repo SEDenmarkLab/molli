@@ -8,10 +8,11 @@ from warnings import warn
 import logging
 import sys
 import molli as ml
-from uuid import uuid1 # Needed for a lock file
+from uuid import uuid1  # Needed for a lock file
 import os
-from mpi4py import MPI
 from socket import gethostname
+from datetime import datetime
+import shlex
 
 KNOWN_CMDS = ["list", *scripts.__all__]
 
@@ -68,45 +69,65 @@ arg_parser.add_argument(
 
 
 def main():
-    comm = MPI.COMM_WORLD
-
     parsed, unk_args = arg_parser.parse_known_args()
     cmd = parsed.COMMAND
 
+    if (verbosity := parsed.VERBOSITY) not in range(6):
+        if verbosity > 5:
+            verbosity = 5
+        if verbosity < 0:
+            verbosity = 0
+        print(
+            f"Expected verbosity in [0, 5]. Adjusted value: {verbosity}",
+            file=sys.stderr,
+        )
+
     #########################################
-    #TODO Set up the logger HERE!
+    # TODO Set up the logger HERE!
     # This will make sure that all molli stuff is now fully captured.
-    logging.basicConfig(level=50-parsed.VERBOSITY*10, handlers=[logging.NullHandler()])
-    logger = logging.getLogger('molli')
-    logger.setLevel(50-parsed.VERBOSITY*10)
+    logging.basicConfig(level=50 - verbosity * 10, handlers=[logging.NullHandler()])
+    logger = logging.getLogger("molli")
+    logger.setLevel(50 - verbosity * 10)
 
-    # create console handler and set level to debug
-    ch = logging.StreamHandler()
-    ch.setLevel(50-parsed.VERBOSITY*10)
+    if parsed.LOG is None:
+        ch = logging.StreamHandler()
+    else:
+        with open(parsed.LOG, "at") as f:
+            f.write(ml.config.SPLASH)
+        ch = logging.FileHandler(parsed.LOG)
 
-    # create formatter
-    # formatter = logging.Formatter('%(asctime)s (%(relativeCreated)d) - %(name)s - %(module)s (%(pathname)s) - %(levelname)s - %(message)s')
+    ch.setLevel(50 - verbosity * 10)
+
     host = gethostname()
-    rank = comm.Get_rank()
-    formatter = logging.Formatter('{levelname:s}: {message:s} ({name:s}:{lineno} at %s:%d {asctime:s})' % (host, rank), style="{")
+    if verbosity > 4:
+        formatter = logging.Formatter(
+            "{levelname:s}: {message:s} ({name:s}:{lineno} {asctime:s})",
+            style="{",
+        )
+    else:
+        formatter = logging.Formatter(
+            "{message:s}",
+            style="{",
+        )
     ch.setFormatter(formatter)
 
     # add ch to logger
     logger.addHandler(ch)
     #########################################
 
-    # This thing allows to 
+    # This thing allows to
     if parsed.CONFIG is not None:
         with open(parsed.CONFIG) as f:
             _config_f = yaml.safe_load(f)
     else:
         _config_f = None
     ml.config.configure(_config_f)
- 
+
+    _code = 0
+
     match cmd:
         # cases can override default behavior, which is to import the module from standalone
         case "list":
-
             for m in scripts.__all__:
                 try:
                     requested_module = import_module(f"molli.scripts.{m}")
@@ -129,7 +150,13 @@ def main():
                         with ml.aux.ForeColor("ltred"):
                             print("No documentation available")
 
-        case _:
+        case _ as _cmd:
+            _start = datetime.now()
+            if _cmd not in {"list", "info"}:
+                logger.info(
+                    f"molli {ml.__version__} started successfully on {host} at {_start}"
+                )
+                logger.debug(f"{sys.argv=}")
             try:
                 requested_module = import_module(f"molli.scripts.{cmd}")
             except:
@@ -138,38 +165,26 @@ def main():
                 )
             else:
                 # This may need to be revised. Not sure if parent creation is a great idea.
-                
-                if rank == 0:
-                    ml.config.SHARED_DIR.mkdir(parents=True, exist_ok=True)
-                    ml.config.SCRATCH_DIR.mkdir(parents=True, exist_ok=True)
 
-                    shared_lkfile = ml.config.SHARED_DIR / f"molli-{uuid1().hex}.lock"
-                    scratch_lkfile = ml.config.SCRATCH_DIR / f"molli-{uuid1().hex}.lock"
-                else:
-                    shared_lkfile = None
-                    scratch_lkfile = None
-                
-                shared_lkfile = comm.bcast(shared_lkfile, 0)
-                scratch_lkfile = comm.bcast(scratch_lkfile, 0)
-
-                try:                
-                    _code = requested_module.molli_main(
-                        unk_args,
-                        shared_lkfile=shared_lkfile,
-                        scratch_lkfile=scratch_lkfile,
+                try:
+                    _code = (
+                        requested_module.molli_main(unk_args, verbosity=verbosity) or 0
                     )
+                except KeyboardInterrupt:
+                    logger.error("Keyboard interrupt")
+                    _code = 1
                 except Exception as xc:
                     logger.exception(xc)
-                    _code = 1 # Maybe change this later
-                
-                # This should free up these keys in case it still exists
-                if shared_lkfile.is_file():
-                    os.remove(shared_lkfile)
-                
-                if scratch_lkfile.is_file():
-                    os.remove(scratch_lkfile)
-                
-                return _code
+                    _code = 1  # Maybe change this later
+            finally:
+                _finish = datetime.now()
+                if _cmd not in {"list", "info"}:
+                    logger.info(
+                        f"molli finished at {_finish}. Total wall clock time: {_finish - _start}. Exit code: {_code}"
+                    )
+
+    return _code
+
 
 if __name__ == "__main__":
     exit(main())

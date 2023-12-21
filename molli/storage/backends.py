@@ -25,6 +25,7 @@ from deprecated import deprecated
 import atexit
 from io import UnsupportedOperation
 import os
+from molli._aux import molli_aux_dir
 
 T = TypeVar("T")
 
@@ -62,7 +63,7 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
             raise ValueError("overwrite and readonly are mutually exclusive.")
 
         self._lock = InterProcessReaderWriterLock(
-            self._path.with_name(self._path.name + ".lock")
+            molli_aux_dir(self._path) / (self._path.name + ".lock")
         )
 
         self._bufsize = (
@@ -76,6 +77,18 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
         # normally then the contents are safely flushed onto the disk
         atexit.register(self.flush)
         # self.update_keys()
+
+    def __getstate__(self):
+        _self_dict = self.__dict__.copy()
+        if "_lock" in _self_dict:
+            del _self_dict["_lock"]
+        return _self_dict
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._lock = InterProcessReaderWriterLock(
+            molli_aux_dir(self._path) / (self._path.name + ".lock")
+        )
 
     def begin_read(self):
         pass
@@ -203,7 +216,7 @@ class DirCollectionBackend(CollectionBackendBase):
         ext: str = ".dat",
         bufsize=0,
     ) -> None:
-        self.ext = ext
+        self.ext = ext or ".dat"
 
         path = path if isinstance(path, Path) else Path(path)
 
@@ -213,8 +226,9 @@ class DirCollectionBackend(CollectionBackendBase):
         super().__init__(path, bufsize=bufsize, readonly=readonly)
 
     def update_keys(self):
-        allpaths: list[str] = glob(f"*{self.ext}", root_dir=self._path)
-        self._keys = set(map(lambda x: x.removesuffix(self.ext), allpaths))
+        self._keys = set(
+            x.name.removesuffix(self.ext) for x in self._path.glob("*" + self.ext)
+        )
 
     def keys(self):
         return self._keys
@@ -352,13 +366,19 @@ class UkvCollectionBackend(CollectionBackendBase):
                     pass
 
     def begin_read(self):
-        self._ukvfile = UKVFile(self._path, mode="r")
+        if not hasattr(self, "_ukvfile"):
+            self._ukvfile = UKVFile(self._path, mode="r")
+        else:
+            self._ukvfile.open("r")
 
     def end_read(self):
         self._ukvfile.close()
 
     def begin_write(self):
-        self._ukvfile = UKVFile(self._path, mode="a")
+        if not hasattr(self, "_ukvfile"):
+            self._ukvfile = UKVFile(self._path, mode="a")
+        else:
+            self._ukvfile.open("a")
 
     def end_write(self):
         self._ukvfile.close()
