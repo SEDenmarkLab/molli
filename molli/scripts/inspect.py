@@ -66,7 +66,6 @@ def molli_main(args,  **kwargs):
                 # Hopefully this will be resolved in later versions
                 try:
                     lib = ml.ConformerLibrary(parsed.input, readonly=True)
-                    lib[0].n_conformers
                 except:
                     lib = ml.MoleculeLibrary(parsed.input, readonly=True)
 

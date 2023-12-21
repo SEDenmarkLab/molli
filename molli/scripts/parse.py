@@ -55,7 +55,7 @@ arg_parser.add_argument(
 )
 
 
-def molli_main(args,  **kwargs):
+def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
     fpath = Path(parsed.file)
 
@@ -69,12 +69,14 @@ def molli_main(args,  **kwargs):
                 print("Unknown input format: {iformat}")
             exit(1)
 
-    with ml.MoleculeLibrary.new(opath, overwrite=parsed.overwrite) as lib:
-        for k in tqdm(input_file.keys()):
+    library = ml.MoleculeLibrary(opath, readonly=False, overwrite=parsed.overwrite)
+
+    with library.writing():
+        for k in tqdm(input_file.keys(), desc=f"Parsing {fpath}"):
             try:
                 mol = input_file[k]
                 if parsed.hadd:
                     mol.add_implicit_hydrogens()
-                lib.append(mol.name, mol)
+                library[mol.name] = mol
             except Exception as e:
                 raise RuntimeError(f"Unable to parse {k}") from e

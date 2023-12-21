@@ -151,12 +151,6 @@ def main():
                             print("No documentation available")
 
         case _ as _cmd:
-            _start = datetime.now()
-            if _cmd not in {"list", "info"}:
-                logger.info(
-                    f"molli {ml.__version__} started successfully on {host} at {_start}"
-                )
-                logger.debug(f"{sys.argv=}")
             try:
                 requested_module = import_module(f"molli.scripts.{cmd}")
             except:
@@ -176,12 +170,6 @@ def main():
                 except Exception as xc:
                     logger.exception(xc)
                     _code = 1  # Maybe change this later
-            finally:
-                _finish = datetime.now()
-                if _cmd not in {"list", "info"}:
-                    logger.info(
-                        f"molli finished at {_finish}. Total wall clock time: {_finish - _start}. Exit code: {_code}"
-                    )
 
     return _code
 
