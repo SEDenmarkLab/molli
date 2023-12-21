@@ -299,8 +299,8 @@ class ConformerEnsemble(Connectivity):
         ----------
         cls : type[ConformerEnsemble]
             Class to be loaded into
-        input : str | Path | IO
-            File path, string, or stream
+        input : str
+            Mol2 block as string
         name : str, optional
             Name for ConformerEnsemble, by default None
         source_units : str, optional

@@ -217,22 +217,22 @@ class CartesianGeometry(Promolecule):
         return self._coords.flatten().tolist()
 
     def extend(self, other: Iterable[CartesianGeometry]):
-        '''Currently Not Implemented
+        """Currently Not Implemented
 
         Parameters
         ----------
         other : Iterable[CartesianGeometry]
             iterable to extend cartesiangeometry by
 
-        '''
+        """
         raise NotImplementedError(
             "Extending CartesianGeometry is Currently Not Implemented"
-            )
+        )
 
     def dump_xyz(
         self, output: StringIO, write_header: bool = True, *, fmt: str = "12.6f"
     ) -> None:
-        '''Dumps the xyz file into the output stream
+        """Dumps the xyz file into the output stream
 
         Parameters
         ----------
@@ -253,7 +253,7 @@ class CartesianGeometry(Promolecule):
             unknown
             C         0.000000     0.000000     0.000000
 
-        '''
+        """
 
         # Header need not be written in certain files
         # Like ORCA inputs
@@ -270,13 +270,13 @@ class CartesianGeometry(Promolecule):
             output.write(f"{s:<5} {x:{fmt}} {y:{fmt}} {z:{fmt}}\n")
 
     def dumps_xyz(self, write_header: bool = True) -> str:
-        '''Dumps the xyz file into the output stream
+        """Dumps the xyz file into the output stream
 
         Parameters
         ----------
         write_header : bool, optional
             Whether to write the header, by default True
-        
+
         Returns
         -------
         str
@@ -290,8 +290,8 @@ class CartesianGeometry(Promolecule):
             1
             unknown
             C         0.000000     0.000000     0.000000
-        '''
-        
+        """
+
         # Header need not be written in certain files
         # Like ORCA inputs
         res = StringIO()
@@ -307,7 +307,7 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> CartesianGeometry:
-        '''This function loads a single xyz file into the current instance.
+        """This function loads a single xyz file into the current instance.
         This can be a stream, filepath, or string.
 
         Parameters
@@ -332,10 +332,10 @@ class CartesianGeometry(Promolecule):
             >>> ml.Molecule.load_xyz(ml.files.dendrobine_xyz, name='dendrobine')
             Molecule(name='dendrobine', formula='C16 H25 N1 O2')
         If desired, one can work directly with CartesianGeometry class instead
-            >>> ml.CartesianGeometry.load_xyz(ml.files.dendrobine_xyz, 
+            >>> ml.CartesianGeometry.load_xyz(ml.files.dendrobine_xyz,
             name='dendrobine')
             CartesianGeometry(name='dendrobine', formula='C16 H25 N1 O2')
-        '''
+        """
 
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -355,15 +355,15 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> CartesianGeometry:
-        '''This function loads a single xyz file into the current instance.
+        """This function loads a single xyz file into the current instance.
         This can only be a string
 
         Parameters
         ----------
         cls : type[CartesianGeometry]
             The class to load the xyz file into
-        input : str | Path | IO
-            XYZ file to be loaded
+        input : str
+            XYZ block as a string
         name : str, optional
             Name of the geometry, by default None
         source_units : str, optional
@@ -384,7 +384,7 @@ class CartesianGeometry(Promolecule):
             >>> with open(ml.files.dendrobine_xyz) as f:
             >>>     ml.CartesianGeometry.loads_xyz(f.read(), name='dendrobine')
             CartesianGeometry(name='dendrobine', formula='C16 H25 N1 O2')
-        '''
+        """
         stream = StringIO(input)
         with stream:
             res = next(cls.yield_from_xyz(stream, name=name, source_units=source_units))
@@ -399,7 +399,7 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> List[CartesianGeometry]:
-        '''_summary_
+        """This function loads all xyz files from the input 
 
         Parameters
         ----------
@@ -425,7 +425,7 @@ class CartesianGeometry(Promolecule):
         If desired, one can work directly with CartesianGeometry class instead
             >>> ml.CartesianGeometry.load_all_xyz(ml.files.pentane_confs_xyz)
             [CartesianGeometry(name='unnamed', formula='C5 H12'), ...]
-        '''
+        """
 
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -440,19 +440,19 @@ class CartesianGeometry(Promolecule):
     @classmethod
     def loads_all_xyz(
         cls: type[CartesianGeometry],
-        input: str | Path | IO,
+        input: str,
         *,
         name: str = None,
         source_units: str = "Angstrom",
     ) -> List[CartesianGeometry]:
-        '''This function loads all xyz files from the input string
+        """This function loads all xyz files from the input string
 
         Parameters
         ----------
         cls : type[CartesianGeometry]
             The class to load the xyz file into
-        input : str | Path | IO
-            XYZ file to be loaded
+        input : str
+            XYZ block as a string
         name : str, optional
             Name of the geometry, by default None
         source_units : str, optional
@@ -473,7 +473,7 @@ class CartesianGeometry(Promolecule):
             >>> with open(ml.files.pentane_confs_xyz) as f:
             >>>     ml.CartesianGeometry.loads_all_xyz(f.read())
             [CartesianGeometry(name='dendrobine', formula='C16 H25 N1 O2'),...]
-        '''
+        """
 
         stream = StringIO(input)
         with stream:
@@ -489,7 +489,7 @@ class CartesianGeometry(Promolecule):
         name: str = None,
         source_units: str = "Angstrom",
     ) -> Generator[CartesianGeometry, None, None]:
-        '''Yields generator of CartesianGeometry from stream
+        """Yields generator of CartesianGeometry from stream
 
         Parameters
         ----------
@@ -506,7 +506,7 @@ class CartesianGeometry(Promolecule):
         ------
         Generator[CartesianGeometry, None, None]
             Yields Generator of CartesianGeometry
-            
+
         Examples
         -------
         The Molecule class inherits yield_from_xyz()
@@ -517,8 +517,7 @@ class CartesianGeometry(Promolecule):
             >>> with open(ml.files.dendrobine_xyz) as f:
             >>>     ml.CartesianGeometry.yield_from_xyz(f, name='dendrobine')
             <generator object CartesianGeometry.yield_from_xyz at ...>
-        '''
-
+        """
 
         for xyzblock in read_xyz(stream):
             geom = cls(n_atoms=xyzblock.n_atoms, coords=xyzblock.coords)
@@ -536,7 +535,7 @@ class CartesianGeometry(Promolecule):
             yield geom
 
     def scale(self, factor: float, allow_inversion=False) -> None:
-        '''Multiplies all coordinates by a factor
+        """Multiplies all coordinates by a factor
 
         Parameters
         ----------
@@ -559,7 +558,7 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom.scale(0.5)
             >>> cartgeom.coords
             array([[ 6.48000e-01, -1.15950e-01,  6.33500e-01],...
-        '''
+        """
 
         if factor < 0 and not allow_inversion:
             raise ValueError(
@@ -573,7 +572,7 @@ class CartesianGeometry(Promolecule):
         self.coords *= factor
 
     def invert(self) -> None:
-        '''Coordinates are inverted wrt the origin. This also inverts
+        """Coordinates are inverted wrt the origin. This also inverts
         inverts the absolute stereochemistry
 
         Examples
@@ -590,12 +589,12 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom.invert()
             >>> cartgeom.coords
             array([[-1.2960e+00,  2.3190e-01, -1.2670e+00],
-        '''
+        """
 
         self.scale(-1, allow_inversion=True)
 
     def distance(self, a1: AtomLike, a2: AtomLike) -> float:
-        '''Calculates the distance between two atoms
+        """Calculates the distance between two atoms
 
         Parameters
         ----------
@@ -608,7 +607,7 @@ class CartesianGeometry(Promolecule):
         -------
         float
             Distance between the two atoms
-            
+
         Examples
         -------
         The Molecule class inherits distance()
@@ -619,13 +618,13 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.distance(0,1)
             1.520002194077364
-        '''
+        """
 
         i1, i2 = map(self.get_atom_index, (a1, a2))
         return np.linalg.norm(self.coords[i1] - self.coords[i2])
 
     def get_atom_coord(self, _a: AtomLike) -> np.ndarray:
-        '''Returns the coordinates of the atom
+        """Returns the coordinates of the atom
 
         Parameters
         ----------
@@ -647,12 +646,12 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.get_atom_coord(0,1)
             array([ 1.296 , -0.2319,  1.267 ])
-        '''
+        """
 
         return self.coords[self.get_atom_index(_a)]
 
     def vector(self, a1: AtomLike, a2: AtomLike | np.ndarray) -> np.ndarray:
-        '''Returns the vector between two atoms or one atom and array
+        """Returns the vector between two atoms or one atom and array
 
         Parameters
         ----------
@@ -676,7 +675,7 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.vector(0,1)
             array([-1.2387,  0.2093,  0.8557])
-        '''
+        """
 
         v1 = self.get_atom_coord(a1)
         v2 = self.get_atom_coord(a2) if isinstance(a2, AtomLike) else np.array(a2)
@@ -684,7 +683,7 @@ class CartesianGeometry(Promolecule):
         return v2 - v1
 
     def distance_to_point(self, a: AtomLike, p: ArrayLike) -> float:
-        '''Compute the distance between an atom and a point
+        """Compute the distance between an atom and a point
 
         Parameters
         ----------
@@ -708,12 +707,12 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.distance_to_point(0,[0,0,0])
             1.827206230834385
-        '''
+        """
 
         return np.linalg.norm(self.vector(a, p))
 
     def angle(self, a1: AtomLike, a2: AtomLike, a3: AtomLike) -> float:
-        '''Compute an angle between three atoms in radians
+        """Compute an angle between three atoms in radians
 
         Parameters
         ----------
@@ -739,7 +738,7 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.angle(0,1,2)
             1.8082869758837117
-        '''
+        """
 
         i1, i2, i3 = map(self.get_atom_index, (a1, a2, a3))
 
@@ -752,7 +751,7 @@ class CartesianGeometry(Promolecule):
         return _angle(v1, v2)
 
     def coord_subset(self, atoms: Iterable[AtomLike]) -> np.ndarray:
-        '''Returns the coordinates of a subset of atoms
+        """Returns the coordinates of a subset of atoms
 
         Parameters
         ----------
@@ -778,7 +777,7 @@ class CartesianGeometry(Promolecule):
             array([[ 1.296 , -0.2319,  1.267 ],
             [ 0.0573, -0.0226,  2.1227],
             [-1.0974, -0.4738,  1.2059]])
-        '''
+        """
 
         indices = list(map(self.get_atom_index, atoms))
         return self.coords[indices]
@@ -790,7 +789,7 @@ class CartesianGeometry(Promolecule):
         a3: AtomLike,
         a4: AtomLike,
     ) -> float:
-        '''Compute the dihedral angle between four atoms in radians
+        """Compute the dihedral angle between four atoms in radians
 
         Parameters
         ----------
@@ -818,7 +817,7 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.dihedral(0,1,2,3)
             -0.3286236550063439
-        '''
+        """
 
         i1, i2, i3, i4 = map(self.get_atom_index, (a1, a2, a3, a4))
 
@@ -834,7 +833,7 @@ class CartesianGeometry(Promolecule):
         return np.arctan2(arg1, arg2)
 
     def translate(self, vector: ArrayLike) -> None:
-        '''Translates coordinates inplace
+        """Translates coordinates inplace
 
         Parameters
         ----------
@@ -855,13 +854,13 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom.translate([1,1,1])
             >>> cartgeom.coords
             array([[ 2.296 ,  0.7681,  2.267 ],...
-        '''
+        """
 
         v = np.array(vector)
         self.coords += v[np.newaxis, :]
 
     def centroid(self) -> np.ndarray:
-        '''Centroid of the molecule
+        """Centroid of the molecule
 
         Returns
         -------
@@ -878,12 +877,12 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.centroid()
             array([ 0.16483864, -0.16130455, -1.00852727])
-        '''
+        """
 
         return np.average(self.coords, axis=0)
 
     def rmsd(self, other: CartesianGeometry, validate_elements=True):
-        '''Currently Not Implemented
+        """Currently Not Implemented
 
         Parameters
         ----------
@@ -893,7 +892,7 @@ class CartesianGeometry(Promolecule):
             Validates the elements between the two geometries are
             equal, by default True
 
-        '''
+        """
         raise NotImplementedError("RMSD Calculation Currently Not Implemented")
 
         if other.n_atoms != self.n_atoms:
@@ -904,9 +903,8 @@ class CartesianGeometry(Promolecule):
                 "Cannot compare two molecules with different lists of elements"
             )
 
-
     def transform(self, _t_matrix: ArrayLike, /, validate=False) -> None:
-        '''Transform the coordinates of the molecule
+        """Transform the coordinates of the molecule
 
         Parameters
         ----------
@@ -929,13 +927,13 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom = ml.CartesianGeometry(dendrobine)
             >>> cartgeom.transform(t_matrix)
             array([[-7.88021233e-01, -1.05471140e+00,  1.26700000e+00],...
-        '''
+        """
 
         t_matrix = np.array(_t_matrix)
         self.coords = self.coords @ t_matrix
 
     def del_atom(self, _a: AtomLike):
-        '''Deletes an atom from the CartesianGeometry
+        """Deletes an atom from the CartesianGeometry
 
         Parameters
         ----------
@@ -957,7 +955,7 @@ class CartesianGeometry(Promolecule):
             >>> cartgeom.del_atom(0)
             >>> cartgeom.get_atom(0)
             Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
-        '''
+        """
         ai = self.get_atom_index(_a)
         self._coords = np.delete(self._coords, ai, axis=0)
         super().del_atom(_a)
