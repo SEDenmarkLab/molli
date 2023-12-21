@@ -421,6 +421,15 @@ def jobmap(
     else:
         scratch_dir = Path(scratch_dir)
 
+    if cache_dir is None:
+        cache_dir = Path(cache_dir).absolute()
+
+    if error_dir is None:
+        error_dir = Path(error_dir).absolute()
+
+    if log_dir is None:
+        log_dir = Path(log_dir).absolute()
+
     if log_dir is not None and Path(log_dir).is_dir():
         prevlogs = Path(log_dir).glob(f"{job._prep.__qualname__}_*.log")
         for fn in prevlogs:
