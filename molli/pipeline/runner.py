@@ -173,6 +173,7 @@ def run_sched():
                 shlex.split(f"qsub -V -terse -sync yes -cwd -N molli"),
                 encoding="utf8",
                 input=sge_inp,
+                capture_output=True,
             )
 
         case _:
