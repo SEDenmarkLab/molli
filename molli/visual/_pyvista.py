@@ -141,6 +141,7 @@ def plot_descriptor(
     opacity: float = 1.0,
     box: bool = True,
     cmap=None,
+    scalar_bar_args: dict = None,
 ):
     match style:
         case "spheres":
@@ -148,7 +149,9 @@ def plot_descriptor(
             pd = pv.PolyData(grid)
             pd.point_data[name] = values
             gly = pd.glyph(geom=sph, scale=name, factor=factor)
-            plt.add_mesh(gly, scalars=name, opacity=opacity)
+            plt.add_mesh(
+                gly, scalars=name, opacity=opacity, scalar_bar_args=scalar_bar_args
+            )
 
             if box:
                 x1, y1, z1 = np.min(grid, axis=0)
