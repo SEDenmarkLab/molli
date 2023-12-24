@@ -374,41 +374,6 @@ class ConformerEnsemble(Connectivity):
         """
         self.scale(-1, allow_inversion=True)
 
-    def get_substr_indices(
-        self, pattern: Connectivity
-    ) -> Generator[list[int], None, None]:
-        """
-        Yields all possible combinations of substructure indices that matched
-        with the given pattern.
-
-        Parameters:
-        -----------
-        pattern: Connectivity
-
-        Returns:
-        --------
-        Generator over list of all possible mappings to pattern
-
-
-        If only one variation of substructure indices is needed, use
-        next(ens.get_substr_indices(pattern))
-
-        ``python
-        for ens in tqdm(library):
-            for mapping in ens.get_substr_indices(pattern):
-                ...
-        ```
-        """
-        mappings = self.match(
-            pattern,
-            node_match=Connectivity._node_match,
-            edge_match=Connectivity._edge_match,
-        )
-        ens_atom_idx = {a: i for i, a in enumerate(self.atoms)}
-
-        for mapping in mappings:
-            yield [ens_atom_idx[mapping[x]] for x in pattern.atoms]
-
     # NOTE: this function is different to translate function from geometry! (explain why)
     def translate(self, vector: ArrayLike):
         v = np.array(vector)
@@ -416,7 +381,7 @@ class ConformerEnsemble(Connectivity):
             case 1:
                 self.coords += v
             case 2:
-                self.coords += v[:, np.newaxis]
+                self.coords += v[:, np.newaxis, :]
             case _:
                 raise ValueError("wrong shape of vector")
 
@@ -430,7 +395,7 @@ class ConformerEnsemble(Connectivity):
         """
         atom_ind = self.index_atom(_a)
 
-        self.translate(-self.coords[atom_ind])
+        self.translate(-self.coords[:, atom_ind])
 
         # previous working version:
         # for cf in self:
