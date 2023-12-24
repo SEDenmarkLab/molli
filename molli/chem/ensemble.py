@@ -90,7 +90,7 @@ class ConformerEnsemble(Connectivity):
     ):
         # TODO: revise the constructor
 
-        if isinstance(other, list) and all(isinstance(o, Structure) for o in other):
+        if isinstance(other, list) and isinstance(other[0], Structure):
             super().__init__(
                 other[0],
                 name=other[0].name,
@@ -116,16 +116,21 @@ class ConformerEnsemble(Connectivity):
                 **kwds,
             )
             self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
-            self._atomic_charges = np.zeros((n_conformers, self.n_atoms))
+            self._atomic_charges = np.zeros(
+                (
+                    n_conformers,
+                    self.n_atoms,
+                )
+            )
             self._weights = np.ones((n_conformers,))
 
         if isinstance(other, ConformerEnsemble):
-            self._atomic_charges = np.array(other.atomic_charges)
-            self._coords = np.array(other.coords)
-            self._weights = np.array(other.weights)
-
-        if coords is not None:
-            self.coords = coords
+            self.atomic_charges = atomic_charges
+            self.coords = other.coords
+            self.weights = other.weights
+        else:
+            if coords is not None:
+                self.coords = coords
 
         if atomic_charges is not None:
             self.atomic_charges = atomic_charges
@@ -220,11 +225,11 @@ class ConformerEnsemble(Connectivity):
             )
 
         return res
-
+    
     def dump_mol2(self, stream: StringIO = None):
         if stream is None:
             stream = StringIO()
-
+            
         for conf in self:
             conf.dump_mol2(stream)
 
@@ -235,7 +240,7 @@ class ConformerEnsemble(Connectivity):
         stream = StringIO()
         self.dump_mol2(stream)
         return stream.getvalue()
-
+    
     @property
     def n_conformers(self):
         return self._coords.shape[0]

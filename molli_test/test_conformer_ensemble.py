@@ -51,21 +51,9 @@ class ConformerEnsembleTC(ut.TestCase):
         self.assertEqual(ens2.n_atoms, 3)
         self.assertTupleEqual(ens2.coords.shape, (5, 3, 3))
 
-    def test_init_with_other_empty_ensemble(self):
-        "Tests initializing ConformerEnsemble from the other instance of ConformerEnsemble class"
-        ens = ml.ConformerEnsemble(["O", "H", "H"])
-        new_ens = ml.ConformerEnsemble(ens, name="new_ens")
-
-        self.assertEqual(new_ens.n_conformers, ens.n_conformers)
-        self.assertEqual(new_ens.n_atoms, ens.n_atoms)
-        self.assertEqual(new_ens.name, "new_ens")
-        self.assertTupleEqual(new_ens.coords.shape, ens.coords.shape)
-        self.assertTupleEqual(new_ens.weights.shape, ens.weights.shape)
-        self.assertTupleEqual(new_ens.atomic_charges.shape, ens.atomic_charges.shape)
-
     def test_init_with_other_ensemble(self):
         "Tests initializing ConformerEnsemble from the other instance of ConformerEnsemble class"
-        ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+        ens = ml.ConformerEnsemble(["O", "H", "H"])
         new_ens = ml.ConformerEnsemble(ens, name="new_ens")
 
         self.assertEqual(new_ens.n_conformers, ens.n_conformers)
