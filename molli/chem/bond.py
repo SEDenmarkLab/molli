@@ -631,6 +631,40 @@ class Connectivity(Promolecule):
         for ismorphism in matcher.subgraph_isomorphisms_iter():
             yield {v: k for k, v in ismorphism.items()}
 
+    def get_substr_indices(
+        self, pattern: Connectivity
+    ) -> Generator[list[int], None, None]:
+        """
+        Yields all possible combinations of substructure indices that matched
+        with the given pattern.
+
+        Parameters:
+        -----------
+        pattern: Connectivity
+
+        Returns:
+        --------
+        Generator over list of all possible mappings to pattern
+
+        If only one variation of substructure indices is needed, use
+        next(ens.get_substr_indices(pattern))
+
+        ``python
+        for ens in tqdm(library):
+            for mapping in ens.get_substr_indices(pattern):
+                ...
+        ```
+        """
+        mappings = self.match(
+            pattern,
+            node_match=Connectivity._node_match,
+            edge_match=Connectivity._edge_match,
+        )
+        atom_idx = {a: i for i, a in enumerate(self.atoms)}
+
+        for mapping in mappings:
+            yield [atom_idx[mapping[x]] for x in pattern.atoms]
+
     def connect(self, _a1: AtomLike, _a2: AtomLike, **kwds):
         a1, a2 = self.get_atoms(_a1, _a2)
         self.append_bond(b := Bond(a1, a2, **kwds))
