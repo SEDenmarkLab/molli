@@ -18,7 +18,7 @@ from ..storage import Collection
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import logging
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor, Future, ProcessPoolExecutor
 import shutil
 
 T_in = TypeVar("T_in")
@@ -139,6 +139,7 @@ def worker(
     error_dir: str | Path = None,
     log_dir: str | Path = None,
     scratch_dir: str | Path = None,
+    shared_dir: str | Path = None,
     log_level: str = "debug",
 ):
     _name = f"{name}_{os.getpid()}"
@@ -148,9 +149,11 @@ def worker(
 
     if cache_dir is not None:
         cache_dir = Path(cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
 
     if error_dir is not None:
         error_dir = Path(error_dir)
+        error_dir.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger("molli.pipeline.worker")
     if log_dir is not None:
@@ -169,8 +172,8 @@ def worker(
 
     with (
         TemporaryDirectory(
-            dir=scratch_dir,
-            prefix=_name + runner.__name__,
+            dir=shared_dir,
+            prefix=f"molli_jobmap_{_name}",
         ) as td,
         ThreadPoolExecutor(n_jobs_per_worker) as executor,
     ):
@@ -222,6 +225,7 @@ def worker(
                         cwd / f"{inp_key}.inp",
                         cwd / f"{inp_key}.out",
                         scratch_dir,
+                        shared_dir,
                     )
                 else:
                     for i, inp in enumerate(_prepared):
@@ -267,7 +271,8 @@ def worker(
                 if cache_dir is not None:
                     shutil.copy(cwd / f"{k}.out", cache_dir)
             elif error_dir is not None:
-                shutil.copy(cwd / f"{k}.out", error_dir)
+                if (cwd / f"{k}.out").exists():
+                    shutil.copy(cwd / f"{k}.out", error_dir)
 
         success = []
         failure = []
@@ -368,16 +373,25 @@ def batched(iterable, n):
         yield batch
 
 
-def _runner_local(fin, fout, scratch):
+def _runner_local(fin, fout, scratch, shared):
     proc = run(
-        ["_molli_run", str(fin), "-o", str(fout), "--scratch", str(scratch)],
+        [
+            "_molli_run",
+            str(fin),
+            "-o",
+            str(fout),
+            "--scratch",
+            str(scratch),
+            "--shared",
+            str(shared),
+        ],
         capture_output=True,
         encoding="utf8",
     )
     return proc
 
 
-def _runner_sge(fin, fout, scratch):
+def _runner_sge(fin, fout, scratch, shared):
     proc = run(
         [
             "_molli_run_sched",
@@ -388,6 +402,8 @@ def _runner_sge(fin, fout, scratch):
             "sge",
             "--scratch",
             str(scratch),
+            "--shared",
+            str(shared),
         ],
         capture_output=True,
         encoding="utf8",
@@ -404,6 +420,7 @@ def jobmap(
     log_dir: str | Path = None,
     scheduler: Literal["local", "sge-cluster"] = "local",
     scratch_dir: str | Path = None,
+    shared_dir: str | Path = None,
     n_workers: int = None,
     n_jobs_per_worker: int = 1,
     batch_size: int = 16,
@@ -421,10 +438,15 @@ def jobmap(
     else:
         scratch_dir = Path(scratch_dir)
 
-    if cache_dir is None:
+    if shared_dir is None:
+        shared_dir = config.SHARED_DIR
+    else:
+        shared_dir = Path(shared_dir)
+
+    if cache_dir is not None:
         cache_dir = Path(cache_dir).absolute()
 
-    if error_dir is None:
+    if error_dir is not None:
         error_dir = Path(error_dir).absolute()
 
     if log_dir is None:
@@ -461,7 +483,7 @@ def jobmap(
     match scheduler.lower():
         case "local":
             _runner = _runner_local
-        case "sge":
+        case "sge-cluster":
             _runner = _runner_sge
 
     jobname = job._prep.__qualname__
@@ -496,6 +518,7 @@ def jobmap(
                 error_dir=error_dir,
                 log_dir=log_dir,
                 scratch_dir=scratch_dir,
+                shared_dir=shared_dir,
                 args=args,
                 kwargs=kwargs,
                 log_level="debug" if verbose else "info",
