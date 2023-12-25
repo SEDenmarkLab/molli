@@ -90,12 +90,13 @@ class ConformerEnsemble(Connectivity):
     ):
         # TODO: revise the constructor
 
-        if isinstance(other, list) and isinstance(other[0], Structure):
+        if isinstance(other, list) and all(isinstance(o, Structure) for o in other):
             super().__init__(
                 other[0],
                 name=other[0].name,
                 charge=other[0].charge,
                 mult=other[0].mult,
+                **kwds,
             )
             n_conformers = len(other)
 
@@ -116,21 +117,16 @@ class ConformerEnsemble(Connectivity):
                 **kwds,
             )
             self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
-            self._atomic_charges = np.zeros(
-                (
-                    n_conformers,
-                    self.n_atoms,
-                )
-            )
+            self._atomic_charges = np.zeros((n_conformers, self.n_atoms))
             self._weights = np.ones((n_conformers,))
 
         if isinstance(other, ConformerEnsemble):
-            self.atomic_charges = atomic_charges
-            self.coords = other.coords
-            self.weights = other.weights
-        else:
-            if coords is not None:
-                self.coords = coords
+            self._atomic_charges = np.array(other.atomic_charges)
+            self._coords = np.array(other.coords)
+            self._weights = np.array(other.weights)
+
+        if coords is not None:
+            self.coords = coords
 
         if atomic_charges is not None:
             self.atomic_charges = atomic_charges
@@ -225,11 +221,11 @@ class ConformerEnsemble(Connectivity):
             )
 
         return res
-    
+
     def dump_mol2(self, stream: StringIO = None):
         if stream is None:
             stream = StringIO()
-            
+
         for conf in self:
             conf.dump_mol2(stream)
 
@@ -240,7 +236,7 @@ class ConformerEnsemble(Connectivity):
         stream = StringIO()
         self.dump_mol2(stream)
         return stream.getvalue()
-    
+
     @property
     def n_conformers(self):
         return self._coords.shape[0]
@@ -389,41 +385,6 @@ class ConformerEnsemble(Connectivity):
         """
         self.scale(-1, allow_inversion=True)
 
-    def get_substr_indices(
-        self, pattern: Connectivity
-    ) -> Generator[list[int], None, None]:
-        """
-        Yields all possible combinations of substructure indices that matched
-        with the given pattern.
-
-        Parameters:
-        -----------
-        pattern: Connectivity
-
-        Returns:
-        --------
-        Generator over list of all possible mappings to pattern
-
-
-        If only one variation of substructure indices is needed, use
-        next(ens.get_substr_indices(pattern))
-
-        ``python
-        for ens in tqdm(library):
-            for mapping in ens.get_substr_indices(pattern):
-                ...
-        ```
-        """
-        mappings = self.match(
-            pattern,
-            node_match=Connectivity._node_match,
-            edge_match=Connectivity._edge_match,
-        )
-        ens_atom_idx = {a: i for i, a in enumerate(self.atoms)}
-
-        for mapping in mappings:
-            yield [ens_atom_idx[mapping[x]] for x in pattern.atoms]
-
     # NOTE: this function is different to translate function from geometry! (explain why)
     def translate(self, vector: ArrayLike):
         v = np.array(vector)
@@ -431,7 +392,7 @@ class ConformerEnsemble(Connectivity):
             case 1:
                 self.coords += v
             case 2:
-                self.coords += v[:, np.newaxis]
+                self.coords += v[:, np.newaxis, :]
             case _:
                 raise ValueError("wrong shape of vector")
 
@@ -445,7 +406,7 @@ class ConformerEnsemble(Connectivity):
         """
         atom_ind = self.index_atom(_a)
 
-        self.translate(-self.coords[atom_ind])
+        self.translate(-self.coords[:, atom_ind])
 
         # previous working version:
         # for cf in self:

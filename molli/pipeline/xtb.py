@@ -5,14 +5,14 @@ from pathlib import Path
 from pprint import pprint
 from subprocess import PIPE, run
 from tempfile import TemporaryDirectory, mkstemp
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, Iterable
 
 import attrs
 import msgpack
 import numpy as np
 from joblib import Parallel, delayed
 
-from ..chem import Molecule
+from ..chem import Molecule, ConformerEnsemble
 from .job import Job, JobInput, JobOutput
 from .driver import DriverBase
 
@@ -21,7 +21,7 @@ class XTBDriver(DriverBase):
     default_executable = "xtb"
 
     @Job(return_files=("xtbopt.xyz",)).prep
-    def optimize(
+    def optimize_m(
         self,
         M: Molecule,
         method: str = "gff",
@@ -29,12 +29,13 @@ class XTBDriver(DriverBase):
         xtbinp: str = "",
         maxiter: int = 500,
     ):
+        """Optimize a molecule with XTB"""
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
         inp = JobInput(
             M.name,
             commands=[
                 (
-                    f"""xtb input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs}""",
+                    f"""{self.executable} input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} --silent""",
                     "xtb",
                 ),
             ],
@@ -46,8 +47,13 @@ class XTBDriver(DriverBase):
 
         return inp
 
-    @optimize.post
-    def optimize(self, out: JobOutput, M: Molecule, **kwargs):
+    @optimize_m.post
+    def optimize_m(
+        self,
+        out: JobOutput,
+        M: Molecule,
+        **kwargs,
+    ):
         if pls := out.files["xtbopt.xyz"]:
             xyz = pls.decode()
 
@@ -58,6 +64,22 @@ class XTBDriver(DriverBase):
             optimized = Molecule(M, coords=Molecule.loads_xyz(xyz_coords).coords)
 
             return optimized
+
+    optimize_ens = Job.vectorize(optimize_m)
+
+    @optimize_ens.reduce
+    def optimize_ens(
+        self,
+        outputs: Iterable[Molecule],
+        ens: ConformerEnsemble,
+        *args,
+        **kwargs,
+    ):
+        """Optimize a conformer ensemble with XTB"""
+        newens = ConformerEnsemble(ens)
+        for new_conf, old_conf in zip(outputs, newens):
+            old_conf.coords = new_conf.coords
+        return newens
 
     @Job().prep
     def energy(
@@ -70,7 +92,7 @@ class XTBDriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            command=f"""xtb input.xyz --{method} --charge {M.charge} --acc {accuracy:0.2f}""",
+            command=f"""{self.executable} input.xyz --{method} --charge {M.charge} --acc {accuracy:0.2f}""",
             files={"input.xyz": M.dumps_xyz().encode()},
         )
 

@@ -48,14 +48,16 @@ arg_parser.add_argument(
     choices=["sge", "slurm", "local"],
 )
 
-arg_parser.add_argument(
-    "--scheduler_params",
-    action="store",
-    type=str,
-)
+arg_parser.add_argument("--scheduler_params", action="store", type=str, default="")
 
 arg_parser.add_argument(
     "--scratch",
+    action="store",
+    default=None,
+)
+
+arg_parser.add_argument(
+    "--shared",
     action="store",
     default=None,
 )
@@ -163,20 +165,25 @@ def run_local():
 def run_sched():
     # so what we are trying to do here is to submit an otherwise "local job" to the queue.
     parsed = arg_parser.parse_args()
-    match parsed.submit:
-        case "sge":
-            _molli_run_path = Path(sys.executable).with_name("_molli_run")
-            print(_molli_run_path)
-            res = run(
-                shlex.split(
-                    f"qsub -V -terse -sync yes -cwd -S {_molli_run_path.as_posix()}"
-                )
-                + sys.argv[1:],
-                stderr=DEVNULL,
-                stdout=DEVNULL,
-            )
+    with TemporaryDirectory(dir=parsed.shared) as cwd:
+        match parsed.submit:
+            case "sge":
+                _molli_run_path = Path(sys.executable).with_name("_molli_run")
 
-        case _:
-            raise NotImplementedError
+                sge_inp = _molli_run_path.as_posix() + " " + shlex.join(sys.argv[1:])
+
+                name = "molli_" + Path(parsed.job).stem
+
+                res = run(
+                    shlex.split(
+                        f"qsub -N {name} -V -terse -sync yes -wd {cwd} {parsed.scheduler_params}"
+                    ),
+                    encoding="utf8",
+                    input=sge_inp,
+                    capture_output=False,
+                )
+
+            case _:
+                raise NotImplementedError
 
     exit(res.returncode)

@@ -229,7 +229,7 @@ def molli_main(args, **kwargs):
         )
         print(f"Finished calculating the bounding box!")
 
-        with h5py.File(out_name, mode="w" if parsed.overwrite else "a") as f:
+        with h5py.File(out_path, mode="w" if parsed.overwrite else "a") as f:
             f.create_dataset("grid", data=grid, dtype="f4")
             f["grid"].attrs["bbox"] = [qmin, qmax]
 

@@ -81,6 +81,8 @@ if (default_path := HOME / "config.yaml").is_file():
         cfg = yaml.safe_load(f)
 
     configure(cfg)
+else:
+    configure()
 
 # This is to patch messagepack so that numpy arrays can be serialized
 import msgpack_numpy

@@ -55,7 +55,7 @@ arg_parser.add_argument(
 )
 
 
-def molli_main(args,  **kwargs):
+def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
     fpath = Path(parsed.file)
 
@@ -69,14 +69,19 @@ def molli_main(args,  **kwargs):
                 print("Unknown input format: {iformat}")
             exit(1)
 
-    lib = ml.MoleculeLibrary(opath, overwrite=parsed.overwrite, readonly=False)
-    with lib.writing():
-        for k in tqdm(input_file.keys()):
+
+    library = ml.MoleculeLibrary(opath, readonly=False, overwrite=parsed.overwrite)
+
+    with library.writing():
+        for k in tqdm(input_file.keys(), desc=f"Parsing {fpath}"):
+
             try:
                 mol = input_file[k]
                 if parsed.hadd:
                     mol.add_implicit_hydrogens()
-                lib[mol.name] = mol
+
+                library[mol.name] = mol
+
             except Exception as e:
                 if isinstance(e, KeyError):
                     raise FileExistsError(f"File {opath} already exists! To overwrite file use option --overwrite")

@@ -51,6 +51,7 @@ from . import external
 from . import files
 from . import storage
 from . import pipeline
+from . import visual
 
 from .chem import *
 from .ftypes import *

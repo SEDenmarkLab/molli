@@ -66,11 +66,11 @@ class Collection(MutableMapping[str, T]):
         self._value_decoder = value_decoder or _do_nothing
         self._encoding = encoding
 
-    def reading(self):
-        return self._backend.reading()
+    def reading(self, timeout=None):
+        return self._backend.reading(timeout=timeout)
 
-    def writing(self):
-        return self._backend.writing()
+    def writing(self, timeout=None):
+        return self._backend.writing(timeout=timeout)
 
     def __contains__(self, __key: str) -> bool:
         return __key in self.keys()
