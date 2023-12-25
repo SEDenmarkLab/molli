@@ -1,3 +1,23 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
 """
 This package parses chemical files, such as .cdxml, and creates a collection of molecules in .mlib format.
 """
@@ -55,7 +75,7 @@ arg_parser.add_argument(
 )
 
 
-def molli_main(args,  **kwargs):
+def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
     fpath = Path(parsed.file)
 
@@ -69,12 +89,20 @@ def molli_main(args,  **kwargs):
                 print("Unknown input format: {iformat}")
             exit(1)
 
-    with ml.MoleculeLibrary.new(opath, overwrite=parsed.overwrite) as lib:
-        for k in tqdm(input_file.keys()):
+    library = ml.MoleculeLibrary(opath, readonly=False, overwrite=parsed.overwrite)
+
+    with library.writing():
+        for k in tqdm(input_file.keys(), desc=f"Parsing {fpath}"):
             try:
                 mol = input_file[k]
                 if parsed.hadd:
                     mol.add_implicit_hydrogens()
-                lib.append(mol.name, mol)
+
+                library[mol.name] = mol
+
             except Exception as e:
+                if isinstance(e, KeyError):
+                    raise FileExistsError(
+                        f"File {opath} already exists! To overwrite file use option --overwrite"
+                    )
                 raise RuntimeError(f"Unable to parse {k}") from e

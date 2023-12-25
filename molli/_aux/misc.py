@@ -21,6 +21,7 @@ from uuid import uuid1
 from pathlib import Path
 import types
 import importlib.machinery as impm
+import sys
 
 # MOLLI_DEFAULT_DATA_LOCATION = Path("~/.molli").expanduser()
 
@@ -158,3 +159,19 @@ def load_external_module(fpath: Path | str, modname: str):
     mod = types.ModuleType(loader.name)
     loader.exec_module(mod)
     return mod
+
+
+def molli_aux_dir(fpath: str | Path):
+    """
+    This creates a hidden .molli directory
+    Useful for hiding lock files and other stuff
+    """
+    path = Path(fpath).parent / ".molli"
+    path.mkdir(exist_ok=True)
+
+    if sys.platform == "win32":
+        import win32con, win32api
+
+        win32api.SetFileAttributes(str(path), win32con.FILE_ATTRIBUTE_HIDDEN)
+
+    return path

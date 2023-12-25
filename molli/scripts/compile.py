@@ -1,5 +1,24 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
 """
-Compile a lot of files into a molli collection
+`molli compile` script is useful to compile a lot of files into a molli collection
 """
 
 from argparse import ArgumentParser
@@ -50,7 +69,7 @@ arg_parser.add_argument(
 )
 
 
-def molli_main(args,  **kwargs):
+def molli_main(args, **kwargs):
     print("This routine will compile all requested mol2 files into a single collection")
     parsed = arg_parser.parse_args(args)
     files = []
@@ -62,7 +81,6 @@ def molli_main(args,  **kwargs):
             print(f"{i+1:>10} | {fn}")
 
     with ml.ConformerLibrary.new(parsed.output, overwrite=False) as lib:
-
         print("\nImporting mol2 files:")
         for fn in (pb := tqdm(files, dynamic_ncols=True)):
             fp = Path(fn)

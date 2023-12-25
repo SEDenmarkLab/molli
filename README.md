@@ -5,7 +5,7 @@
 # Installation and Building
 
 Molli is designed to serve as both a pip package and a conda package.
-The main difference comes from the fact that several required components are unavailable from a normal pip distribution (openbabel, xtb/crest, etc). Using anaconda also allows
+The main difference comes from the fact that several required components are unavailable from a normal pip distribution (openbabel, xtb/crest, etc). 
 
 Molli is both a pip and conda package. Technically, it is installable with both, but there are large differences described below. They boil down to pip's inability to install certain secondary dependencies.
 

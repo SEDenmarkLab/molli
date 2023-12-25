@@ -1,9 +1,41 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+# `molli.descriptor.aso`
+This module defines the functions necessary to calculate ASO
+(Average Steric Occupancy Descriptor)
+
+See 
+Zahrt AF, Henle JJ, Rose BT, Wang Y, Darrow WT, Denmark SE. Science 2019, 363 (6424), eaau5631.
+Henle JJ, Zahrt AF, Rose BT, Darrow WT, Wang Y, Denmark SE. Journal of the American Chemical Society 2020, 142 (26), 11578-11592.
+for definitions
+"""
+
 from ..chem import Molecule, ConformerEnsemble
 from concurrent.futures import ThreadPoolExecutor, Future
 import numpy as np
 from math import dist
 import molli_xt
 import deprecated
+
 
 def _where_distance(p, g: np.ndarray, r: float):
     """
@@ -15,64 +47,48 @@ def _where_distance(p, g: np.ndarray, r: float):
 
     return dists <= r**2
 
-@deprecated.deprecated("This function is left for compatibility and testing purposes only."
-                       "While it is more readable, due to pure Python for loops it is relatively slow.")
-def aso1(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.ndarray:
-    aso_full = np.empty((ens.n_conformers, g.shape[0]), dtype=dtype)
+
+@deprecated.deprecated(
+    "This function is left for compatibility and testing purposes only."
+    "While it is more readable, due to pure Python for loops it is relatively slow."
+)
+def aso1(
+    ens: ConformerEnsemble,
+    grid: np.ndarray,
+    weighted: bool = False,
+) -> np.ndarray:
+    aso_full = np.empty((ens.n_conformers, grid.shape[0]))
 
     # Iterate over conformers in the ensemble
     # Complexity (O(n_confs * n_gpts))
     for i, c in enumerate(ens):
         # Iterate over atoms
         for j, a in enumerate(c.atoms):
-            aso_full[i][_where_distance(c.coords[j], g, a.vdw_radius)] = 1
+            aso_full[i][_where_distance(c.coords[j], grid, a.vdw_radius)] = 1
 
-    aso = np.average(aso_full, axis=0)
-    return aso
+    return np.average(
+        aso_full,
+        axis=0,
+        weights=ens.weights if weighted else None,
+    )
 
 
-def aso2(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.ndarray:
+def aso2(
+    ens: ConformerEnsemble,
+    grid: np.ndarray,
+    weighted: bool = False,
+) -> np.ndarray:
     """
     Main workhorse function for ASO calculation that takes advantage of C++ backend code whenever possible.
     With large grids can be relatively memory intensive, so breaking up the grid into smaller pieces is recommended
     (see "chunky" calculation strategy)
     """
-    alldist = molli_xt.cdist32_eu2_f3(ens._coords, g)
+    alldist = molli_xt.cdist32_eu2(ens._coords, grid)
     vdwr2s = np.array([a.vdw_radius for a in ens.atoms]) ** 2
     diff = alldist <= vdwr2s[:, None]
 
-    return np.average(np.any(diff, axis=1), axis=0, weights=ens.weights)
-
-
-def chunky_aso(ens: ConformerEnsemble, grid: np.ndarray, chunksize=512):
-    aso_chunks = []
-    for subgrid in np.array_split(grid, grid.shape[0] // chunksize):
-        aso_chunks.append(aso2(ens, subgrid))
-    return np.concatenate(aso_chunks)
-
-
-def parallel_aso(ens: ConformerEnsemble, grid: np.ndarray, n_threads=4, chunksize=512):
-    with ThreadPoolExecutor(n_threads) as tp:
-        futures: list[Future] = []
-        for subgrid in np.array_split(grid, grid.shape[0] // chunksize):
-            f = tp.submit(aso2, ens, subgrid)
-            futures.append(f)
-
-        sub_asos = [f.result() for f in futures]
-
-    return np.concatenate(sub_asos)
-
-
-# def aso3(ens: ConformerEnsemble, g: np.ndarray, dtype: str = "float32") -> np.ndarray:
-#     aso_full = np.empty((ens.n_conformers, g.shape[0]), dtype=dtype)
-
-#     vdw2 = np.array([a.vdw_radius**2 for a in ens.atoms], dtype=dtype)
-
-#     for i, c in enumerate(ens):
-#         vecs = g[:, np.newaxis] - c.coords  # Shape of vecs: (n_gpts, n_atoms)
-#         dists2 = np.sum(vecs**2, axis=-1)  # Squared distances of grid points to atoms
-#         where = np.any(dists2 - vdw2 <= 0, axis=-1)
-
-#         aso_full[i][where] = 1
-
-#     return np.average(aso_full, 0)
+    return np.average(
+        np.any(diff, axis=1),
+        axis=0,
+        weights=ens.weights if weighted else None,
+    )

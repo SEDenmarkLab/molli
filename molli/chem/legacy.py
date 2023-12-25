@@ -1,9 +1,27 @@
-"""
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
 
+
+"""
 # `molli.parsing.legacy` module
 
 Left for backwards compatibility reasons.
-
 """
 
 # from xml.dom import minidom as xmd
@@ -12,6 +30,7 @@ import re
 from warnings import warn
 from io import StringIO, BytesIO
 from . import ConformerEnsemble, Molecule, Atom, Bond, Element
+
 
 def read_geom(k, g, ens):
     m = re.match(r"#(?P<L>[0-9]+),(?P<D>[0-9]+):(?P<G>.+);", g.text)
@@ -24,36 +43,39 @@ def read_geom(k, g, ens):
     coord = []
     for a, xyz in enumerate(G.split(";")):
         x, y, z = map(float, xyz.split(","))
-        if isinstance(ens,ConformerEnsemble):
+        if isinstance(ens, ConformerEnsemble):
             ens._coords[(k, a)] = (x, y, z)
         elif isinstance(ens, Molecule):
             ens._coords[a] = (x, y, z)
     return ens
 
-def ensemble_from_molli_old_xml(f: StringIO | BytesIO, mol_lib=False) -> ConformerEnsemble | Molecule:
-    # This auxiliary function parses an old molli collection
-    """
 
-    # `read_molli_old_xml`
-    parse an old version of the collection
+def ensemble_from_molli_old_xml(
+    f: StringIO | BytesIO, mol_lib=False
+) -> ConformerEnsemble | Molecule:
+    """Parses an old version of the collection.
+    This function is primarily intended for backwards compatibility
+    reasons with the old molli version. It is best to use the
+    `recollect` command rather than directly interact with this function
 
-    This function is primarily intented for backwards compatibility reasons with the old molli version
-
-    ## Parameters
-
-    `f : StringIO`
+    Parameters
+    ----------
+    f : StringIO | BytesIO
         xml file stream
+    mol_lib : bool, optional
+        Returns `ConformerEnsemble` if True, by default False
 
-    `mol_lib: bool`
-        Returns `ConformerEnsemble` by default, if False returns `Molecule`
+    Returns
+    -------
+    ConformerEnsemble | Molecule
+        Returns Conformer Ensemble or Molecule
 
-    ## Returns
-
-    `ConformerEnsemble` or `Molecule`
-        Ensemble of conformers as written in the xml file or molecule
-        Note: if no conformer geometries are given, default geometry will be imported as 0th conformer.
-
+    Notes
+    -----
+    If no conformer geometries are given, default geometry will be imported
+    as the 0th conformer.
     """
+
     tree = cET.parse(f)
     mol = tree.getroot()
     name = mol.attrib["name"]
@@ -91,10 +113,10 @@ def ensemble_from_molli_old_xml(f: StringIO | BytesIO, mol_lib=False) -> Conform
         _b.set_mol2_type(b.attrib["t"])
 
     if len(xconfs) == 0:
-        for k,g in enumerate(xgeom):
-            ens = read_geom(k,g,ens)
+        for k, g in enumerate(xgeom):
+            ens = read_geom(k, g, ens)
     else:
-        for k,g in enumerate(xconfs):
-            ens = read_geom(k,g,ens)
+        for k, g in enumerate(xconfs):
+            ens = read_geom(k, g, ens)
 
     return ens

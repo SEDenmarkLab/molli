@@ -1,3 +1,27 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+This file contains useful functions that define rotation matrices.
+"""
+
 import numpy as np
 from numpy.typing import ArrayLike
 import math
@@ -37,14 +61,16 @@ def rotation_matrix_from_vectors(
         # This case is for vectors that are nearly opposite and collinear
         # Here we determine a vector that is orthogonal to v2n
         # So instead of one -180 degree rotation we do two rotations
-        # One to an orthogonal vector `ort` 
+        # One to an orthogonal vector `ort`
         _rcp = 1.0
-        while abs(_rcp) > 0.01: # In most tested cases it converges within one step
+        while abs(_rcp) > 0.01:  # In most tested cases it converges within one step
             RV = np.random.rand(3)
             RV /= np.linalg.norm(RV)
-            ort = RV - v2n * np.dot(RV, v2n) # This is a Gram-Schmidt orthogonalization
+            ort = RV - v2n * np.dot(RV, v2n)  # This is a Gram-Schmidt orthogonalization
             _rcp = np.dot(ort, v2n)
-        return rotation_matrix_from_vectors(v1, ort) @ rotation_matrix_from_vectors(ort, v2)
+        return rotation_matrix_from_vectors(v1, ort) @ rotation_matrix_from_vectors(
+            ort, v2
+        )
     else:
         I = np.eye(3)
         Ux = np.outer(v1n, v2n) - np.outer(v2n, v1n)
@@ -67,8 +93,10 @@ def rotation_matrix_from_axis(_axis: ArrayLike, angle: float):
     return np.eye(3) + k1 * W + k2 * (W @ W)
 
 
-def rotate_2dvec_outa_plane(_vec: ArrayLike, angle: float, _plane_normal: ArrayLike = [0,0,1]):
+def rotate_2dvec_outa_plane(
+    _vec: ArrayLike, angle: float, _plane_normal: ArrayLike = [0, 0, 1]
+):
     R = rotation_matrix_from_vectors(_plane_normal, [0, 0, 1])
-    ax = np.cross([0, 0, 1], _vec)  
+    ax = np.cross([0, 0, 1], _vec)
     Rinv = np.linalg.inv(R)
     return R @ rotation_matrix_from_axis(ax, angle) @ Rinv

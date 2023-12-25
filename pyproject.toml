@@ -1,9 +1,20 @@
+# ================================================================================
+# This file is part of `molli 1.0` 
+# (https://github.com/SEDenmarkLab/molli)
+# ================================================================================
+
 [build-system]
 requires = ["setuptools>=67", "wheel", "pybind11>=2.10.4"]
 build-backend = "setuptools.build_meta"
 
 [project]
-authors = [{ name = "Alexander S. Shved", email = "shvedalx@illinois.edu" }]
+authors = [
+    { name = "Alexander S. Shved", email = "shvedalx@illinois.edu" },
+    { name = "Blake E. Ocampo" },
+    { name = "Elena S. Burlova" },
+    { name = "Casey L. Olen" },
+    { name = "N. Ian Rinehart" },
+]
 requires-python = ">=3.10"
 name = "molli"
 description = "Molecular toolbox library"
@@ -26,7 +37,7 @@ dependencies = [
     "fasteners>=0.19",
     "joblib>=1.3.2",
 ]
-version = "1.0.0b1"
+version = "1.0.0b2"
 
 
 [tool.setuptools.package-data]
@@ -38,3 +49,5 @@ include = ["molli", "molli.*", "molli_test"]
 
 [project.scripts]
 molli = "molli.__main__:main"
+_molli_run = "molli.pipeline.runner:run_local"
+_molli_run_sched = "molli.pipeline.runner:run_sched"

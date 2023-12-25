@@ -2,8 +2,10 @@ from glob import glob
 from typing import Callable, Iterable, TypeVar, Generator
 from pathlib import Path
 from warnings import warn
+import sys
 
 T = TypeVar("T")
+
 
 def sglob(
     pattern: str,
@@ -105,3 +107,29 @@ def dglob(
                     f"An error occurred while loading {fn}: {xc}. Skipping the"
                     " file..."
                 )
+
+
+if sys.version_info >= (3, 12):
+    from itertools import batched
+else:
+    try:
+        from more_itertools import batched
+    except:
+
+        def batched(iterable, n):
+            """This is from python documentation website.
+            This version is a fallback in case `more_itertools` is not installed
+            and python is not >= 3.12
+            """
+            from itertools import islice
+
+            if n < 1:
+                raise ValueError("n must be at least one")
+            it = iter(iterable)
+            while batch := tuple(islice(it, n)):
+                yield batch
+
+
+def len_batched(iterable: Iterable | int, n: int) -> int:
+    L = iterable if isinstance(iterable, int) else len(iterable)
+    return L // n + (1 if L % n else 0)

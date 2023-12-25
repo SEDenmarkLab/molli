@@ -1,7 +1,28 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
 """
-Inspect a .mlib file.
+`molli combine` script is useful when performing a combinatorial expansion of the library
 """
 
+from functools import partial
 from argparse import ArgumentParser
 import molli as ml
 from molli.external import openbabel
@@ -13,10 +34,12 @@ from itertools import (
     chain,
     product,
 )
+from typing import Callable
 from tqdm import tqdm
 import multiprocessing as mp
 import os
 from math import comb, perm, factorial
+from joblib import Parallel, delayed
 
 OS_NCORES = os.cpu_count() // 2
 
@@ -57,21 +80,21 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "-j",
-    "--n_jobs",
+    "-n",
+    "--nprocs",
     action="store",
     metavar=1,
     default=1,
     type=int,
-    help="Number of parallel jobs",
+    help="Number of processes to be used in parallel",
 )
 
 arg_parser.add_argument(
     "-b",
-    "--batch_size",
+    "--batchsize",
     action="store",
     metavar=1,
-    default=None,
+    default=256,
     type=int,
     help="Number of molecules to be processed at a time on a single core",
 )
@@ -124,58 +147,69 @@ arg_parser.add_argument(
 )
 
 
-def _ml_init(_progress, _parsed, _outputs: mp.Queue):
-    """
-    This function is used to initialize workers.
-    """
-    global progress, library, parsed
-    progress, parsed = _progress, _parsed
+@delayed
+def _ml_assemble(
+    core: ml.Molecule,
+    core_aps: tuple[int],
+    substituent_combos: list[tuple[ml.Molecule]],
+    hadd: bool = True,
+    obopt: Callable = None,
+    separator: str = "_",
+):
+    results = {}
+    for substituent_combo in substituent_combos:
+        assert len(core_aps) == len(substituent_combo)
 
-    pid = mp.current_process().pid
-    calc_name = str(parsed.output).removesuffix(".mlib")
-    library = ml.MoleculeLibrary.new(f"{calc_name}.{pid}.mlib.tmp")
-    _outputs.put(library.path)
-
-
-def _ml_assemble(core: ml.Molecule, core_aps: tuple[int], substituent_combo: tuple[ml.Molecule]):
-    assert len(core_aps) == len(substituent_combo)
-
-    deriv = ml.Molecule(core)
-    for i, (ap_i, sub) in enumerate(zip(core_aps, substituent_combo)):
-        deriv = ml.Molecule.join(
-            deriv, sub, ap_i - i, sub.attachment_points[0], optimize_rotation=True
+        deriv = ml.Molecule(core)
+        for i, (ap_i, sub) in enumerate(zip(core_aps, substituent_combo)):
+            deriv = ml.Molecule.join(
+                deriv, sub, ap_i - i, sub.attachment_points[0], optimize_rotation=True
+            )
+        deriv.name = separator.join(
+            [core.name] + [sub.name for sub in substituent_combo]
         )
-    deriv.name = parsed.separator.join([core.name] + [sub.name for sub in substituent_combo])
 
-    if parsed.hadd:
-        deriv.add_implicit_hydrogens()
+        if hadd:
+            deriv.add_implicit_hydrogens()
+
+        if callable(obopt):
+            obopt(deriv)
+
+        results[deriv.name] = deriv
+
+    return results
+
+
+def molli_main(args, **kwargs):
+    parsed = arg_parser.parse_args(args)
+    with (_lib := ml.MoleculeLibrary(parsed.cores)).reading():
+        cores: list[ml.Molecule] = list(_lib.values())
+    with (_lib := ml.MoleculeLibrary(parsed.substituents)).reading():
+        substituents: list[ml.Molecule] = list(_lib.values())
 
     if parsed.obopt is not None:
         match parsed.obopt:
             case []:
-                openbabel.obabel_optimize(
-                    deriv,
-                    inplace=True,
-                )
+                obopt = partial(openbabel.obabel_optimize, inplace=True)
 
             case [ff]:
-                openbabel.obabel_optimize(
-                    deriv,
+                obopt = partial(
+                    openbabel.obabel_optimize,
                     ff=ff,
                     inplace=True,
                 )
 
             case [ff, maxiter]:
-                openbabel.obabel_optimize(
-                    deriv,
+                obopt = partial(
+                    openbabel.obabel_optimize,
                     ff=ff,
                     max_steps=int(maxiter),
                     inplace=True,
                 )
 
             case [ff, maxiter, tol]:
-                openbabel.obabel_optimize(
-                    deriv,
+                obopt = partial(
+                    openbabel.obabel_optimize,
                     ff=ff,
                     max_steps=int(maxiter),
                     tol=float(tol),
@@ -183,8 +217,8 @@ def _ml_assemble(core: ml.Molecule, core_aps: tuple[int], substituent_combo: tup
                 )
 
             case [ff, maxiter, tol, disp]:
-                openbabel.obabel_optimize(
-                    deriv,
+                obopt = partial(
+                    openbabel.obabel_optimize,
                     ff=ff,
                     max_steps=int(maxiter),
                     tol=float(tol),
@@ -193,19 +227,11 @@ def _ml_assemble(core: ml.Molecule, core_aps: tuple[int], substituent_combo: tup
                 )
 
             case _:
-                raise ValueError(f"Unsupported arguments for openbabel optimize: {parsed.obopt}")
-
-    with progress.get_lock():
-        with library:
-            library.append(deriv.name, deriv)
-        progress.value += 1
-
-
-def molli_main(args,  **kwargs):
-    parsed = arg_parser.parse_args(args)
-    cores: list[ml.Molecule] = ml.MoleculeLibrary(parsed.cores)[:]
-    substituents: list[ml.Molecule] = ml.MoleculeLibrary(parsed.substituents)[:]
-
+                raise ValueError(
+                    f"Unsupported arguments for openbabel optimize: {parsed.obopt}"
+                )
+    else:
+        obopt = None
     # TODO: turn all assertions into more meaningful errors
     assert all(sub.n_attachment_points == 1 for sub in substituents)
 
@@ -235,53 +261,52 @@ def molli_main(args,  **kwargs):
     match parsed.mode:
         case "same":
             subst_iter = zip(*repeat(substituents, n_aps))
-            lib_size = n_cores * n_subst
+            n_subst_combos = n_subst
         case "permutns":
             # len = n! / (n - k)!
             subst_iter = permutations(substituents, n_aps)
-            lib_size = n_cores * perm(n_subst, n_aps)
+            n_subst_combos = perm(n_subst, n_aps)
         case "combns":
             # len = n! / k! / (n - k)!
             subst_iter = combinations(substituents, n_aps)
-            lib_size = n_cores * comb(n_subst, n_aps)
-        case "combins_repl":
+            n_subst_combos = comb(n_subst, n_aps)
+        case "combns_repl":
             # from docs: len = (n+r-1)! / r! / (n-1)!
             subst_iter = combinations_with_replacement(substituents, n_aps)
-            lib_size = n_cores * perm(n_subst + n_aps - 1, n_aps) // factorial(n_aps)
+            n_subst_combos = perm(n_subst + n_aps - 1, n_aps) // factorial(n_aps)
         case _:
             raise NotImplementedError(f"Unknown mode: {parsed.mode}")
 
+    lib_size = n_cores * n_subst_combos
+
     print(f"Will create a library of size {lib_size}")
 
-    progress = mp.Value("Q", 0, lock=True)
-    outputs = mp.Queue()
+    parallel = Parallel(n_jobs=parsed.nprocs, return_as="generator")
 
-    with (
-        mp.Pool(parsed.n_jobs, initializer=_ml_init, initargs=(progress, parsed, outputs)) as pool,
-        tqdm(range(lib_size)) as pb,
-    ):
-        lib_iter = ((c, i, s) for (c, i), s in product(zip(cores, ap_indices), subst_iter))
-        res = pool.starmap_async(
-            _ml_assemble, lib_iter, chunksize=parsed.batch_size, error_callback=lambda xc: print(xc)
-        )
-        cur = 0
-        while not res.ready():
-            res.wait(0.3)
-            with progress.get_lock():
-                pb.update(progress.value - cur)
-                cur = progress.value
-
-        dest_files = res.get()
-
-    outputs = [outputs.get() for _ in range(outputs.qsize())]
-    lib = ml.MoleculeLibrary.concatenate(parsed.output, outputs, overwrite=parsed.overwrite)
-    assert len(lib) == lib_size, (
-        f"Something went wrong. Output library size is different: expected {lib_size}, obtained"
-        f" {len(lib)}"
+    library = ml.MoleculeLibrary(
+        parsed.output, readonly=False, overwrite=parsed.overwrite
     )
 
-    for of in outputs:
-        os.remove(of)
+    for results in tqdm(
+        parallel(
+            _ml_assemble(
+                c,
+                i,
+                sb,
+                hadd=parsed.hadd,
+                obopt=obopt,
+                separator=parsed.separator,
+            )
+            for (c, i), sb in product(
+                zip(cores, ap_indices),
+                ml.aux.batched(subst_iter, parsed.batchsize),
+            )
+        ),
+        total=ml.aux.len_batched(n_subst_combos, parsed.batchsize) * n_cores,
+    ):
+        with library.writing():
+            for k, v in results.items():
+                library[k] = v
 
     # Now all the files will be concatenated
 
