@@ -7,6 +7,9 @@ import molli as ml
 from pathlib import Path
 from sys import stderr, stdout
 import warnings
+from contextlib import nullcontext
+from tqdm import tqdm
+import math
 
 arg_parser = ArgumentParser(
     "molli inspect",
@@ -25,8 +28,15 @@ arg_parser.add_argument(
     "-t",
     "--type",
     default=None,
-    choices=["mlib", "cdxml"],
+    choices=["mlib", "clib", "cdxml"],
     help="Collection type",
+)
+
+arg_parser.add_argument(
+    "--timeout",
+    default=1.0,
+    type=float,
+    help="Timeout for a reader lock acquisition",
 )
 
 arg_parser.add_argument(
@@ -42,82 +52,66 @@ arg_parser.add_argument(
     ),
 )
 
-arg_parser.add_argument(
-    "-o",
-    "--output",
-    help="Type of output to produce. By default the output produced will be written to stdout.",
-    choices=["json", "json-compact", "yaml", "pandas"],
-    action="store",
-    default="pandas",
-)
+# arg_parser.add_argument(
+#     "-o",
+#     "--output",
+#     help="Type of output to produce. By default the output produced will be written to stdout.",
+#     choices=["json", "json-compact", "yaml", "pandas"],
+#     action="default",
+#     default="pandas",
+# )
 
 
-def molli_main(args,  **kwargs):
+def get_attribute(obj, key, sentinel):
+    res = getattr(obj, key, sentinel)
+    if res is not sentinel:
+        return res
+    elif key in obj.attrib:
+        return obj.attrib[key]
+    else:
+        raise KeyError(f"{key} is neither an attribute of, nor in .attrib of {obj}")
+
+
+def molli_main(args, verbose=False, **kwargs):
     parsed = arg_parser.parse_args(args)
 
     input_type = parsed.type or Path(parsed.input).suffix[1:]
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore")
+    match input_type:
+        case "mlib":
+            library = ml.MoleculeLibrary(parsed.input, readonly=True)
+            guard = library.reading
 
-        match input_type:
-            case "mlib":
-                # Right now the library import is a bit syntactically ambiguous
-                # Hopefully this will be resolved in later versions
-                try:
-                    lib = ml.ConformerLibrary(parsed.input, readonly=True)
-                except:
-                    lib = ml.MoleculeLibrary(parsed.input, readonly=True)
+        case "clib":
+            library = ml.ConformerLibrary(parsed.input, readonly=True)
+            guard = library.reading
 
-            case "cdxml":
-                lib = ml.CDXMLFile(parsed.input)
+        case "cdxml":
+            library = ml.CDXMLFile(parsed.input)
+            guard = nullcontext
 
-            case _:
-                print(f"Unrecognized input type: {input_type}")
-                exit(1)
+        case _:
+            print(f"Unrecognized input type: {input_type}")
+            exit(1)
 
-        # We are going to assume homogeneity of the collection
-        for a in parsed.attrib:
-            assert hasattr(
-                lib[0], a
-            ), f"Unable to locate the following attribute in {lib[0].__class__.__name__}: {a}"
+    # We are going to assume homogeneity of the collection
+    with guard(timeout=parsed.timeout), warnings.catch_warnings():
+        if not verbose:
+            warnings.filterwarnings("ignore")
 
-        header = {
-            "_molli_collection_class": lib.__class__.__name__,
-            "_molli_data_class": lib[0].__class__.__name__,
-            "len": len(lib),
-        }
-
-        collection = {x: {"id": i} for i, x in enumerate(lib.keys())}
-
-        for k in lib.keys():
-            mol = lib[k]
-            collection[k] |= {a: getattr(mol, a) for a in parsed.attrib}
-
-        match parsed.output:
-            case "json":
-                import json
-
-                json.dump({"header": header, "collection": collection}, stdout, indent=2)
-
-            case "json-compact":
-                import json
-
-                json.dump({"header": header, "collection": collection}, stdout)
-
-            case "pandas":
-                import pandas as pd
-
-                for h in header:
-                    print(f"### {h}: {header[h]}")
-
-                df = pd.DataFrame.from_dict(collection, orient="index")
-                pd.set_option("display.max_rows", None)
-                pd.set_option("display.max_columns", None)
-                pd.set_option("display.max_colwidth", None)
-                pd.set_option("display.width", None)
-                print(df)
-
-            case _:
-                print("Unrecognized file format", file=stderr)
-                return 2
+        L = len(library)
+        _sentinel = object()
+        if L > 0:
+            D = int(math.log10(L)) + 1
+            N = max(len(k) for k in library.keys()) + 1
+            for i, k in tqdm(
+                enumerate(library.keys()),
+                total=L,
+                disable=not verbose,
+            ):
+                obj = library[k]
+                attrib = {a: get_attribute(obj, a, _sentinel) for a in parsed.attrib}
+                s = f""" {i:>{D}}  {k:<{N}} """ + " ".join(
+                    f"{x}={y!r}" for x, y in attrib.items()
+                )
+                tqdm.write(s)
