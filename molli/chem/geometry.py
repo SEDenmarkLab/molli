@@ -222,7 +222,10 @@ class CartesianGeometry(Promolecule):
         Parameters
         ----------
         other : Iterable[CartesianGeometry]
-            iterable to extend cartesiangeometry by
+            iterable to extend cartesiangeometry from other cartesian geometries
+            
+        """
+        raise NotImplementedError
 
 
     def dump_xyz(
