@@ -23,6 +23,19 @@ import networkx as nx
 
 
 class BondType(IntEnum):
+    """The BondType class is an Enumeration class for assigning bond types
+
+    Parameters
+    ----------
+    IntEnum :
+        Accepts integer enumerations for different bond types
+
+    Examples
+    -------
+        >>> ml.BondType(20) == ml.BondType.Aromatic
+        True
+    """
+
     Unknown = 0
     Single = 1
     Double = 2
@@ -44,6 +57,19 @@ class BondType(IntEnum):
 
 
 class BondStereo(IntEnum):
+    """The BondStereo class is an Enumeration class for assigning bond geometry
+
+    Parameters
+    ----------
+    IntEnum :
+        Accepts integer enumerations for different bond geometry
+
+    Examples
+    -------
+        >>> ml.BondStereo(10) == ml.BondStereo.E
+        True
+    """
+
     Unknown = 0
     NotStereogenic = 1
 
@@ -80,7 +106,9 @@ MOL2_BOND_TYPE_MAP = bidict(
 
 @attrs.define(slots=True, repr=True, hash=False, eq=False, weakref_slot=True)
 class Bond:
-    """`a1` and `a2` are always assumed to be interchangeable"""
+    """The class for bonds in the MOLLI package. a1 and a2 are the atoms that the
+    bond connects and are interchangeable. The atoms are ordered upon initialization.
+    """
 
     a1: Atom = attrs.field(repr=lambda a: a.idx or a)
     a2: Atom = attrs.field(repr=lambda a: a.idx or a)
@@ -131,11 +159,48 @@ class Bond:
     def parent(self, other):
         self._parent = other
 
-    def evolve(self, **changes):
+    def evolve(self, **changes) -> Bond:
+        """Evolves the bond into a new bond with the changes specified
+
+        Returns
+        -------
+        Bond
+            A new Bond instance with the changes specified
+
+        Examples
+        -------
+            >>> benzene = ml.Molecule.load_mol2(ml.files.benzene_mol2)
+            >>> bond = benzene.get_bond(0)
+            >>> bond.btype
+            <BondType.Aromatic: 20>
+            >>> new_bond = bond.evolve(btype = ml.BondType.Double)
+            >>> new_bond.btype
+            <BondType.Double: 2>
+        """
+
         return attrs.evolve(self, **changes)
 
     @property
     def order(self) -> float:
+        """
+        Returns
+        -------
+        float
+            Returns the bond order as a float
+
+        Examples
+        -------
+        Bonds default to 1.0 when not specified
+            >>> bond = ml.Bond(a1 = ml.Atom("C"), a2= ml.Atom("C"))
+            >>> bond.order
+            1.0
+        Aromatic Bonds default to 1.5
+            >>> benzene = ml.Molecule.load_mol2(ml.files.benzene_mol2)
+            >>> bond = benzene.get_bond(0)
+            >>> bond.order
+            1.5
+        """
+
         # if self.btype == BondType.FractionalOrder:
         #     return self._order
         # elif 0 < self.btype < 9:
@@ -161,22 +226,111 @@ class Bond:
             case _:
                 return 1.0
 
-    def as_dict(self, schema: List[str] = None):
+    def as_dict(self, schema: List[str] = None) -> dict:
+        """Returns the bond as a dictionary
+
+        Parameters
+        ----------
+        schema : List[str], optional
+            Can be used to specify if only certain properties are desired,
+            by default None
+
+        Returns
+        -------
+        dict
+            This dictionary contains properties of the associated bond
+
+        Examples
+        -------
+            >>> ml.Bond(a1 = ml.Atom("C"), a2= ml.Atom("C")).as_dict()
+            {'a1':{'element': C...}, 'a2': {'element': C ...}, 'label': None, ...}
+            >>> bond = ml.Bond(a1 = ml.Atom("C"), a2= ml.Atom("C")).as_dict(
+                ['a1','stereo','attrib']
+                )
+            {'a1':{'element': C...}, 'stereo': <BondStereo.Unknown: 0>,
+            'attrib': {}}}
+        """
+
         if schema is None:
             return attrs.asdict(self)
         else:
             return {a: getattr(self, a, None) for a in schema}
 
-    def as_tuple(self, schema: List[str] = None):
+    def as_tuple(self, schema: List[str] = None) -> tuple:
+        """Returns the bond as a tuple
+
+        Parameters
+        ----------
+        schema : List[str], optional
+            Can be used to specify if only certain properties are desired,
+            by default None
+
+        Returns
+        -------
+        tuple
+            This tuple contains properties of the associated bond,
+            also returning a1 and a2 as tuples
+
+        Examples
+        -------
+            >>> ml.Bond(a1 = ml.Atom("C"), a2= ml.Atom("C")).as_tuple()
+            ((C,...),(C,...), None, <BondType.Single: 1>, ...)
+            >>> bond = ml.Bond(a1 = ml.Atom("C"), a2= ml.Atom("C")).as_tuple(
+                ['a1','stereo','attrib']
+                )
+            ((C,...),<BondStereo.Unknown: 0>, {})
+        """
+
         if schema is None:
             return attrs.astuple(self)
         else:
             return tuple(getattr(self, a, None) for a in schema)
 
-    def __contains__(self, other: Atom):
+    def __contains__(self, other: Atom) -> bool:
+        """Checks if atom is in the bond
+
+        Parameters
+        ----------
+        other : Atom
+            Atom to check
+
+        Returns
+        -------
+        bool
+            Returns True if atom is in the bond
+
+        Examples
+        -------
+            >>> bond = ml.Bond(a1 = ml.Atom("C"), a2= ml.Atom("C"))
+            >>> new_atom = ml.Atom("C")
+            >>> new_atom in bond
+            False
+        """
+
         return other in {self.a1, self.a2}
 
-    def __eq__(self, other: Bond | set):
+    def __eq__(self, other: Bond | set) -> bool:
+        """Checks if two bonds are equal
+
+        Parameters
+        ----------
+        other : Bond | set
+            Bond or set to check
+
+        Returns
+        -------
+        bool
+            Returns True if bond is the same
+
+        Examples
+        -------
+            >>> a1, a2 = ml.Atom("C"), ml.Atom("C")
+            >>> bond1 = ml.Bond(a1,a2)
+            >>> bond2 = ml.Bond(a2,a1)
+            >>> bond1 == bond2
+            True
+        """
+
         # return self is other
         match other:
             case Bond():
@@ -187,7 +341,20 @@ class Bond:
             case _:
                 raise ValueError(f"Cannot equate <{type(other)}: {other}>, {self}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Returns
+        -------
+        str
+            Prints bond as string
+
+        Examples
+        -------
+            >>> bond = ml.Bond(a1 = ml.Atom("C"), a2= ml.Atom("C"))
+            >>> bond
+            Bond(a1=Atom(element=C, ...), a2=Atom(element=C, ...), label=None, ...)
+        """
+
         return f"Bond({self.a1}, {self.a2}, order={self.order})"
 
     # This mimics the default behavior of object instances in python
@@ -195,6 +362,27 @@ class Bond:
         return id(self) >> 4
 
     def __mod__(self, a: Atom) -> Atom:
+        """Allows % to be used on a bond in combination with an atom to
+        return the other atom of the bond.
+
+        Parameters
+        ----------
+        a : Atom
+            One atom of the bond
+
+        Returns
+        -------
+        Atom
+            The other Atom instance of the bond
+
+        Examples
+        -------
+            >>> a1, a2 = ml.Atom("C", label='a1'), ml.Atom("H", label="a2")
+            >>> bond = ml.Bond(a1, a2)
+            >>> bond % a1
+            Atom(element=H, ... label='a2', ...)
+        """
+
         if self.a1 == a:
             return self.a2
         elif self.a2 == a:
@@ -204,6 +392,21 @@ class Bond:
 
     @property
     def expected_length(self) -> float:
+        """
+        Returns
+        -------
+        float
+            Returns an estimated value of a bond connection between two atoms
+            based on the covalent radius of a single bond
+
+        Examples
+        -------
+            >>> a1, a2 = ml.Atom("Pb", label='a1'), ml.Atom("H", label="a2")
+            >>> bond = ml.Bond(a1, a2)
+            >>> bond.expected_length
+            1.76 # (Pb = 1.44, H = 0.32)
+
+        """
         r1 = self.a1.cov_radius_1
         r2 = self.a2.cov_radius_1
         return (r1 or Element.C.cov_radius_1) + (r2 or Element.C.cov_radius_1)
@@ -212,7 +415,19 @@ class Bond:
     def set_mol2_type(self, m2t: str):
         self.btype = MOL2_BOND_TYPE_MAP[m2t]
 
-    def get_mol2_type(self):
+    def get_mol2_type(self) -> str:
+        """Used to return the Sybyl Mol2 Type of a bond
+
+        Returns
+        -------
+        str
+            Returns the Sybyl Mol2 type of a bond
+
+        Examples
+        -------
+            >>> unknown_molli_bond.get_mol2_type()
+            'am' # Indicates it was an amide bond
+        """
         match self.btype:
             case BondType.Single:
                 # print()
@@ -238,6 +453,13 @@ class Bond:
 
 
 class Connectivity(Promolecule):
+    """This is a parent class that employs methods that work on Promolecule (i.e.
+    a list of disconnected atoms with no structure or geometry assigned to them)
+    and connections between these disconnected atoms. This can be thought of
+    as an undirected graph of nodes (atoms) and edges (bonds) without
+    explicit coordinates.
+    """
+
     def __init__(
         self,
         other: Promolecule = None,
@@ -271,17 +493,76 @@ class Connectivity(Promolecule):
 
     @property
     def bonds(self) -> List[Bond]:
+        """
+        Returns
+        -------
+        List[Bond]
+            Returns an ordered list of the Bonds in the Connectivity instance
+
+        Examples
+        -------
+        The Molecule class inherits bonds
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.bonds
+            [Bond(a1=42, a2=22, ...), Bond(a1=41,a2=22, ...), ...]
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.bonds
+            [Bond(a1=42, a2=22, ...), Bond(a1=41,a2=22, ...), ...]
+        """
+
         return self._bonds
 
     @property
-    def n_bonds(self):
+    def n_bonds(self) -> int:
+        """
+        Returns
+        -------
+        int
+            Returns the total number of bonds in the Connectivity instance
+
+        Examples
+        -------
+        The Molecule class inherits n_bonds
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.n_bonds
+            47
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.n_bonds
+            47
+        """
+
         return len(self._bonds)
 
-    def lookup_bond(self, a1: AtomLike, a2: AtomLike):
+    def lookup_bond(self, a1: AtomLike, a2: AtomLike) -> Bond | None:
+        """Retrieves the bond that connects two atoms
+
+        Parameters
+        ----------
+        a1 : AtomLike
+            The first Atom instance
+        a2 : AtomLike
+            the second Atom instance
+
+        Returns
+        -------
+        Bond | None
+            Returns the bond found or None if the bond doesn't exist
+
+        Examples
+        -------
+        The Molecule class inherits lookup_bond()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> a1, a2 = dendrobine.get_atoms(0,1)
+            >>> dendrobine.lookup_bond(a1, a2)
+            Bond(a1=0, a2=1, label=None, ...)
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.lookup_bond(a1, a2)
+            Bond(a1=0, a2=1, label=None, ...)
         """
-        Returns a bond that connects the two atoms. O(N).
-        NOTE: `a1` and `a2` are always assumed to be interchangeable in this context.
-        """
+
         _a1 = self.get_atom(a1)
         _a2 = self.get_atom(a2)
 
@@ -290,15 +571,92 @@ class Connectivity(Promolecule):
         except:
             return None
 
-    def connect(self, _a1: AtomLike, _a2: AtomLike, **kwds):
+    def connect(self, _a1: AtomLike, _a2: AtomLike, **kwds) -> Bond:
+        """Connects two atoms together in the same Connectivity instance
+
+        Parameters
+        ----------
+        _a1 : AtomLike
+            The first Atom instance
+        _a2 : AtomLike
+            The second Atom instance
+
+        Returns
+        -------
+        Bond
+            Returns newly created bond
+
+        Examples
+        -------
+        The Molecule class inherits connect()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> a1, a2 = dendrobine.get_atoms(0, 35)
+            >>> dendrobine.connect(a1, a2, btype=ml.BondType.Single)
+            Bond(a1=0, a2=35, label=None, btype=Single, ...)
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.connect(a1, a2, btype=ml.BondType.Single)
+            Bond(a1=0, a2=35, label=None, btype=Single, ...)
+        """
+
         a1, a2 = self.get_atoms(_a1, _a2)
         self.append_bond(b := Bond(a1, a2, **kwds))
         return b
 
     def index_bond(self, b: Bond) -> int:
+        """Fetches the atom index from the Connectivity instance
+
+        Parameters
+        ----------
+        b : Bond
+            Must be a bond in the Connectivity instance list
+
+        Returns
+        -------
+        int
+            Returns the index of the bond
+
+        Examples
+        -------
+        The Molecule class inherits index_bond()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> bond = dendrobine.lookup_bond(3,4)
+            >>> dendrobine.index_bond(bond)
+            31
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> bond = connect.lookup_bond(3,4)
+            >>> connect.index_bond(bond)
+            31
+        """
+
         return self._bonds.index(b)
 
     def get_bond(self, b: Bond | int) -> Bond:
+        """Fetches a bond from the Connectivity instance
+
+        Parameters
+        ----------
+        b : Bond | int
+            A bond or index
+
+        Returns
+        -------
+        Bond
+            Returns the Bond instance
+
+        Examples
+        -------
+        The Molecule class inherits get_bond()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.get_bond(10)
+            Bond(a1=21, a2=39, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.get_bond(10)
+            Bond(a1=21, a2=39, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        """
+
         match b:
             case Bond():
                 if b in self._bonds:
@@ -312,39 +670,239 @@ class Connectivity(Promolecule):
             case _:
                 raise ValueError(f"Unable to fetch a bond with {type(b)}: {b}")
 
-    def append_bond(self, bond: Bond):
+    def append_bond(self, bond: Bond) -> None:
+        """Appends a bond to the Connectivity instance
+
+        Parameters
+        ----------
+        bond : Bond
+            A bond instance to be added
+
+        Examples
+        -------
+        The Molecule class inherits append_bond()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> a1, a2 = dendrobine.get_atoms(0,35)
+            >>> new_bond = ml.Bond(a1,a2)
+            >>> dendrobine.append_bond(new_bond)
+            >>> dendrobine.lookup_bond(new_bond)
+            Bond(a1=0, a2=35, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> a1, a2 = connect.get_atoms(0,35)
+            >>> new_bond = ml.Bond(a1,a2)
+            >>> connect.append_bond(new_bond)
+            >>> connect.lookup_bond(new_bond)
+            Bond(a1=0, a2=35, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        """
+
         self._bonds.append(bond)
         bond.parent = self
 
-    def append_bonds(self, *bonds: Bond):
+    def append_bonds(self, *bonds: Bond) -> None:
+        """Appends multiple bonds to the Connectivity instance
+
+        Examples
+        -------
+        The Molecule class inherits append_bonds()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> a1, a2, a3 = dendrobine.get_atoms(0,35, 39)
+            >>> b1 = ml.Bond(a1,a2)
+            >>> b2 = ml.Bond(a1,a3)
+            >>> dendrobine.append_bonds(b1,b2)
+            >>> dendrobine.lookup_bond(a1,a2)
+            Bond(a1=0, a2=35, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+            >>> dendrobine.lookup_bond(a1,a3)
+            Bond(a1=0, a2=39, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> a1, a2, a3 = connect.get_atoms(0,35, 39)
+            >>> b1 = ml.Bond(a1,a2)
+            >>> b2 = ml.Bond(a1,a3)
+            >>> connect.append_bonds(b1,b2)
+            >>> connect.lookup_bond(a1,a2)
+            Bond(a1=0, a2=35, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+            >>> connect.lookup_bond(a1,a3)
+            Bond(a1=0, a2=39, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        """
         self._bonds.extend(bonds)
         for b in bonds:
             b.parent = self
 
-    def extend_bonds(self, bonds: Iterable[Bond]):
+    def extend_bonds(self, bonds: Iterable[Bond]) -> None:
+        """Extends the list of bonds to the Connectivity instance
+
+        Examples
+        -------
+        The Molecule class inherits extend_bonds()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> a1, a2, a3 = dendrobine.get_atoms(0,35, 39)
+            >>> b1 = ml.Bond(a1,a2)
+            >>> b2 = ml.Bond(a1,a3)
+            >>> dendrobine.extend_bonds([b1,b2])
+            >>> dendrobine.lookup_bond(a1,a2)
+            Bond(a1=0, a2=35, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+            >>> dendrobine.lookup_bond(a1,a3)
+            Bond(a1=0, a2=39, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> a1, a2, a3 = connect.get_atoms(0,35, 39)
+            >>> b1 = ml.Bond(a1,a2)
+            >>> b2 = ml.Bond(a1,a3)
+            >>> connect.extend_bonds([b1,b2])
+            >>> connect.lookup_bond(a1,a2)
+            Bond(a1=0, a2=35, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+            >>> connect.lookup_bond(a1,a3)
+            Bond(a1=0, a2=39, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        """
         self.append_bonds(*bonds)
 
-    def del_bond(self, b: Bond):
+    def del_bond(self, b: Bond) -> None:
+        """Deletes a bond from the Connectivity instance
+
+        Parameters
+        ----------
+        b : Bond
+            Bond to delete
+
+        Examples
+        -------
+        The Molecule class inherits del_bond()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.get_bond(0)
+            Bond(a1=42, a2=22, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+            >>> dendrobine.del_bond(dendrobine.get_bond(0))
+            >>> dendrobine.get_bond(0)
+            Bond(a1=41, a2=22, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.get_bond(0)
+            Bond(a1=42, a2=22, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+            >>> connect.del_bond(connect.get_bond(0))
+            >>> connect.get_bond(0)
+            Bond(a1=41, a2=22, label=None, btype=Single, stereo=Unknown, f_order=1.0)
+        """
+
         self._bonds.remove(b)
 
     def del_atom(self, _a: AtomLike):
+        """Deletes an atom and its respective bonds from the Connectivity instance
+
+        Parameters
+        ----------
+        _a : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+
+        Examples
+        -------
+        The Molecule class inherits del_atom()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> print(dendrobine.n_atoms, dendrobine.n_bonds)
+            44, 47
+            >>> dendrobine.del_atom(0)
+            >>> print(dendrobine.n_atoms, dendrobine.n_bonds)
+            43, 44
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> print(connect.n_atoms, connect.n_bonds)
+            44, 47
+            >>> connect.del_bond(connect.get_bond(0))
+            >>> print(connect.n_atoms, connect.n_bonds)
+            44, 47
+        """
+
         tbd = list(self.bonds_with_atom(_a))
         for b in tbd:
             self.del_bond(b)
         super().del_atom(_a)
 
     def bonds_with_atom(self, a: AtomLike) -> Generator[Bond, None, None]:
+        """Yields bonds attached to an atom in a Connectivity instance
+
+        Parameters
+        ----------
+        a : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+
+        Yields
+        ------
+        Generator[Bond, None, None]
+            Yields generator of Bond instances
+
+        Examples
+        -------
+        The Molecule class inherits bonds_with_atom()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.bonds_with_atom(0)
+            <generator object Connectivity.bonds_with_atom at ...>
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.bonds_with_atom(0)
+            <generator object Connectivity.bonds_with_atom at ...>
+        """
         _a = self.get_atom(a)
         for b in self._bonds:
             if _a in b:
                 yield b
 
     def connected_atoms(self, a: AtomLike) -> Generator[Atom, None, None]:
+        """Yields atoms attached to an atom in a Connectivity instance
+
+        Parameters
+        ----------
+        a : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+
+        Yields
+        ------
+        Generator[Atom, None, None]
+            Yields generator of Atom instances
+
+        Examples
+        -------
+        The Molecule class inherits connected_atoms()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.connected_atoms(0)
+            <generator object Connectivity.connected_atoms at ...>
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.connected_atoms(0)
+            <generator object Connectivity.connected_atoms at ...>
+        """
+
         _a = self.get_atom(a)
         for b in self.bonds_with_atom(_a):
             yield b % _a
 
-    def bonded_valence(self, a: AtomLike):
+    def bonded_valence(self, a: AtomLike) -> float:
+        """Sum of valences of the atoms bonded in a Connectivity instance
+
+        Parameters
+        ----------
+        a : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+
+        Returns
+        -------
+        float
+            Returns sum of valences of atoms connected
+
+        Examples
+        -------
+        The Molecule class inherits bonded_valence()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.bonded_valence(0)
+            3.0
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.bonded_valence(0)
+            3.0
+        """
+
         # TODO: rewrite using sum()
         _a_bonds = self.bonds_with_atom(a)
 
@@ -354,7 +912,32 @@ class Connectivity(Promolecule):
 
         return val
 
-    def n_bonds_with_atom(self, a: AtomLike):
+    def n_bonds_with_atom(self, a: AtomLike) -> int:
+        """Total number of bonds to an atom in a Connectivity instance
+
+        Parameters
+        ----------
+        a : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+
+        Returns
+        -------
+        int
+            Returns the total number of bonds to an atom
+
+        Examples
+        -------
+        The Molecule class inherits n_bonds_with_atom()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.n_bonds_with_atom(0)
+            3
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dendrobine)
+            >>> connect.n_bonds_with_atom(0)
+            3
+        """
+
         return sum(1 for _ in self.connected_atoms(a))
 
     # def _bfs_single(self, q: deque, visited: set):
@@ -370,14 +953,36 @@ class Connectivity(Promolecule):
         _start: AtomLike,
         _direction: AtomLike = None,
     ) -> Generator[Tuple[Atom, int], None, None]:
-        """
-        Yields atoms and their distances from start
+        '''Yields atoms in breadth-first search, in traversal order,
+        Distance from the start atom is also yielded
 
-        ```python
-        for atom, distance in connectivity.yield_bfsd(a):
-            ...
-        ```
-        """
+        Parameters
+        ----------
+        _start : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+        _direction : AtomLike, optional
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found, by default None
+
+        Yields
+        ------
+        Generator[Tuple[Atom, int], None, None]
+            the atoms in breadth-first search, in traversal order,
+            Distance from the start atom is also yielded
+
+        Examples
+        -------
+        The Molecule class inherits yield_bfsd()
+            >>> dmf = ml.Molecule.load_mol2(ml.files.dmf_mol2)
+            >>> dmf.yield_bfsd(0)
+            <generator object Connectivity.yield_bfsd at ...>
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dmf)
+            >>> connect.yield_bfsd(0)
+            <generator object Connectivity.yield_bfsd at ...>        
+        '''
+
         start = self.get_atom(_start)
         visited = {start}
         queue = deque()
@@ -404,14 +1009,35 @@ class Connectivity(Promolecule):
     def yield_bfs(
         self, _start: AtomLike, _direction: AtomLike = None
     ) -> Generator[Atom, None, None]:
-        """
-        Yields atoms and their distances from start
+        '''Yields atoms in breadth-first search, in traversal order,
+        Distance is not yielded
 
-        ```python
-        for atom in connectivity.yield_bfsd(a):
-            ...
-        ```
-        """
+        Parameters
+        ----------
+        _start : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+        _direction : AtomLike, optional
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found, by default None
+
+        Yields
+        ------
+        Generator[Atom, None, None]
+            The Atoms in a breadth-first search, in traversal order
+
+        Examples
+        -------
+        The Molecule class inherits yield_bfsd()
+            >>> dmf = ml.Molecule.load_mol2(ml.files.dmf_mol2)
+            >>> dmf.yield_bfsd(0)
+            <generator object Connectivity.yield_bfs at ...>
+        If desired, one can work directly with Connectivity class instead
+            >>> connect = ml.Connectivity(dmf)
+            >>> connect.yield_bfsd(0)
+            <generator object Connectivity.yield_bfs at ...>  
+        '''
+
         start = self.get_atom(_start)
         visited = {start}
         queue = deque()

@@ -34,7 +34,12 @@ RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
 
 
 class Structure(CartesianGeometry, Connectivity):
-    """Structure is a simple amalgamation of the concepts of CartesianGeometry and Connectivity"""
+    """Combines the functionality of `CartesianGeometry` andd `Connectivity`
+    'CartesianGeometry' gives the molecular data structure features of a 3d
+    coordinate matrix
+    'Connectivity' gives the molecular data structure features of an
+    undirected graph
+    """
 
     def __init__(
         self,
@@ -49,7 +54,6 @@ class Structure(CartesianGeometry, Connectivity):
         mult: int = None,
         **kwds,
     ):
-        """Structure."""
         super().__init__(
             other,
             n_atoms=n_atoms,
@@ -63,11 +67,41 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def yield_from_mol2(
-        cls,
+        cls: type[Structure],
         input: str | StringIO,
         name: str = None,
         source_units: str = "Angstrom",
-    ):
+    ) -> Generator[Structure, None, None]:
+        """Yields generator of Structure from stream
+
+        Parameters
+        ----------
+        cls : type[Structure]
+            The class to load the mol2 file into
+        input : str | StringIO
+            Stream to read from
+        name : str, optional
+            Name of the Structure, by default None
+        source_units : str, optional
+            Units to use when reading, by default "Angstrom"
+
+        Yields
+        ------
+        Generator[Structure, None, None]
+            Yields generator of Structure
+
+        Examples
+        -------
+        The Molecule class inherits yield_from_mol2()
+            >>> with open(ml.files.dendrobine_mol2) as f:
+            >>>     ml.Molecule.yield_from_mol2(f, name='dendrobine')
+            <generator object Structure.yield_from_mol2 at ...>
+        If desired, one can work directly with Structure class instead
+            >>> with open(ml.files.dendrobine_mol2) as f:
+            >>>     ml.Structure.yield_from_mol2(f, name='dendrobine')
+            <generator object Structure.yield_from_mol2 at ...>
+        """
+
         mol2io = StringIO(input) if isinstance(input, str) else input
 
         for block in read_mol2(mol2io):
@@ -98,7 +132,33 @@ class Structure(CartesianGeometry, Connectivity):
 
             yield res
 
-    def dump_mol2(self, _stream: StringIO = None):
+    def dump_mol2(self, _stream: StringIO = None) -> None:
+        """Dumps the mol2 block into the output stream
+
+        Parameters
+        ----------
+        _stream : StringIO, optional
+            Output stream, by default None
+
+        Examples
+        -------
+        The Molecule class inherits dump_mol2()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> with open('dendrobine.mol2', 'w') as f:
+            >>>     dendrobine.dump_mol2(f)
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            dendrobine
+            ...
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> with open('dendrobine.mol2', 'w') as f:
+            >>>     dendrobine.dump_mol2(f)
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            dendrobine
+            ...
+        """
         if _stream is None:
             stream = StringIO()
 
@@ -134,13 +194,40 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def load_mol2(
-        cls,
+        cls: type[Structure],
         input: str | Path | IO,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> CartesianGeometry:
-        """Load mol2 from a file stream or file"""
+    ) -> Structure:
+        """_summary_
+
+        Parameters
+        ----------
+        cls : type[Structure]
+            Class to be loaded into
+        input : str | Path | IO
+            File path, string, or stream
+        name : str, optional
+            Name for Structure, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        Structure
+            Returns Structure
+
+        Examples
+        -------
+        The Molecule class inherits load_mol2()
+            >>> ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            Molecule(name='dendrobine', formula='C16 H25 N1 O2')
+        If desired, one can work directly with Structure class instead
+            >>> ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            Structure(name='dendrobine', formula='C16 H25 N1 O2')
+        """
+
         if isinstance(input, str | Path):
             stream = open(input, "rt")
         else:
@@ -159,13 +246,42 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def loads_mol2(
-        cls,
+        cls: type[Structure],
         input: str,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ):
-        """Load mol2 file from string"""
+    ) -> Structure:
+        """Loads mol2 from a string
+
+        Parameters
+        ----------
+        cls : type[Structure]
+            Class to be loaded into
+        input : str
+            Mol2 block as string
+        name : str, optional
+            Name for Structure, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        Structure
+            Returns Structure
+
+        Examples
+        -------
+        The Molecule class inherits loads_mol2()
+            >>> with open(ml.files.dendrobine_mol2, 'r') as f:
+            >>>     ml.Molecule.loads_mol2(f.read())
+            Molecule(name='dendrobine', formula='C16 H25 N1 O2')
+        If desired, one can work directly with Structure class instead
+            >>> with open(ml.files.dendrobine_mol2, 'r') as f:
+            >>>     ml.Structure.loads_mol2(f.read())
+            Structure(name='dendrobine', formula='C16 H25 N1 O2')
+        """
+
         stream = StringIO(input)
         with stream:
             res = next(
@@ -180,12 +296,39 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def load_all_mol2(
-        cls,
+        cls: type[Structure],
         input: str | Path | IO,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ):
+    ) -> List[Structure]:
+        """This function loads all mol2 files from the input
+
+        Parameters
+        ----------
+        cls : type[Structure]
+            Class to be loaded into
+        input : str | Path | IO
+            File path, string, or stream
+        name : str, optional
+            Name for Structure, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        List[Structure]
+            Returns list of Structures
+
+        Examples
+        -------
+        The Molecule class inherits load_all_mol2()
+            >>> ml.Molecule.load_all_mol2(ml.files.pentane_confs_mol2)
+            [Molecule(name='pentane', formula='C5 H12'),...
+        If desired, one can work directly with Structure class instead
+            >>> ml.Structure.load_all_mol2(ml.files.pentane_confs_mol2)
+            [Structure(name='pentane', formula='C5 H12'),...
+        """
         """Load all components in a mol2 file from a multimol2 file"""
         if isinstance(input, str | Path):
             stream = open(input, "rt")
@@ -205,13 +348,42 @@ class Structure(CartesianGeometry, Connectivity):
 
     @classmethod
     def loads_all_mol2(
-        cls: type[CartesianGeometry],
-        input: str | Path | IO,
+        cls: type[Structure],
+        input: str,
         *,
         name: str = None,
         source_units: str = "Angstrom",
-    ) -> List[CartesianGeometry]:
-        """LOAD ALL MOL2"""
+    ) -> List[Structure]:
+        """This loads all mol2 files from the input string
+
+        Parameters
+        ----------
+        cls : type[CartesianGeometry]
+            Class to be loaded into
+        input : str
+            Mol2 Block as a string
+        name : str, optional
+            Name for Structure, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        List[Structure]
+            Returns a list of Structures
+
+        Examples
+        -------
+        The Molecule class inherits loads_all_mol2()
+            >>> with open(ml.files.pentane_confs_mol2, 'r') as f:
+            >>>     ml.Molecule.loads_all_mol2(f.read())
+            [Molecule(name='pentane', formula='C5 H12'),...
+        If desired, one can work directly with Structure class instead
+            >>> with open(ml.files.pentane_confs_mol2, 'r') as f:
+            >>>     ml.Structure.loads_all_mol2(f.read())
+            [Structure(name='pentane', formula='C5 H12'),...
+        """
+
         stream = StringIO(input)
         with stream:
             res = list(
@@ -225,6 +397,30 @@ class Structure(CartesianGeometry, Connectivity):
         return res
 
     def dumps_mol2(self) -> str:
+        """Dumps the mol2 block as a string
+
+        Returns
+        -------
+        str
+            The mol2 block
+
+        Examples
+        -------
+        The Molecule class inherits dumps_mol2()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.dumps_mol2()
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            dendrobine
+            ...
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.dumps_mol2()
+            # Produced with molli package
+            @<TRIPOS>MOLECULE
+            dendrobine
+            ...
+        """
         """
         This returns a mol2 file as a string
         """
@@ -250,7 +446,57 @@ class Structure(CartesianGeometry, Connectivity):
         btype: BondType = BondType.Single,
         bstereo: BondStereo = BondStereo.Unknown,
         bforder: float = 1.0,
-    ):
+    ) -> Structure:
+        """This can be used to join two structures together at individual atoms
+
+        Parameters
+        ----------
+        struct1 : Structure
+            First structure
+        struct2 : Structure
+            Second structure
+        _a1 : AtomLike
+            First atom
+        _a2 : AtomLike
+            Second atom
+        dist : float, optional
+            Distance for two structures to be joined at, by default None
+        optimize_rotation : bool | int, optional
+            Rotates structures if there is expected to be overlapping
+            van der Waals radii, by default False
+        name : str, optional
+            Name of the new structure, by default None
+        charge : float, optional
+            Charge of the new structure, by default None
+        mult : float, optional
+            Multiplicity of the new structure, by default None
+        btype : BondType, optional
+            Type of bond formed, by default BondType.Single
+        bstereo : BondStereo, optional
+            Geometry of bond formed, by default BondStereo.Unknown
+        bforder : float, optional
+            Fractional order of bond formed, by default 1.0
+
+        Returns
+        -------
+        Structure
+            Returns a structure joined at the the atoms of interest
+
+        Examples
+        -------
+        The Molecule class inherits join()
+            >>> mol1 = ml.Molecule.load_mol2('mol1_w_attachment_point.mol2')
+            >>> ap1, = mol1.get_attachment_points()
+            >>> mol2 = ml.Molecule.load_mol2('mol1_w_attachment_point.mol2')
+            >>> ap2, = mol2.get_attachment_points()
+            >>> res = ml.Molecule.join(mol1, mol2, ap1, ap2, optimize_rotation=True)
+        If desired, one can work directly with Structure class instead
+            >>> mol1 = ml.Structure.load_mol2('mol1_w_attachment_point.mol2')
+            >>> ap1, = mol1.get_attachment_points()
+            >>> mol2 = ml.Structure.load_mol2('mol1_w_attachment_point.mol2')
+            >>> ap2, = mol2.get_attachment_points()
+            >>> res = ml.Structure.join(mol1, mol2, ap1, ap2, optimize_rotation=True)
+        """
         assert struct1.n_bonds_with_atom(_a1) == 1, (
             f"{struct1.get_atom(_a1)} does not seem to be a valid attachment point."
             f" {struct1.n_bonds_with_atom(_a1)=}"
@@ -319,7 +565,27 @@ class Structure(CartesianGeometry, Connectivity):
         return result
 
     @classmethod
-    def concatenate(cls, *structs: Structure):
+    def concatenate(cls, *structs: Structure) -> Structure:
+        """Concatenates atom and bond tables of structures
+
+        Returns
+        -------
+        Structure
+            Returns concatenated structure
+
+        Examples
+        -------
+        The Molecule class inherits concatenate()
+            >>> mol1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> mol2 = ml.Molecule.load_mol2(ml.files.benzene_mol2)
+            >>> ml.Molecule.concatenate(mol1, mol2)
+            Molecule(name='unknown', formula='C22 H31 N1 O2')
+        If desired, one can work directly with Structure class instead
+            >>> mol1 = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> mol2 = ml.Structure.load_mol2(ml.files.benzene_mol2)
+            >>> ml.Structure.concatenate(mol1, mol2)
+            Structure(name='unknown', formula='C22 H31 N1 O2')
+        """
         source_atoms = list(chain.from_iterable(x.atoms for x in structs))
         res = cls(source_atoms, copy_atoms=True)
 
@@ -336,43 +602,203 @@ class Structure(CartesianGeometry, Connectivity):
         return res
 
     def extend(self, other: Structure) -> None:
+        """Currently Not Implemented
+
+        This extends current structure with the copied atoms, bonds
+        and coordinates from another
+
+        Parameters
+        ----------
+        other : Structure
+            Structure to extend with
+
+        Raises
+        ------
+        NotImplementedError
+            _description_
+        """
         """This extends current structure with the copied atoms, bonds and coordinates from another"""
-        raise NotImplementedError
+        raise NotImplementedError("Extending Structures is Currently Not Implemented")
 
     def substructure(self, atoms: Iterable[AtomLike]) -> Substructure:
+        """Creates a substructure from a subset of atoms
+
+        Parameters
+        ----------
+        atoms : Iterable[AtomLike]
+            Subset of atoms to create Substructure from
+
+        Returns
+        -------
+        Substructure
+            Returns a Substructure from a parent Structure
+
+        Examples
+        -------
+        The Molecule class inherits substructure()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.substructure([0,1,2])
+            Substructure(parent=Molecule(name='dendrobine', ...), atoms=[0,1,2])
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.substructure([0,1,2])
+            Substructure(parent=Structure(name='dendrobine', ...), atoms=[0,1,2])
+        """
         return Substructure(self, list(atoms))
 
     @property
     def heavy(self) -> Substructure:
+        """Returns a substructure containing only heavy atoms.
+
+        Returns
+        -------
+        Substructure
+            The substructure containing only heavy atoms.
+
+        Examples
+        -------
+        The Molecule class inherits heavy
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.heavy
+            Substructure(parent=Molecule(name='dendrobine', ...), atoms=[0,1,...])
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.heavy
+            Substructure(parent=Structure(name='dendrobine', ...), atoms=[0,1,...])
+        """
+
         return Substructure(self, [a for a in self.atoms if a.element != Element.H])
 
     def bond_length(self, b: Bond) -> float:
+        """Returns the length of a bond.
+
+        Parameters
+        ----------
+        b : Bond
+            The bond to measure.
+
+        Returns
+        -------
+        float
+            The length of the bond.
+
+        Examples
+        -------
+        The Molecule class inherits bond_length()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> bond = dendrobine.get_bond(0)
+            >>> dendrobine.bond_length(bond)
+            1.0956031261364676
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> bond = dendrobine.get_bond(0)
+            >>> dendrobine.bond_length(bond)
+            1.0956031261364676
+        """
+
         return self.distance(b.a1, b.a2)
 
     def bond_vector(self, b: Bond) -> np.ndarray:
+        """Returns the vector between the two atoms in a bond.
+
+        Parameters
+        ----------
+        b : Bond
+             The bond to measure.
+
+        Returns
+        -------
+        np.ndarray
+            The vector between the two atoms in the bond.
+
+        Examples
+        -------
+        The Molecule class inherits bond_vector()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> bond = dendrobine.get_bond(0)
+            >>> dendrobine.bond_vector(bond)
+            array([-0.6747, -0.6486,  0.5696])
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> bond = dendrobine.get_bond(0)
+            >>> dendrobine.bond_vector(bond)
+            array([-0.6747, -0.6486,  0.5696])
+        """
+
         i1, i2 = map(self.get_atom_index, (b.a1, b.a2))
         return self.coords[i2] - self.coords[i1]
 
     def bond_coords(self, b: Bond) -> tuple[np.ndarray]:
+        """Returns the coordinates of the two atoms in a bond.
+
+        Parameters
+        ----------
+        b : Bond
+            The bond to measure.
+
+        Returns
+        -------
+        tuple[np.ndarray]
+            The coordinates of the two atoms in the bond.
+
+        Examples
+        -------
+        The Molecule class inherits bond_coords()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> bond = dendrobine.get_bond(0)
+            >>> dendrobine.bond_coords(bond)
+            array([[ 1.0232, -0.452 , -5.421 ], [ 0.3485, -1.1006, -4.8514]])
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> bond = dendrobine.get_bond(0)
+            >>> dendrobine.bond_coords(bond)
+            array([[ 1.0232, -0.452 , -5.421 ], [ 0.3485, -1.1006, -4.8514]])
+        """
+
         return self.coord_subset((b.a1, b.a2))
 
     def __or__(self, other: Structure) -> Structure:
+        """This function concatenates two structures
+
+        Parameters
+        ----------
+        other : Structure
+            The other structure to concatenate with.
+
+        Returns
+        -------
+        Structure
+            The concatenated structure.
+        Examples
+        -------
+        The Molecule class inherits concatenate()
+            >>> mol1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> mol2 = ml.Molecule.load_mol2(ml.files.benzene_mol2)
+            >>> mol1 | mol2
+            Structure(name='unknown', formula='C22 H31 N1 O2')
+        If desired, one can work directly with Structure class instead
+            >>> mol1 = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> mol2 = ml.Structure.load_mol2(ml.files.benzene_mol2)
+            >>> mol1 | mol2
+            Structure(name='unknown', formula='C22 H31 N1 O2')
+        """
+
         return Structure.concatenate(self, other)
 
     def perceive_atom_properties(self, _a: AtomLike) -> None:
-        """# `perceive_atom_properties`
-        This function analyzes atomic types
+        """Currently Not Implemented
 
-        ## Returns
+        This function analyzes atomic properties
 
-        `_type_`
-            _description_
-
-        ## Yields
-
-        `_type_`
-            _description_
+        Parameters
+        ----------
+        _a : AtomLike
+            This is the atom for analysis
         """
+
+        raise NotImplementedError(
+            "perceive_atom_properties is Currently Not Implemented"
+        )
         a = self.get_atom(_a)
         n_bonds = self.n_bonds_with_atom(a)
         max_bond_order = max(b.order for b in self.bonds_with_atom(_a))
@@ -385,30 +811,64 @@ class Structure(CartesianGeometry, Connectivity):
                 a.atype = AtomType.MainGroup_sp2
 
     def perceive_bond_properties(self) -> None:
-        """# `perceive_bond_properties`
+        """Currently Not Implemented
+
         This function analyzes bond properties
 
-        ## Returns
-
-        `_type_`
-            _description_
-
-        ## Yields
-
-        `_type_`
-            _description_
         """
-        raise NotImplementedError
+        raise NotImplementedError(
+            "perceive_bond_properties is Currently Not Implemented"
+        )
 
     def del_atom(self, _a: AtomLike):
+        """Deletes an atom from the Structure
+
+        Parameters
+        ----------
+        _a : AtomLike
+            An atom, index, label, or Element. This will only delete the first
+            instance of the label or Element found
+        Examples
+        -------
+        The Molecule class inherits del_atom()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.get_atom(0)
+            Atom(element=N, isotope=None, label='N', formal_charge=0, formal_spin=0)
+            >>> dendrobine.del_atom(0)
+            >>> dendrobine.get_atom(0)
+            Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
+        If desired, one can work directly with Structure class instead
+            >>> Structure = ml.Structure(dendrobine)
+            >>> Structure.del_atom(0)
+            >>> Structure.get_atom(0)
+            Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
+        """
         a = self.get_atom(_a)
         super().del_atom(a)
 
-    def add_implicit_hydrogens(self, *atoms: AtomLike):
+    def add_implicit_hydrogens(self, *atoms: AtomLike) -> None:
+        """This function adds implicit hydrogens to all specified atoms.
+        By default, it will add implicit hydrogens to all atoms if
+        necessary.
+
+        Examples
+        -------
+        The Molecule class inherits add_implicit_hydrogens()
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.n_atoms
+            44
+            >>> dendrobine.add_implicit_hydrogens()
+            >>> dendrobine.n_atoms
+            44
+        If desired, one can work directly with Structure class instead
+            >>> dendrobine = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.n_atoms
+            44
+            >>> dendrobine.add_implicit_hydrogens()
+            >>> dendrobine.n_atoms
+            44
         """
-        This function adds implicit hydrogens to all specified atoms.
-        TODO: rewrite with optimization (!)
-        """
+
         from molli.math.polyhedra import TETRAHEDRON
         from molli.math import rotation_matrix_from_vectors, mean_plane
 
@@ -466,6 +926,11 @@ class Structure(CartesianGeometry, Connectivity):
 
 
 class Substructure(Structure):
+    """This class represents a substructure of a structure. It pulls the
+    atoms and bonds from the parent structure, and allows for manipulation of
+    the a subset of atoms within the initial structure.
+    """
+
     def __init__(self, parent: Structure, atoms: Iterable[AtomLike]):
         self._parent = parent
         self._atoms = [parent.get_atom(a) for a in atoms]
@@ -478,24 +943,100 @@ class Substructure(Structure):
     def yield_parent_atom_indices(
         self, atoms: Iterable[AtomLike]
     ) -> Generator[int, None, None]:
+        """This function yields the indices of the atoms in the parent structure.
+
+        Parameters
+        ----------
+        atoms : Iterable[AtomLike]
+            The atoms to yield the indices of.
+
+        Yields
+        ------
+        Generator[int, None, None]
+            The indices of the atoms in the parent structure.
+
+        Examples
+        -------
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.heavy
+            Substructure(parent=Molecule(name='dendrobine', ...), atoms=[0,1,...])
+            >>> substruc.yield_parent_atom_indices(struc.yield_atoms_by_element("H"))
+            <generator object Substructure.yield_parent_atom_indices at ...>
+        """
+
         yield from map(self._parent.get_atom_index, atoms)
 
     def __repr__(self):
         return f"""{type(self).__name__}(parent={self._parent!r}, atoms={self.parent_atom_indices!r})"""
 
     @property
-    def parent_atom_indices(self):
+    def parent_atom_indices(self) -> list[int]:
+        """Returns the indices of the atoms in the parent structure.
+
+        Returns
+        -------
+        list[int]
+            The indices of the atoms in the parent structure.
+
+        Examples
+        -------
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.heavy
+            Substructure(parent=Molecule(name='dendrobine', ...), atoms=[0,1,...])
+            >>> substruc.parent_atom_indices
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 21, 22]
+        """
+
         return list(self.yield_parent_atom_indices(self._atoms))
 
     @property
-    def coords(self):
+    def coords(self) -> np.ndarray:
+        """Returns the coordinates of the atoms in the substructure.
+
+        Returns
+        -------
+        np.ndarray
+            The coordinates of the atoms in the substructure.
+
+        Examples
+        -------
+            >>> dendrobine = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> dendrobine.coords
+            (44,3)
+            >>> dendrobine.heavy.coords
+            array([[ 1.2960e+00, -2.3190e-01,  1.2670e+00],...
+            >>> dendrobine.heavy.coords.shape
+            (19,3)
+        """
+
         return self._parent.coords[self.parent_atom_indices]
 
     @coords.setter
     def coords(self, other):
         self._parent.coords[self.parent_atom_indices] = other
 
-    def __or__(self, other: Substructure | Structure):
+    def __or__(self, other: Substructure | Structure) -> Structure | Substructure:
+        """This function concatenates two structures or substructures
+
+        Parameters
+        ----------
+        other : Substructure | Structure
+            The other structure or substructure to concatenate with.
+
+        Returns
+        -------
+        Structure | Substructure
+            The concatenated structure or substructure
+
+        Examples
+        -------
+        The Molecule class inherits concatenate()
+            >>> mol1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+            >>> mol2 = ml.Molecule.load_mol2(ml.files.benzene_mol2)
+            >>> mol1.heavy | mol2.heavy
+            Structure(name='unknown', formula='C22 N1 O2')
+        """
+
         if isinstance(other, Substructure) and other.parent == self._parent:
             return Substructure(self._parent, chain(self.atoms, other.atoms))
         else:
