@@ -527,7 +527,9 @@ class Structure(CartesianGeometry, Connectivity):
         atom_map = dict(zip(atoms, result.atoms))
         for j, b in enumerate(chain(struct1.bonds, struct2.bonds)):
             if a1 not in b and a2 not in b:
-                result.append_bond(b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2]))
+                result.append_bond(
+                    b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=result)
+                )
 
         result.append_bond(
             nb := Bond(

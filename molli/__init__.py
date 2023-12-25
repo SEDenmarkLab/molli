@@ -22,16 +22,17 @@ It also implements a lot of command line tools (run `molli --HELP` or `molli lis
 """
 
 
-
 # Determine whether molli C++ extensions are available
 # if not, pure python analogs should be provided
 
 
 from . import config
+
 __version__ = config.VERSION
 
 # Believe it or not, on Windows `aux` is not a valid file/folder name
 from . import _aux as aux
+
 try:
     import molli_xt as xt
 except:
@@ -46,10 +47,12 @@ from . import parsing
 from . import storage
 
 # from . import chem
-from . import descriptor
 from . import external
 from . import files
 from . import storage
+from . import pipeline
+from . import visual
 
 from .chem import *
 from .ftypes import *
+from . import descriptor

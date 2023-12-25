@@ -224,10 +224,6 @@ class CartesianGeometry(Promolecule):
         other : Iterable[CartesianGeometry]
             iterable to extend cartesiangeometry by
 
-        """
-        raise NotImplementedError(
-            "Extending CartesianGeometry is Currently Not Implemented"
-        )
 
     def dump_xyz(
         self, output: StringIO, write_header: bool = True, *, fmt: str = "12.6f"

@@ -26,7 +26,7 @@ dependencies = [
     "fasteners>=0.19",
     "joblib>=1.3.2",
 ]
-version = "1.0.0b1"
+version = "1.0.0b2"
 
 
 [tool.setuptools.package-data]
@@ -38,3 +38,5 @@ include = ["molli", "molli.*", "molli_test"]
 
 [project.scripts]
 molli = "molli.__main__:main"
+_molli_run = "molli.pipeline.runner:run_local"
+_molli_run_sched = "molli.pipeline.runner:run_sched"

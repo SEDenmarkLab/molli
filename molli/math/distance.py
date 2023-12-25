@@ -16,7 +16,7 @@ def _optimize_rotation(
     aug_c2 = np.array([c2 @ rotation_matrix_from_axis(ax, ang) for ang in angles])
 
     dist = (
-        xt.cdist32_eu2_f3(aug_c2, c1) + 0.05
+        xt.cdist32_eu2(aug_c2, c1) + 0.05
     )  # This latter part is damping to avoid singularities when and if present
     loss = np.sum(1 / dist, axis=(1, 2))
 

@@ -13,10 +13,16 @@ pentane_confs_mol2 = ROOT / "pentane_confs.mol2"
 zincdb_fda_mol2 = ROOT / "zincdb_fda.mol2"
 dummy_mol2 = ROOT / "dummy.mol2"
 fxyl_mol2 = ROOT / "fxyl.mol2"
+dmf_mol2 = ROOT / "dmf.mol2"
 bpa_backbone_mol2 = ROOT / "bpa_core.mol2"
 box_backbone_mol2 = ROOT / "box_alignment_core.mol2"
+
 benzene_mol2 = ROOT / "benzene.mol2"
 dmf_mol2 = ROOT / "dmf.mol2"
+
+
+cinchonidine_query = ROOT / "cinchonidine_query.mol2"
+cinchonidine_mcs = ROOT / "cinchonidine_mcs.mol2"
 
 
 dendrobine_xyz = ROOT / "dendrobine.xyz"
@@ -26,6 +32,7 @@ dummy_xyz = ROOT / "dummy.xyz"
 
 substituents_cdxml = ROOT / "substituents.cdxml"
 parser_demo_cdxml = ROOT / "parser_demo.cdxml"
+parser_demo2_cdxml = ROOT / "parser_demo2.cdxml"
 
 oldstyle_xml = ROOT / "oldstyle.xml"
 
@@ -36,3 +43,7 @@ cinchonidine_rd_conf = ROOT / "cinchonidine_rdconfs.clib"
 fletcher_phosphoramidite = ROOT / "fletcher_phosphoramidite_cats.mlib"
 test_mol2_zip = ROOT / "test_mol2s.zip"
 test_mol2_ml02_zip = ROOT / "test_mol2s_ml02.zip"
+
+BOX_4_position = ROOT / "BOX_4position_fragments.cdxml"
+BOX_cores = ROOT / "BOX_cores.cdxml"
+BOX_bridge = ROOT / "BOX_bridging_fragments.cdxml"

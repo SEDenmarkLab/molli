@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any, List, Iterable, Generator, TypeVar, Generic, Dict
+from ast import Tuple
+from typing import Any, Callable, List, Iterable, Generator, TypeVar, Generic, Dict
 from enum import Enum
 import numpy as np
 from numpy.typing import ArrayLike
@@ -211,6 +212,38 @@ class Molecule(Structure):
         _i = self.get_atom_index(_a)
         super().del_atom(_a)
         self._atomic_charges = np.delete(self._atomic_charges, _i, axis=0)
+
+    def align_to_ref_coords(
+        self,
+        func: Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, float]],
+        substructure_indices: list[list[int]],
+        reference_subgeometry: Substructure,
+        vec: list = None,
+    ) -> float:
+        centroid = self.substructure(substructure_indices[0]).centroid()
+        self.translate(-centroid)
+
+        smallest_rmsd = 100.0
+        optimal_rot_matrix = None
+
+        for idx in substructure_indices:
+            subgeom = self.substructure(idx)
+
+            rotation, rmsd_ = func(subgeom.coords, reference_subgeometry.coords)
+
+            if rmsd_ < smallest_rmsd:
+                smallest_rmsd = rmsd_
+                optimal_rot_matrix = rotation
+
+        self.transform(optimal_rot_matrix)
+
+        # bringing ensemble coordinates from origin back to referential coordinates (if necessary)
+        if vec is not None:
+            self.translate(vec)
+            # for cf in self:
+            #     cf.coords += vec
+
+        return smallest_rmsd
 
     # def serialize(self):
     #     atom_id_map = {a: i for i, a in enumerate(self.atoms)}

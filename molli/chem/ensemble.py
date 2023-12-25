@@ -105,12 +105,17 @@ class ConformerEnsemble(Connectivity):
         copy_atoms: bool = False,
         **kwds,
     ):
-        if isinstance(other, list) and isinstance(other[0], Structure):
+
+        # TODO: revise the constructor
+
+        if isinstance(other, list) and all(isinstance(o, Structure) for o in other):
+
             super().__init__(
                 other[0],
                 name=other[0].name,
                 charge=other[0].charge,
                 mult=other[0].mult,
+                **kwds,
             )
             n_conformers = len(other)
 
@@ -131,21 +136,16 @@ class ConformerEnsemble(Connectivity):
                 **kwds,
             )
             self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
-            self._atomic_charges = np.zeros(
-                (
-                    n_conformers,
-                    self.n_atoms,
-                )
-            )
+            self._atomic_charges = np.zeros((n_conformers, self.n_atoms))
             self._weights = np.ones((n_conformers,))
 
         if isinstance(other, ConformerEnsemble):
-            self.atomic_charges = atomic_charges
-            self.coords = other.coords
-            self.weights = other.weights
-        else:
-            if coords is not None:
-                self.coords = coords
+            self._atomic_charges = np.array(other.atomic_charges)
+            self._coords = np.array(other.coords)
+            self._weights = np.array(other.weights)
+
+        if coords is not None:
+            self.coords = coords
 
         if atomic_charges is not None:
             self.atomic_charges = atomic_charges
@@ -327,6 +327,7 @@ class ConformerEnsemble(Connectivity):
             )
 
         return res
+
 
     def dump_mol2(self, stream: StringIO = None) -> None:
         """Dumps the multi-mol2 block into the output stream
@@ -590,6 +591,7 @@ class ConformerEnsemble(Connectivity):
 
         self.scale(-1, allow_inversion=True)
 
+
     def get_substr_indices(
         self, pattern: Connectivity
     ) -> Generator[list[int], None, None]:
@@ -649,7 +651,7 @@ class ConformerEnsemble(Connectivity):
             case 1:
                 self.coords += v
             case 2:
-                self.coords += v[:, np.newaxis]
+                self.coords += v[:, np.newaxis, :]
             case _:
                 raise ValueError("wrong shape of vector")
 
@@ -689,7 +691,7 @@ class ConformerEnsemble(Connectivity):
 
         atom_ind = self.index_atom(_a)
 
-        self.translate(-self.coords[atom_ind])
+        self.translate(-self.coords[:, atom_ind])
 
         # previous working version:
         # for cf in self:
