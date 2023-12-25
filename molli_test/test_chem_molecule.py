@@ -12,24 +12,28 @@ class MoleculeTC(ut.TestCase):
         m1 = ml.Molecule()
         m2 = ml.Molecule()
 
-        self.assertIsInstance(m1, ml.Molecule) # make sure its a molecule
+        self.assertIsInstance(m1, ml.Molecule)  # make sure its a molecule
 
-        self.assertEqual(len(m1.atoms), 0) # no atoms
-        self.assertEqual(len(m1.atomic_charges), 0) # no charges
-        self.assertEqual(len(m1.bonds), 0) # no bonds
-        self.assertEqual(m1.coords.shape, (0,3)) # no coords, but correct shape
-        self.assertEqual(m1.charge, 0) # total charge is 0
-        self.assertEqual(m1.mult, 1) # multiplicity is 1, closed shell
-        self.assertEqual(m1.name, 'unknown') # name is unknown
+        self.assertEqual(len(m1.atoms), 0)  # no atoms
+        self.assertEqual(len(m1.atomic_charges), 0)  # no charges
+        self.assertEqual(len(m1.bonds), 0)  # no bonds
+        self.assertEqual(m1.coords.shape, (0, 3))  # no coords, but correct shape
+        self.assertEqual(m1.charge, 0)  # total charge is 0
+        self.assertEqual(m1.mult, 1)  # multiplicity is 1, closed shell
+        self.assertEqual(m1.name, "unknown")  # name is unknown
 
-        self.assertNotEqual(id(m1), id(m2)) # should be different objects in memory
-        self.assertNotEqual(id(m1.atoms), id(m2.atoms)) # atom list should be different
-        self.assertNotEqual(id(m1.atomic_charges), id(m2.atomic_charges)) # atom list should be different
-        self.assertNotEqual(id(m1.bonds), id(m2.bonds)) # bonds should be different
-        self.assertNotEqual(id(m1.coords), id(m2.coords)) # coords should be different
-        
-        self.assertEqual(id(m1.charge), id(m2.charge)) # primitive types should be the same
-        self.assertEqual(id(m1.mult), id(m2.mult)) # primitive types should be the same
+        self.assertNotEqual(id(m1), id(m2))  # should be different objects in memory
+        self.assertNotEqual(id(m1.atoms), id(m2.atoms))  # atom list should be different
+        self.assertNotEqual(
+            id(m1.atomic_charges), id(m2.atomic_charges)
+        )  # atom list should be different
+        self.assertNotEqual(id(m1.bonds), id(m2.bonds))  # bonds should be different
+        self.assertNotEqual(id(m1.coords), id(m2.coords))  # coords should be different
+
+        self.assertEqual(
+            id(m1.charge), id(m2.charge)
+        )  # primitive types should be the same
+        self.assertEqual(id(m1.mult), id(m2.mult))  # primitive types should be the same
         self.assertEqual(id(m1.name), id(m2.name))
 
     def test_yield_from_mol2(self):
@@ -110,10 +114,10 @@ class MoleculeTC(ut.TestCase):
         ncoords = mol.coords.shape
 
         a = ml.Atom()
-        mol.add_atom(a, [0,0,0])
+        mol.add_atom(a, [0, 0, 0])
 
         self.assertEqual(mol.n_atoms, na + 1)
-        self.assertEqual(mol.n_bonds, nb) # added an atom but no bonds
+        self.assertEqual(mol.n_bonds, nb)  # added an atom but no bonds
         self.assertEqual(mol._atomic_charges.shape, (na + 1,))
         self.assertEqual(mol.coords.shape, (ncoords[0] + 1, 3))
 
@@ -125,3 +129,10 @@ class MoleculeTC(ut.TestCase):
 
         for b in mol.bonds:
             assert b.parent is mol
+
+    def test_mol_pickle_serialization(self):
+        import pickle
+
+        m1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+        m_pkl = pickle.dumps(m1)
+        m2 = pickle.loads(m_pkl)

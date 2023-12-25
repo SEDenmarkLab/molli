@@ -377,6 +377,14 @@ class Atom:
         converter=lambda x: x if x is None or isinstance(x, ref) else ref(x),
     )
 
+    def __getstate__(self):
+        # Serialization of objects should just exclude _parent and __weakref__
+        return self.as_dict(schema=self.__slots__[:-2])
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            setattr(self, k, v)
+
     @property
     def parent(self):
         if self._parent is None:
@@ -636,7 +644,6 @@ class Promolecule:
 
     __slots__ = (
         "_name",
-        "_parent",
         "_atoms",
         "_atomic_charges",
         "_bonds",
@@ -645,6 +652,7 @@ class Promolecule:
         "charge",
         "mult",
         "attrib",
+        "_parent",
         "__weakref__",
     )
 
@@ -705,6 +713,14 @@ class Promolecule:
                 raise NotImplementedError(
                     f"Cannot interpret {other} of type {type(other)}"
                 )
+
+    def __getstate__(self):
+        # Serialization of objects should just exclude _parent and __weakref__
+        return {k: getattr(self, k, None) for k in self.__slots__[:-2]}
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            setattr(self, k, v)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(name={self.name!r}, formula={self.formula!r})"

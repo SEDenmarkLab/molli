@@ -112,6 +112,14 @@ class Bond:
         converter=lambda x: x if x is None or isinstance(x, ref) else ref(x),
     )
 
+    def __getstate__(self):
+        # Serialization of objects should just exclude _parent and __weakref__
+        return self.as_dict(schema=self.__slots__[:-2])
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            setattr(self, k, v)
+
     @property
     def parent(self):
         if self._parent is None:

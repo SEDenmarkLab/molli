@@ -124,7 +124,9 @@ class CartesianGeometry(Promolecule):
         """This extends current geometry with another one"""
         raise NotImplementedError
 
-    def dump_xyz(self, output: StringIO, write_header: bool = True, *, fmt: str = "12.6f") -> None:
+    def dump_xyz(
+        self, output: StringIO, write_header: bool = True, *, fmt: str = "12.6f"
+    ) -> None:
         """
         This dumps an xyz file into the output stream.
         """
