@@ -1,3 +1,29 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+# `molli.chem.molecule`
+This submodule defines the cornerstone of the diamond inheritance in `molli`: 
+the `Structure` and `Substructure` classes
+"""
+
 from __future__ import annotations
 from pathlib import Path
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, IO, Callable

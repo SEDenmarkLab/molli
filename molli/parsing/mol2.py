@@ -1,3 +1,27 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+This is a parser for .mol2 files
+"""
+
 from dataclasses import dataclass, field
 from typing import List, Generator
 from io import StringIO
@@ -108,7 +132,6 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
 
     while (line := reader.next_noexcept()) is not None:
         match line:
-
             case "":
                 # Empty lines should be ignored
                 continue
@@ -124,9 +147,7 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                 match m[1]:
                     case "MOLECULE":
                         if parsed_header is not None:
-                            yield MOL2Block(
-                                parsed_header, parsed_atoms, parsed_bonds
-                            )
+                            yield MOL2Block(parsed_header, parsed_atoms, parsed_bonds)
 
                         mol_name = next(reader)
                         mol_record_counts = next(reader)
@@ -214,9 +235,7 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                             #         charge=float(_chrg),
                             #     )
                             # )
-                            parsed_atoms.append(
-                                MOL2Atom(*atom_def.split(maxsplit=10))
-                            )
+                            parsed_atoms.append(MOL2Atom(*atom_def.split(maxsplit=10)))
 
                     case "BOND":
                         parsed_bonds = []
@@ -237,9 +256,7 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                             #         idx=int(_id), a1=int(_a1), a2=int(_a2), typ=_type
                             #     )
                             # )
-                            parsed_bonds.append(
-                                MOL2Bond(*bond_def.split(maxsplit=5))
-                            )
+                            parsed_bonds.append(MOL2Bond(*bond_def.split(maxsplit=5)))
 
                     # case "SUBSTRUCTURE":
                     #     ...

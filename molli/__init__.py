@@ -1,29 +1,60 @@
 # ================================================================================
-# This file is part of
-#      -----------
-#      MOLLI 1.0.0
-#      -----------
-# (C) 2022 Alexander S. Shved and the Denmark laboratory
-# University of Illinois at Urbana-Champaign, Department of Chemistry
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by:
+#     - Alexander S. Shved <shvedalx@illinois.edu>,
+#     - Blake E. Ocampo
+#     - Elena S. Burlova
+#     - Casey L. Olen
+#     - N. Ian Rinehart
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 # ================================================================================
+
+
 """
 ------------------------------------
  `MOLLI`: Molecular Library Toolbox
 ------------------------------------
-(C) 2022 Alexander S. Shved and the Denmark laboratory  
-University of Illinois at Urbana-Champaign, Department of Chemistry
 
-Molli, molecular library toolbox, is a library that supports
-small to medium size full molecular structure manipulations.
-Additional features include efficient distributed and parallel calculations.
+`Molli`, molecular library toolbox, is a python 3.10+ library that supports
+small to medium size full molecular structure manipulations, combinatorial molecular 
+library generation, structure manipulations, and feature Extraction.
+Molli offsers an efficient molecular and conformer library storage format.
 
 It also implements a lot of command line tools (run `molli --HELP` or `molli list` for more details)
 
+Copyright 2022-2023 The Board of Trustees of the University of Illinois. 
+All Rights Reserved.
+
+Developed by: 
+    - Alexander S. Shved <shvedalx@illinois.edu>,
+    - Blake E. Ocampo
+    - Elena S. Burlova
+    - Casey L. Olen
+    - N. Ian Rinehart
+
+S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+https://denmarkgroup.illinois.edu/
+
+Licensed under the terms MIT License 
+The License is included in the distribution as LICENSE file.
+You may not use this file except in compliance with the License. 
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
 """
-
-
-# Determine whether molli C++ extensions are available
-# if not, pure python analogs should be provided
 
 
 from . import config

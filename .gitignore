@@ -19,6 +19,6 @@ molli_xt.*.so
 # Files not to be uploaded to repo
 **/_temp_*
 **/*.lock
-
+**/.vscode/
 /.vscode/c_cpp_properties.json
 molli/chem/molli_dev.code-workspace

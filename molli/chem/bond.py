@@ -1,3 +1,29 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+# `molli.chem.bond`
+
+This submodule defines classes `Bond`, `Connectivity` and others.
+"""
+
 from __future__ import annotations
 from . import (
     Atom,
@@ -953,7 +979,7 @@ class Connectivity(Promolecule):
         _start: AtomLike,
         _direction: AtomLike = None,
     ) -> Generator[Tuple[Atom, int], None, None]:
-        '''Yields atoms in breadth-first search, in traversal order,
+        """Yields atoms in breadth-first search, in traversal order,
         Distance from the start atom is also yielded
 
         Parameters
@@ -980,8 +1006,8 @@ class Connectivity(Promolecule):
         If desired, one can work directly with Connectivity class instead
             >>> connect = ml.Connectivity(dmf)
             >>> connect.yield_bfsd(0)
-            <generator object Connectivity.yield_bfsd at ...>        
-        '''
+            <generator object Connectivity.yield_bfsd at ...>
+        """
 
         start = self.get_atom(_start)
         visited = {start}
@@ -1009,7 +1035,7 @@ class Connectivity(Promolecule):
     def yield_bfs(
         self, _start: AtomLike, _direction: AtomLike = None
     ) -> Generator[Atom, None, None]:
-        '''Yields atoms in breadth-first search, in traversal order,
+        """Yields atoms in breadth-first search, in traversal order,
         Distance is not yielded
 
         Parameters
@@ -1035,8 +1061,8 @@ class Connectivity(Promolecule):
         If desired, one can work directly with Connectivity class instead
             >>> connect = ml.Connectivity(dmf)
             >>> connect.yield_bfsd(0)
-            <generator object Connectivity.yield_bfs at ...>  
-        '''
+            <generator object Connectivity.yield_bfs at ...>
+        """
 
         start = self.get_atom(_start)
         visited = {start}

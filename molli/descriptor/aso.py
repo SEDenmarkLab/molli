@@ -1,3 +1,34 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+# `molli.descriptor.aso`
+This module defines the functions necessary to calculate ASO
+(Average Steric Occupancy Descriptor)
+
+See 
+Zahrt AF, Henle JJ, Rose BT, Wang Y, Darrow WT, Denmark SE. Science 2019, 363 (6424), eaau5631.
+Henle JJ, Zahrt AF, Rose BT, Darrow WT, Wang Y, Denmark SE. Journal of the American Chemical Society 2020, 142 (26), 11578-11592.
+for definitions
+"""
+
 from ..chem import Molecule, ConformerEnsemble
 from concurrent.futures import ThreadPoolExecutor, Future
 import numpy as np
