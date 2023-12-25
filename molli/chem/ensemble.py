@@ -1,3 +1,30 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by  Alexander S. Shved <shvedalx@illinois.edu>,
+#               Elena S. Burlova
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+# `molli.chem.ensemble`
+
+This submodule defines the `ConformerEnsemble` class.
+"""
+
 from __future__ import annotations
 from typing import IO, Iterable, Iterator, List, Callable, Generator, Tuple
 from . import (
@@ -105,11 +132,9 @@ class ConformerEnsemble(Connectivity):
         copy_atoms: bool = False,
         **kwds,
     ):
-
         # TODO: revise the constructor
 
         if isinstance(other, list) and all(isinstance(o, Structure) for o in other):
-
             super().__init__(
                 other[0],
                 name=other[0].name,
@@ -327,7 +352,6 @@ class ConformerEnsemble(Connectivity):
             )
 
         return res
-
 
     def dump_mol2(self, stream: StringIO = None) -> None:
         """Dumps the multi-mol2 block into the output stream
@@ -590,7 +614,6 @@ class ConformerEnsemble(Connectivity):
         """
 
         self.scale(-1, allow_inversion=True)
-
 
     def get_substr_indices(
         self, pattern: Connectivity

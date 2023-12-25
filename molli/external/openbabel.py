@@ -1,3 +1,29 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by  Blake E. Ocampo
+#               Alexander S. Shved
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+This module provides a set of functions (albeit incomplete) to interface with
+OpenBabel package
+"""
+
 from __future__ import annotations
 from ..chem import Molecule, ConformerEnsemble, Element, Bond
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, Dict
@@ -16,6 +42,7 @@ try:
     from openbabel import openbabel as ob
 except:
     raise ImportError("OpenBabel is not installed in this environment")
+
 
 def to_obmol(
     mol: Molecule,
@@ -60,6 +87,7 @@ def to_obmol(
 
     return obm
 
+
 def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
     """
     This is only a stub method right now. We need fully supported conversion.
@@ -85,10 +113,13 @@ def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
 
     return mol
 
-def loads_obmol(inp: str, ext: str = 'xyz',connect_perceive: bool = False, cls: type = Molecule) -> ob.OBMol:
-    '''
+
+def loads_obmol(
+    inp: str, ext: str = "xyz", connect_perceive: bool = False, cls: type = Molecule
+) -> ob.OBMol:
+    """
     This function takes any file and creates an openbabel style mol format
-    '''
+    """
 
     conv = ob.OBConversion()
     obmol = ob.OBMol()
@@ -98,20 +129,21 @@ def loads_obmol(inp: str, ext: str = 'xyz',connect_perceive: bool = False, cls: 
     if connect_perceive:
         obmol.ConnectTheDots()
         obmol.PerceiveBondOrders()
-    
+
     mlmol = from_obmol(obmol=obmol, cls=cls)
 
     return mlmol
 
-def loads_all_obmol(data, ext, connect_perceive: bool=False, cls: type=Molecule):
-    '''
+
+def loads_all_obmol(data, ext, connect_perceive: bool = False, cls: type = Molecule):
+    """
     Requires creation of a temporary file, loads all files in an object
-    '''
+    """
     with NamedTemporaryFile(
         dir=ml.config.SCRATCH_DIR,
         prefix="obabel-",
-        suffix=f'{ext}',
-        mode='w+b',
+        suffix=f"{ext}",
+        mode="w+b",
         delete=False,
     ) as tf:
         tf.write(data)
@@ -131,10 +163,11 @@ def loads_all_obmol(data, ext, connect_perceive: bool=False, cls: type=Molecule)
         mols.append(mlmol)
         obmol = ob.OBMol()
         notatend = conv.Read(obmol)
-    
+
     os.remove(tf.name)
 
     return mols
+
 
 def coord_from_obmol(obmol: ob.OBMol, dtype: np.dtype = np.float64) -> np.ndarray:
     n_atoms = obmol.NumAtoms()
@@ -145,12 +178,14 @@ def coord_from_obmol(obmol: ob.OBMol, dtype: np.dtype = np.float64) -> np.ndarra
 
     return coord
 
+
 def coords_to_obmol(obmol: ob.OBMol, coords: np.ndarray):
     n_atoms = obmol.NumAtoms()
     for i in range(n_atoms):
         a = obmol.GetAtomById(i)
         x, y, z = map(float, coords[i])
         a.SetVector(x, y, z)
+
 
 def from_str_w_ob(block: str, input_fmt: str = "mol2") -> ob.OBMol:
     """
@@ -164,6 +199,7 @@ def from_str_w_ob(block: str, input_fmt: str = "mol2") -> ob.OBMol:
     obmol.PerceiveBondOrders()
     return obmol
 
+
 def to_mol2_w_ob(mol: Molecule):
     """
     This returns basic mol2 data when writing the mol2 file that would be expected using Avogadro/Openbabel
@@ -173,6 +209,7 @@ def to_mol2_w_ob(mol: Molecule):
     conv.SetOutFormat("mol2")
 
     return conv.WriteString(obm)
+
 
 def dumps_obmol(mol: Molecule | ConformerEnsemble, ftype: str, encode=False):
     """
@@ -186,7 +223,7 @@ def dumps_obmol(mol: Molecule | ConformerEnsemble, ftype: str, encode=False):
             return conv.WriteString(obm).encode()
         else:
             return conv.WriteString(obm)
-        
+
     elif isinstance(mol, ConformerEnsemble):
         write = list()
         for conf in mol:
@@ -194,7 +231,7 @@ def dumps_obmol(mol: Molecule | ConformerEnsemble, ftype: str, encode=False):
             conv = ob.OBConversion()
             conv.SetOutFormat(ftype)
             write.append(conv.WriteString(obm))
-        write = ''.join(write)
+        write = "".join(write)
         if encode:
             return write.encode()
         else:

@@ -1,10 +1,6 @@
 # ================================================================================
-# This file is part of
-#      -----------  
-#      MOLLI 1.0.0  
-#      -----------  
-# (C) 2022 Alexander S. Shved and the Denmark laboratory
-# University of Illinois at Urbana-Champaign, Department of Chemistry
+# This file is part of `molli 1.0` 
+# (https://github.com/SEDenmarkLab/molli)
 # ================================================================================
 
 {% set pyproject = load_file_data("../pyproject.toml", from_recipe_dir=True)  %}
@@ -17,11 +13,14 @@ package:
   version: {{ version }}
   
 about:
+  home: https://github.com/SEDenmarkLab/molli
+  license: MIT
   summary: "Molecular Library Toolkit"
   description: |
-    This package was originally developed to supersede ccheminfolib. 
-    Now it is a tool that allows storage and fast manipulations of full molecule and conformer ensembles.
+    Molli is a toolbox that allows storage and fast manipulations of full molecule and conformer ensembles.
     This project takes advantage of numpy mathematics in its core, as well as binary information storage.
+    Molli offers a convenient interface to familiar chemical concepts such as Atom, Molecule, ConformerEnsemble, etc.
+    See README.md for more details.
 
 source:
   path: ..

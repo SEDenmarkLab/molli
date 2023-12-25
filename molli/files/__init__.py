@@ -1,4 +1,30 @@
-# This module provides easier access to miscellaneous files
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by  Alexander S. Shved
+#               Blake E. Ocampo
+#               Casey L. Olen
+#               Elena S. Burlova
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+This module defines paths to sample files that can be used for testing or initial development of some code.
+"""
+
 
 from pathlib import Path
 

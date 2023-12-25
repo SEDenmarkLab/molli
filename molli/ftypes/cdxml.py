@@ -1,3 +1,27 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+This file provides the necessary functionality to parse a CDXML file with stereochemical hinting
+"""
+
 from xml.etree import cElementTree as et
 from attrs import define, field
 from pathlib import Path
@@ -44,7 +68,9 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
         if s.is_bond_in_ring(b):
             # Fun stuff happens here
             # this is under a few assumptions
-            s.substructure((a1, a2)).coords += sign * np.array([[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]])
+            s.substructure((a1, a2)).coords += sign * np.array(
+                [[0.0, 0.5, 0.75], [0.0, 0.5, 1.5]]
+            )
 
             for _b in s.bonds_with_atom(a1):
                 if not s.is_bond_in_ring(_b):
@@ -61,7 +87,9 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
         else:
             # We need to define the rotation matrix first.
             normal = mean_plane(s.coord_subset(s.connected_atoms(a1)))
-            angle = sign * (radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60))
+            angle = sign * (
+                radians(+90) if s.n_bonds_with_atom(a1) == 4 else radians(+60)
+            )
             rotation = rotate_2dvec_outa_plane(s.vector(i1, i2), angle, normal)
             substruct = s.substructure(s.yield_bfs(a1, a2))
             v = s.get_atom_coord(a1)
@@ -129,7 +157,8 @@ class CDXMLFile:
         self.xfrags.extend(
             filter(
                 validate_fragment,
-                self.tree.findall("./page/fragment") + self.tree.findall("./page/group/fragment"),
+                self.tree.findall("./page/fragment")
+                + self.tree.findall("./page/group/fragment"),
             )
         )
 
@@ -152,7 +181,7 @@ class CDXMLFile:
 
     def __len__(self):
         return len(self.keys())
-    
+
     def __getitem__(self, key: str) -> Molecule:
         # TEMPORARY. DO A BETTER REWRITE.
         if isinstance(key, int):
@@ -169,7 +198,9 @@ class CDXMLFile:
             _, indices = self.xfrag_kd.query(lpos, k=5, p=1)
             for i in indices:
                 fpos = position(self.xfrags[i])
-                if fpos[1] < lpos[1]:  # if the label is below the fragment, which is what we want
+                if (
+                    fpos[1] < lpos[1]
+                ):  # if the label is below the fragment, which is what we want
                     frag = self.xfrags[i]
                     break
 
@@ -239,7 +270,9 @@ class CDXMLFile:
                 btype = BondType.Single
 
             case "1.5":
-                btype = BondType.Aromatic  # Unclear if this is correct, but for now let it be
+                btype = (
+                    BondType.Aromatic
+                )  # Unclear if this is correct, but for now let it be
 
             case _:
                 btype = BondType(int(_order))
@@ -254,7 +287,7 @@ class CDXMLFile:
         coords = []
         atom_idx = {}
         bond_idx = {}
-        
+
         try:
             # iterate over all nodes
             for node in frag.findall("./n"):
@@ -317,6 +350,8 @@ class CDXMLFile:
                     name=name,
                 )
         except Exception as xc:
-            raise SyntaxError(f"Invalid syntax encountered in fragment id=\"{frag.get('id')}\"") from xc
+            raise SyntaxError(
+                f"Invalid syntax encountered in fragment id=\"{frag.get('id')}\""
+            ) from xc
 
         return result
