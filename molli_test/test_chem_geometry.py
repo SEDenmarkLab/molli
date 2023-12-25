@@ -1,3 +1,27 @@
+# ================================================================================
+# This file is part of `molli 1.0`
+# (https://github.com/SEDenmarkLab/molli)
+#
+# Developed by Alexander S. Shved <shvedalx@illinois.edu>
+#
+# S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
+# https://denmarkgroup.illinois.edu/
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+# All Rights Reserved.
+#
+# Licensed under the terms MIT License
+# The License is included in the distribution as LICENSE file.
+# You may not use this file except in compliance with the License.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+# ================================================================================
+
+
+"""
+Testing the `CartesianGeometry` class functionality
+"""
+
 import unittest as ut
 import numpy as np
 import molli as ml
@@ -36,9 +60,7 @@ class GeometryTC(ut.TestCase):
         m = ml.CartesianGeometry.loads_xyz(H2O_XYZ)
         self.assertEqual(m.n_atoms, 3)
         self.assertTupleEqual(m.coords.shape, (3, 3))
-        self.assertAlmostEqual(
-            np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0
-        )
+        self.assertAlmostEqual(np.linalg.norm(m.coords - np.array(H2O_XYZ_LIST)), 0)
         self.assertAlmostEqual(m.distance(0, 1), 0.96900, places=5)
         self.assertAlmostEqual(m.distance(2, 1), 1.52694, places=5)
         self.assertEqual(m.formula, "H2 O1")
@@ -66,9 +88,7 @@ class GeometryTC(ut.TestCase):
         d2 = WATER.distance(0, 2)
 
         self.assertAlmostEqual(d1, d2, 6)
-        self.assertAlmostEqual(
-            d1, math.dist(H2O_XYZ_LIST[0], H2O_XYZ_LIST[1]), 6
-        )
+        self.assertAlmostEqual(d1, math.dist(H2O_XYZ_LIST[0], H2O_XYZ_LIST[1]), 6)
 
     def test_distance_to_point(self):
         d = WATER.distance_to_point(0, [50, 0, 0])
