@@ -96,6 +96,7 @@ class ConformerEnsemble(Connectivity):
                 name=other[0].name,
                 charge=other[0].charge,
                 mult=other[0].mult,
+                **kwds,
             )
             n_conformers = len(other)
 
