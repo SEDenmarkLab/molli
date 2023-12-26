@@ -39,6 +39,9 @@ jobs:
         pip install cibuildwheel==2.16.2
         
     - name: Build package
+      env:
+        # Skip pypy builds (something goes wrong when trying to build)
+        CIBW_SKIP: 'pp3*'
       run: python -m cibuildwheel
 
     - name: Publish package
