@@ -1247,6 +1247,19 @@ class Promolecule:
 
     @name.setter
     def name(self, value: str):
+        """
+        Sets the name of the Promolecule to the specified value
+        Parameters:
+        -----------
+        value: str
+            Desired name of the instance of the Promolecule class.
+            String length is required to be no longer than 255 characters.
+        Notes:
+        -----------
+        If no value was specified, the Promolecule name will be set to "unknown".
+        Illegal characters (anything except numbers, letters and "_" in the name)
+        will be replaced by "_".
+        """
         if value is None or value is Ellipsis:
             self._name = "unknown"
 
