@@ -5,7 +5,7 @@
 
 import os
 import sys
-from importlib.metadata import version
+from importlib.metadata import version as _get_version
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -13,7 +13,8 @@ from importlib.metadata import version
 project = "molli"
 copyright = "2022-2023 The Board of Trustees of the University of Illinois"
 author = "Alexander S. Shved, Blake E. Ocampo, Elena S. Burlova, Casey L. Olen, N. Ian Rinehart"
-release = version("molli")
+version = _get_version("molli")
+release = _get_version("molli")
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

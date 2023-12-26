@@ -8,7 +8,7 @@ Welcome to Molli's documentation!
 =================================
 
 .. docs/indext.rst 
-.. include:: ../welcome.rst
+.. include:: welcome.rst
 
 
 .. toctree::
