@@ -69,6 +69,10 @@ class ConformerEnsemble(Connectivity):
         >>> mol_list = ml.Molecule.load_all_mol2(ml.files.pentane_confs_mol2)
         >>> ml.ConformerEnsemble(mol_list)
         ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
+    Moreover, ConformerEnsemble can be initialized from other ensebmle:
+        >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+        >>> ml.ConformerEnsemble(ens, name="new_ensemble")
+        ConformerEnsemble(name='new_ensemble', formula='C5 H12', n_conformers=7)
     """
 
     # old one
@@ -132,7 +136,7 @@ class ConformerEnsemble(Connectivity):
         copy_atoms: bool = False,
         **kwds,
     ):
-        # TODO: revise the constructor
+        # TODO: revise this function
 
         if isinstance(other, list) and all(isinstance(o, Structure) for o in other):
             super().__init__(
@@ -197,6 +201,22 @@ class ConformerEnsemble(Connectivity):
 
     @coords.setter
     def coords(self, other: ArrayLike):
+        """Sets ConformerEnsemble coordinates to specified values.
+
+        Parameters:
+        -------
+        other: ArrayLike
+            New coordinates in shape that either matches or can be broadcast
+            into current coordinates shape: (n_confs, n_atoms, 3)
+
+        Examples
+        -------
+            >>> import numpy as np
+            >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+            >>> ens.coords = np.zeros(shape=(ens.n_conformers, ens.n_atoms, 3))
+            >>> ens.coords
+            array([[[0., 0., 0.],...
+        """
         self._coords[:] = other
 
     @property
@@ -219,11 +239,27 @@ class ConformerEnsemble(Connectivity):
 
     @weights.setter
     def weights(self, other: ArrayLike):
+        """Sets weights of conformers to the specified values.
+
+        Parameters:
+        -------
+        other: ArrayLike
+            New weights of conformers in shape that either matches or can be broadcast
+            into current weights shape: (n_confs, )
+
+        Examples
+        -------
+            >>> import numpy as np
+            >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+            >>> ens.weights = np.zeros(shape=(ens.n_conformers, ))
+            >>> ens.weights
+            array([0., 0., 0., 0., 0., 0., 0.])
+        """
         self._weights[:] = other
 
     @property
     def atomic_charges(self) -> np.ndarray:
-        """The atomic charges of the ensemble in shape (n_confs,n_atoms)
+        """The atomic charges of the ensemble in shape (n_confs, n_atoms)
 
         Returns
         -------
@@ -241,6 +277,22 @@ class ConformerEnsemble(Connectivity):
 
     @atomic_charges.setter
     def atomic_charges(self, other: ArrayLike):
+        """Sets atomic charges of conformers to the specified values.
+
+        Parameters:
+        -------
+        other: ArrayLike
+            New atomic charges of conformers in shape that either matches or
+            can be broadcast into current weights shape: (n_confs, n_atoms)
+
+        Examples
+        -------
+            >>> import numpy as np
+            >>> ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+            >>> ens.atomic_charges = np.zeros(shape=(ens.n_conformers, ens.n_atoms))
+            >>> ens.atomic_charges
+            array([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], ...
+        """
         self._atomic_charges[:] = other
 
     @classmethod
@@ -253,7 +305,42 @@ class ConformerEnsemble(Connectivity):
         mult: int = None,
         source_units: str = "Angstrom",
     ) -> ConformerEnsemble:
-        """ """
+        # TODO: revise this method
+        """Creates ConformerEnsemble from mol2 file
+
+        Notes:
+        -------
+        Consider using load_mol2() and loads_mol2() before utilizing this method!
+        This is an innner helper function used in load_mol2 and loads_mols methods.
+
+        Parameters
+        ----------
+        cls : type[ConformerEnsemble]
+            Class to be loaded into
+        input : str | IO
+            String, or stream
+        name : str, optional
+            Name for ConformerEnsemble, by default None
+        charge: int, optional
+            Charge of each conformer
+        mult: int, optional
+            Multiplicity of each conformer
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        ConformerEnsemble
+            Returns ConformerEnsemble
+
+        Examples
+        -------
+            >>> ens_path = ml.files.pentane_confs_mol2
+            >>> with open(ens_path, "rt") as stream:
+            >>>     ens = ml.ConformerEnsemble.from_mol2(stream, name="example_ensemble")
+            >>> ens
+            ConformerEnsemble(name='example_ensemble', formula='C5 H12')
+        """
         mol2io = StringIO(input) if isinstance(input, str) else input
         mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
 
@@ -292,8 +379,12 @@ class ConformerEnsemble(Connectivity):
 
         Examples
         -------
-            >>> ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
-            ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
+            >>> import molli as ml
+            >>> ens_path = ml.files.pentane_confs_mol2
+            >>> with open(ens_path, "rt") as stream:
+            ...     ml.ConformerEnsemble.from_mol2(stream, name="example_ensemble")
+            ...
+            ConformerEnsemble(name='example_ensemble', formula='C5 H12')
         """
 
         if isinstance(input, str | Path):
@@ -716,11 +807,6 @@ class ConformerEnsemble(Connectivity):
 
         self.translate(-self.coords[:, atom_ind])
 
-        # previous working version:
-        # for cf in self:
-        #     atom_coord = cf.coords[atom_ind]
-        #     cf.coords -= atom_coord
-
     def center_at_core(self, substructure_indices: list[int]):
         """
         Centers ensemble at its substructure so that the coordinates of centroid of the
@@ -744,10 +830,12 @@ class ConformerEnsemble(Connectivity):
         reference_subgeometry: Substructure,
     ) -> Tuple[list[float], np.ndarray]:
         """
-        This is the inner part of the main function for Conformer alignment. For each conformer in the ConformerEnsemble,
-        it does the following:
-        1. Finds optimal rotation using symmetry corrected rmsd. It calculates rmsd (root mean squared deviation) for
-        every possible mapping with reference coordinates, then picks the lowest rmsd and corresponding rotation matrix.
+        This is the inner part of the main function for Conformer alignment.
+        For each conformer in the ConformerEnsemble, it does the following:
+        1. Finds optimal rotation using symmetry corrected rmsd.
+        It calculates rmsd (root mean squared deviation) for every possible
+        mapping with reference coordinates, then picks the lowest rmsd and
+        corresponding rotation matrix.
         2. Rotates conformer with the resulting rotation matrix.
         3. Returns list with the lowest rmsd values for each conformer.
 
@@ -769,7 +857,8 @@ class ConformerEnsemble(Connectivity):
 
         Notes:
         ------
-        If core_indices list has only one element, the algorithm will perform the usual (non symmetry corrected) alignment
+        If core_indices list has only one element,
+        the algorithm will perform the usual (non symmetry corrected) alignment
         """
 
         rmsds = []
