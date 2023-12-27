@@ -205,6 +205,77 @@ class Job(Generic[T_in, T_out]):
         #     envars=envars,
         # )
 
+    def __call__(
+        self,
+        obj: T_in,
+        scheduler: str = "local",
+        scratch_dir: str | Path = None,
+        shared_dir: str | Path = None,
+        n_jobs: int = 1,
+        args: tuple = None,
+        kwargs: tuple = None,
+    ) -> T_out:
+        _name = f"{self.name}_{os.getpid()}"
+
+        if scratch_dir is None:
+            scratch_dir = config.SCRATCH_DIR
+
+        args = args or ()
+        kwargs = kwargs or {}
+
+        match scheduler.lower():
+            case "local":
+                _runner = _runner_local
+            case "sge-cluster":
+                _runner = _runner_sge
+
+        with (
+            TemporaryDirectory(
+                dir=shared_dir,
+                prefix=f"molli_jobmap_worker_",
+            ) as td,
+            ThreadPoolExecutor(n_jobs) as executor,
+        ):
+            _prepared = self.prepare(obj, *args, **kwargs)
+
+            if isinstance(_prepared, JobInput):
+                _prepared.dump(f"{td}/input")
+                fut = executor.submit(
+                    _runner,
+                    f"{td}/input",
+                    f"{td}/output",
+                    scratch_dir,
+                    shared_dir,
+                )
+                proc = fut.result()
+                if proc.returncode == 0:
+                    out = JobOutput.load(f"{td}/output")
+                    return self.process(out, obj, *args, **kwargs)
+                else:
+                    out = JobOutput.load(f"{td}/output")
+                    raise RuntimeError(f"{proc}\n{out}")
+            else:
+                futures = []
+                for i, inp in enumerate(_prepared):
+                    futures.append(
+                        executor.submit(
+                            _runner,
+                            f"{td}/input.{i}",
+                            f"{td}/output.{i}",
+                            scratch_dir,
+                            shared_dir,
+                        )
+                    )
+
+                results = [f.result() for f in futures]
+
+                if all(proc.returncode == 0 for proc in results):
+                    outputs = map(
+                        JobOutput.load,
+                        (f"{td}/output.{i}" for i in range(len(futures))),
+                    )
+                    return self.reduce(outputs, obj, *args, **kwargs)
+
 
 def worker(
     name: str,
