@@ -543,6 +543,7 @@ def jobmap(
     kwargs = kwargs or {}
 
     jobs_to_run = []
+    job_len = {}
 
     # Step 2. Create all job input files
     with source.reading():
@@ -550,6 +551,7 @@ def jobmap(
             obj = source[k]
             _input = job.prepare(obj, *args, **kwargs)
             if isinstance(_input, JobInput):
+                job_len[k] = None
                 if (_out_fn := job_output_dir / f"{k}.out").is_file():
                     try:
                         _out = JobOutput.load(_out_fn)
@@ -561,43 +563,100 @@ def jobmap(
                 _input.dump(job_input_dir / f"{k}.inp")
                 jobs_to_run.append(job_input_dir / f"{k}.inp")
             else:
-                for i, _inp in _input:
+                L = 0
+                for i, _inp in enumerate(_input):
                     if (_out_fn := job_output_dir / f"{k}.{i}.out").is_file():
                         try:
                             _out = JobOutput.load(_out_fn)
                         except:
                             pass
                         else:
-                            if _out.input_hash == _input.hash and _out.exitcode == 0:
+                            if _out.input_hash == _inp.hash and _out.exitcode == 0:
                                 continue
                     _inp.dump(job_input_dir / f"{k}.{i}.inp")
                     jobs_to_run.append(f"{k}.{i}.inp")
+                    L += 1
+                job_len[k] = L
 
+    futures = []
     with ThreadPoolExecutor(
-        max_workers=n_workers, thread_name_prefix=job.name
+        max_workers=n_workers,  # thread_name_prefix=job.name
     ) as executor:
         for i, jin in tqdm(
             enumerate(jobs_to_run),
-            desc="Running jobs",
+            desc="Submitting jobs",
             total=len(jobs_to_run),
         ):
-            script = f"""{MOLLI_RUN} {jin} -o {job_output_dir.as_posix()} --s {scratch_dir.as_posix()}"""
-
-            proc = run(
-                shlex.split(script),
-                cwd=job_work_dir,
-                capture_output=True,
-                encoding="utf8",
+            f = executor.submit(
+                _run_local,
+                job_input_dir / jin,
+                job_work_dir,
+                job_output_dir,
+                scratch_dir,
             )
+            futures.append(f)
 
-            if proc.returncode == 0:
-                logger.info(
-                    f"Successfully submitted calculation {jids[-1]} for {jin!r}"
-                )
+        for f in tqdm(futures, desc="Waiting for jobs"):
+            proc = f.result()
+            if proc.returncode:
+                logger.error(f"Failed for process: {proc}")
+
+    with source.reading(), destination.writing():
+        for key in tqdm(to_be_done, "Finalizing the calculations"):
+            if job_len[key] is None:
+                try:
+                    output = JobOutput.load(job_output_dir / f"{key}.out")
+                    result = job.process(
+                        output,
+                        source[key],
+                        *args,
+                        **kwargs,
+                    )
+                except Exception as xc:
+                    logger.error(f"Failed to compute for {key=}")
+                    logger.exception(xc)
+                else:
+                    destination[key] = result
+                    logger.info(f"Successfully computed for {key=}")
             else:
-                logger.error(
-                    f"Failed to submit calculation for {jin!r}\nError: {proc.stderr}"
-                )
+                try:
+                    outputs = map(
+                        JobOutput.load,
+                        (
+                            job_output_dir / f"{key}.{j}.out"
+                            for j in range(job_len[key])
+                        ),
+                    )
+                    result = job.process(
+                        outputs,
+                        source[key],
+                        *args,
+                        **kwargs,
+                    )
+                except Exception as xc:
+                    logger.error(f"Failed to compute for {key=}")
+                    logger.exception(xc)
+                else:
+                    destination[key] = result
+                    logger.info(f"Successfully computed for {key=}")
+
+
+def _run_local(
+    ifn: Path,
+    cwd: Path,
+    odir: Path,
+    sdir: Path,
+):
+    script = f"""{MOLLI_RUN} {ifn} -o {odir.as_posix()} -s {sdir.as_posix()}"""
+
+    proc = run(
+        shlex.split(script),
+        cwd=cwd,
+        capture_output=True,
+        encoding="utf8",
+    )
+
+    return proc
 
 
 def is_running(jid: str):
@@ -670,6 +729,7 @@ def jobmap_sge(
     kwargs = kwargs or {}
 
     jobs_to_run = []
+    job_len = {}
 
     # Step 2. Create all job input files
     with source.reading():
@@ -677,6 +737,7 @@ def jobmap_sge(
             obj = source[k]
             _input = job.prepare(obj, *args, **kwargs)
             if isinstance(_input, JobInput):
+                job_len[k] = None
                 if (_out_fn := job_output_dir / f"{k}.out").is_file():
                     try:
                         _out = JobOutput.load(_out_fn)
@@ -688,17 +749,20 @@ def jobmap_sge(
                 _input.dump(job_input_dir / f"{k}.inp")
                 jobs_to_run.append(job_input_dir / f"{k}.inp")
             else:
-                for i, _inp in _input:
+                L = 0
+                for i, _inp in enumerate(_input):
                     if (_out_fn := job_output_dir / f"{k}.{i}.out").is_file():
                         try:
                             _out = JobOutput.load(_out_fn)
                         except:
                             pass
                         else:
-                            if _out.input_hash == _input.hash and _out.exitcode == 0:
+                            if _out.input_hash == _inp.hash and _out.exitcode == 0:
                                 continue
                     _inp.dump(job_input_dir / f"{k}.{i}.inp")
                     jobs_to_run.append(f"{k}.{i}.inp")
+                    L += 1
+                job_len[k] = L
 
     # Step 3. Schedule the jobs through qsub
     # if batchsize is specified, jobs will be scheduled in batches
@@ -739,3 +803,42 @@ def jobmap_sge(
             current = sum(int(is_running(j)) for j in jids)
             pbar.update(prev - current)
             prev = current
+
+    with source.reading(), destination.writing():
+        for key in tqdm(to_be_done, "Finalizing the calculations"):
+            if job_len[key] is None:
+                try:
+                    output = JobOutput.load(job_output_dir / f"{key}.out")
+                    result = job.process(
+                        output,
+                        source[key],
+                        *args,
+                        **kwargs,
+                    )
+                except Exception as xc:
+                    logger.error(f"Failed to compute for {key=}")
+                    logger.exception(xc)
+                else:
+                    destination[key] = result
+                    logger.info(f"Successfully computed for {key=}")
+            else:
+                try:
+                    outputs = map(
+                        JobOutput.load,
+                        (
+                            job_output_dir / f"{key}.{j}.out"
+                            for j in range(job_len[key])
+                        ),
+                    )
+                    result = job.process(
+                        outputs,
+                        source[key],
+                        *args,
+                        **kwargs,
+                    )
+                except Exception as xc:
+                    logger.error(f"Failed to compute for {key=}")
+                    logger.exception(xc)
+                else:
+                    destination[key] = result
+                    logger.info(f"Successfully computed for {key=}")
