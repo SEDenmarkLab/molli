@@ -9,6 +9,9 @@ molli.chem
    atomtypes
    bond
    ensemble
+   fragment
    geometry
+   legacy
+   library
    molecule
    structure

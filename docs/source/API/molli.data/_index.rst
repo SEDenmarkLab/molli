@@ -10,5 +10,13 @@ molli.data
    covalent_radius_1
    covalent_radius_grimme
    electron_affinity
-   element_group
+   group
    vdw_radius
+
+..note::
+   Missing the following files due to being empty:
+   c6_grimme 
+   covalent_radius_2
+   covalent_radius_3
+   en_pauling
+   isotope.exact_mass.yml

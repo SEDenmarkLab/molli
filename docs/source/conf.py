@@ -5,16 +5,18 @@
 
 import os
 import sys
-from importlib.metadata import version as _get_version
+
+sys.path.insert(0, os.path.abspath(".."))
+
+import molli.chem
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "molli"
-copyright = "2022-2023 The Board of Trustees of the University of Illinois"
-author = "Alexander S. Shved, Blake E. Ocampo, Elena S. Burlova, Casey L. Olen, N. Ian Rinehart"
-version = _get_version("molli")
-release = _get_version("molli")
+project = "Molli"
+copyright = "2022, Alexander Shved"
+author = "Alexander Shved"
+release = "1.0.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -38,7 +40,7 @@ autoyaml_level = 2
 autodoc_class_signature = "separated"
 
 # Removes the type hints from the documentation, this makes the documentation legible
-# autodoc_typehints = "none"
+autodoc_typehints = "none"
 
 templates_path = ["_templates"]
 exclude_patterns = []
@@ -49,7 +51,11 @@ intersphinx_mapping = {
     "rdkit": ("https://www.rdkit.org/docs/", None),
 }
 
+latex_engine = "xelatex"
 
+# latex_elements = {
+#     "preamble": r"\usepackage{pmboxdraw}",
+# }
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
