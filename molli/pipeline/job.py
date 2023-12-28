@@ -25,7 +25,7 @@ Description of this module
 from typing import Any, Generator, Callable, Literal, Generic, TypeVar, Iterable
 import molli as ml
 from .. import config
-from subprocess import run, PIPE
+from subprocess import run, PIPE, DEVNULL
 from pathlib import Path
 import attrs
 import shlex
@@ -38,6 +38,7 @@ from joblib import delayed, Parallel
 import numpy as np
 import re
 import os
+import sys
 from ..storage import Collection
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -45,9 +46,12 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, Future, ProcessPoolExecutor
 import shutil
 from copy import copy
+from time import sleep
 
 T_in = TypeVar("T_in")
 T_out = TypeVar("T_out")
+
+MOLLI_RUN = Path(sys.executable).with_name("_molli_run")
 
 
 @attrs.define(repr=True)
@@ -379,6 +383,7 @@ def worker(
                         scratch_dir,
                         shared_dir,
                     )
+                    logger.info(f"Submitted calculation {inp_key}")
                 else:
                     for i, inp in enumerate(_prepared):
                         inp_key = f"{key}.{i}"
@@ -476,120 +481,15 @@ def worker(
 
     return success, failure
 
-    # for key in keys:
-    #     with source.reading():
-    #         obj = source[key]
-    #     # Now checking if the result of the computation is already available
-    #     out = None
-    #     if cache is not None:
-    #         with cache.reading():
-    #             if key in cache:
-    #                 out = cache[key]
-    #                 logger.debug(f"{key}: found a cached result")
-
-    #     if out is None:
-    #         # Additional support for multiple job input is in order
-    #         inp = job._prep(job, obj, *args, **kwargs)
-    #         with open(cwd / (key + ".inp"), "wb") as f:
-    #             inp.dump(f)
-
-    #         proc = runner(cwd / (key + ".inp"), cwd / (key + ".out"), scratch_dir)
-
-    #         with open(cwd / (key + ".out"), "rb") as f:
-    #             out = JobOutput.load(f)
-
-    #         if proc.returncode == 0:
-    #             if cache is not None:
-    #                 with cache.writing():
-    #                     cache[key] = out
-    #                     logger.debug(
-    #                         f"{key}: successfully computed and cached the intermediate step."
-    #                     )
-    #             else:
-    #                 logger.debug(
-    #                     f"{key}: successfully computed the intermediate result."
-    #                 )
-    #         else:
-    #             if cache_error is not None:
-    #                 with cache_error.writing():
-    #                     cache_error[key] = out
-    #                     logger.debug(
-    #                         f"{key}: computation failed. Intermediate result cached."
-    #                     )
-    #             else:
-    #                 logger.debug(f"{key}: computation failed.")
-    #             break
-
-    #     # At this point we have either successfully computed
-    #     # or retrieved a cached calculation
-    #     res = job._post(job, out, obj, *args, **kwargs)
-
-    #     with destination.writing():
-    #         destination[key] = res
-    #         logger.info(f"{key}: completed! Result written in the destination.")
-
-
-def batched(iterable, n):
-    from itertools import islice
-
-    if n < 1:
-        raise ValueError("n must be at least one")
-    it = iter(iterable)
-    while batch := tuple(islice(it, n)):
-        yield batch
-
-
-def _runner_local(fin, fout, scratch, shared):
-    proc = run(
-        [
-            "_molli_run",
-            str(fin),
-            "-o",
-            str(fout),
-            "--scratch",
-            str(scratch),
-            "--shared",
-            str(shared),
-        ],
-        capture_output=True,
-        encoding="utf8",
-    )
-    return proc
-
-
-def _runner_sge(fin, fout, scratch, shared):
-    proc = run(
-        [
-            "_molli_run_sched",
-            str(fin),
-            "-o",
-            str(fout),
-            "-s",
-            "sge",
-            "--scratch",
-            str(scratch),
-            "--shared",
-            str(shared),
-        ],
-        capture_output=True,
-        encoding="utf8",
-    )
-    return proc
-
 
 def jobmap(
     job: Job,
     source: Collection,
     destination: Collection,
     cache_dir: str | Path = None,
-    error_dir: str | Path = None,
-    log_dir: str | Path = None,
-    scheduler: Literal["local", "sge-cluster"] = "local",
     scratch_dir: str | Path = None,
     shared_dir: str | Path = None,
     n_workers: int = None,
-    n_jobs_per_worker: int = 1,
-    batch_size: int = 16,
     args: tuple = None,
     kwargs: dict = None,
     verbose: bool = False,
@@ -599,32 +499,26 @@ def jobmap(
     This function maps a Job call onto a collection of items.
     This represents the central concept of parallelization
     """
+    logger = logging.getLogger("molli.pipeline.jobmap_sge")
+
+    if cache_dir is None:
+        cache_dir = Path(source._path.stem + "." + job.name).absolute()
+    else:
+        cache_dir = Path(cache_dir).absolute()
+
+    job_input_dir = cache_dir / "input"
+    job_input_dir.mkdir(exist_ok=True, parents=True)
+
+    job_output_dir = cache_dir / "output"
+    job_output_dir.mkdir(exist_ok=True, parents=True)
+
+    job_work_dir = cache_dir / "work"
+    job_work_dir.mkdir(exist_ok=True, parents=True)
+
     if scratch_dir is None:
         scratch_dir = config.SCRATCH_DIR
     else:
         scratch_dir = Path(scratch_dir)
-
-    if shared_dir is None:
-        shared_dir = config.SHARED_DIR / job.name
-    else:
-        shared_dir = Path(shared_dir)
-    shared_dir.mkdir(parents=True, exist_ok=True)
-
-    if cache_dir is not None:
-        cache_dir = Path(cache_dir).absolute()
-
-    if error_dir is not None:
-        error_dir = Path(error_dir).absolute()
-
-    if log_dir is None:
-        log_dir = Path(log_dir).absolute()
-
-    if log_dir is not None and Path(log_dir).is_dir():
-        prevlogs = Path(log_dir).glob(f"{job._prep.__qualname__}_*.log")
-        for fn in prevlogs:
-            os.unlink(fn)
-
-    n_workers = n_workers or 1
 
     with source.reading():
         all_keys = source.keys()
@@ -635,66 +529,213 @@ def jobmap(
     to_be_done = all_keys ^ skip_keys
 
     if verbose:
-        print("Starting a molli.pipeline.jobmap calculation:")
+        print("Starting a molli.pipeline.jobmap_sge calculation:")
         print("calculation:", job.name)
         print(job.__doc__)
-        print("input <<", source)
-        print("output >>", destination)
-        print("Scratch dir: ", scratch_dir)
+        print("     source: ", source)
+        print("destination: ", destination)
+        print("scratch dir: ", scratch_dir)
         print(f"Total number of jobs: {len(all_keys):>8}")
         print(f"Exist in destination: {len(skip_keys):>8}")
         print(f"To be computed:       {len(to_be_done):>8}")
 
-    batches = list(batched(sorted(to_be_done), batch_size))
+    args = args or ()
+    kwargs = kwargs or {}
 
-    parallel = Parallel(n_jobs=n_workers, return_as="generator")
+    jobs_to_run = []
 
-    match scheduler.lower():
-        case "local":
-            _runner = _runner_local
-        case "sge-cluster":
-            _runner = _runner_sge
+    # Step 2. Create all job input files
+    with source.reading():
+        for k in tqdm(to_be_done, desc="Preparing inputs", disable=not progress):
+            obj = source[k]
+            _input = job.prepare(obj, *args, **kwargs)
+            if isinstance(_input, JobInput):
+                if (_out_fn := job_output_dir / f"{k}.out").is_file():
+                    try:
+                        _out = JobOutput.load(_out_fn)
+                    except:
+                        pass
+                    else:
+                        if _out.input_hash == _input.hash and _out.exitcode == 0:
+                            continue
+                _input.dump(job_input_dir / f"{k}.inp")
+                jobs_to_run.append(job_input_dir / f"{k}.inp")
+            else:
+                for i, _inp in _input:
+                    if (_out_fn := job_output_dir / f"{k}.{i}.out").is_file():
+                        try:
+                            _out = JobOutput.load(_out_fn)
+                        except:
+                            pass
+                        else:
+                            if _out.input_hash == _input.hash and _out.exitcode == 0:
+                                continue
+                    _inp.dump(job_input_dir / f"{k}.{i}.inp")
+                    jobs_to_run.append(f"{k}.{i}.inp")
 
-    with (
-        tqdm(
-            desc=f"{job.name} success",
-            total=len(all_keys),
-            initial=len(skip_keys),
-            position=1,
-            # dynamic_ncols=True,
-            colour="green",
-        ) as pbar_success,
-        tqdm(
-            desc=f"{job.name} error",
-            total=len(all_keys),
-            initial=0,
-            position=0,
-            # dynamic_ncols=True,
-            colour="red",
-        ) as pbar_error,
-    ):
-        for success, error in parallel(
-            delayed(worker)(
-                job.name,
-                _runner,
-                job,
-                source,
-                destination,
-                batch,
-                cache_dir=cache_dir,
-                error_dir=error_dir,
-                log_dir=log_dir,
-                scratch_dir=scratch_dir,
-                shared_dir=shared_dir,
-                args=args,
-                kwargs=kwargs,
-                log_level="debug" if verbose else "info",
-            )
-            for batch in batches
+    with ThreadPoolExecutor(
+        max_workers=n_workers, thread_name_prefix=job.name
+    ) as executor:
+        for i, jin in tqdm(
+            enumerate(jobs_to_run),
+            desc="Running jobs",
+            total=len(jobs_to_run),
         ):
-            pbar_success.update(len(success))
-            pbar_error.update(len(error))
+            script = f"""{MOLLI_RUN} {jin} -o {job_output_dir.as_posix()} --s {scratch_dir.as_posix()}"""
 
-            if len(error):
-                for k in error:
-                    pbar_error.write(f"Error at key {k}")
+            proc = run(
+                shlex.split(script),
+                cwd=job_work_dir,
+                capture_output=True,
+                encoding="utf8",
+            )
+
+            if proc.returncode == 0:
+                logger.info(
+                    f"Successfully submitted calculation {jids[-1]} for {jin!r}"
+                )
+            else:
+                logger.error(
+                    f"Failed to submit calculation for {jin!r}\nError: {proc.stderr}"
+                )
+
+
+def is_running(jid: str):
+    proc = run(shlex.split(f"qstat -j {jid}"), capture_output=True)
+    if proc.returncode:
+        return False
+    else:
+        return True
+
+
+def jobmap_sge(
+    job: Job,
+    source: Collection,
+    destination: Collection,
+    cache_dir: str | Path = None,
+    scratch_dir: str | Path = None,
+    qsub_header: str = None,
+    args: tuple = None,
+    kwargs: dict = None,
+    verbose: bool = False,
+    progress: bool = False,
+    update: float = 10.0,
+):
+    """
+    This function maps a job using SGE cluster functionality.
+    """
+    # Step 1. Analyze source and destination.
+    # Only keys not present in the destination will be run.
+    logger = logging.getLogger("molli.pipeline.jobmap_sge")
+
+    if cache_dir is None:
+        cache_dir = Path(source._path.stem + "." + job.name).absolute()
+    else:
+        cache_dir = Path(cache_dir).absolute()
+
+    job_input_dir = cache_dir / "input"
+    job_input_dir.mkdir(exist_ok=True, parents=True)
+
+    job_output_dir = cache_dir / "output"
+    job_output_dir.mkdir(exist_ok=True, parents=True)
+
+    job_work_dir = cache_dir / "work"
+    job_work_dir.mkdir(exist_ok=True, parents=True)
+
+    if scratch_dir is None:
+        scratch_dir = config.SCRATCH_DIR
+    else:
+        scratch_dir = Path(scratch_dir)
+
+    with source.reading():
+        all_keys = source.keys()
+
+    with destination.reading():
+        skip_keys = destination.keys()
+
+    to_be_done = all_keys ^ skip_keys
+
+    if verbose:
+        print("Starting a molli.pipeline.jobmap_sge calculation:")
+        print("calculation:", job.name)
+        print(job.__doc__)
+        print("     source: ", source)
+        print("destination: ", destination)
+        print("scratch dir: ", scratch_dir)
+        print(f"Total number of jobs: {len(all_keys):>8}")
+        print(f"Exist in destination: {len(skip_keys):>8}")
+        print(f"To be computed:       {len(to_be_done):>8}")
+
+    args = args or ()
+    kwargs = kwargs or {}
+
+    jobs_to_run = []
+
+    # Step 2. Create all job input files
+    with source.reading():
+        for k in tqdm(to_be_done, desc="Preparing inputs", disable=not progress):
+            obj = source[k]
+            _input = job.prepare(obj, *args, **kwargs)
+            if isinstance(_input, JobInput):
+                if (_out_fn := job_output_dir / f"{k}.out").is_file():
+                    try:
+                        _out = JobOutput.load(_out_fn)
+                    except:
+                        pass
+                    else:
+                        if _out.input_hash == _input.hash and _out.exitcode == 0:
+                            continue
+                _input.dump(job_input_dir / f"{k}.inp")
+                jobs_to_run.append(job_input_dir / f"{k}.inp")
+            else:
+                for i, _inp in _input:
+                    if (_out_fn := job_output_dir / f"{k}.{i}.out").is_file():
+                        try:
+                            _out = JobOutput.load(_out_fn)
+                        except:
+                            pass
+                        else:
+                            if _out.input_hash == _input.hash and _out.exitcode == 0:
+                                continue
+                    _inp.dump(job_input_dir / f"{k}.{i}.inp")
+                    jobs_to_run.append(f"{k}.{i}.inp")
+
+    # Step 3. Schedule the jobs through qsub
+    # if batchsize is specified, jobs will be scheduled in batches
+    # to reduce the qsub overhead
+
+    jids = []
+
+    for i, jin in tqdm(
+        enumerate(jobs_to_run),
+        desc="Submitting jobs",
+        total=len(jobs_to_run),
+    ):
+        script = (
+            (qsub_header or "")
+            + f"\n\n {MOLLI_RUN} {jin} -o {job_output_dir.as_posix()} --s {scratch_dir.as_posix()}"
+        )
+
+        proc = run(
+            shlex.split(f"qsub -N {job.name}.{i+1} -shell n -V -terse -cwd -j y"),
+            input=script,
+            cwd=job_work_dir,
+            capture_output=True,
+            encoding="utf8",
+        )
+
+        if proc.returncode == 0:
+            jids.append(proc.stdout.strip())
+            logger.info(f"Successfully submitted calculation {jids[-1]} for {jin!r}")
+        else:
+            logger.error(
+                f"Failed to submit calculation for {jin!r}\nError: {proc.stderr}"
+            )
+
+    prev = len(jobs_to_run)
+    with tqdm(desc="Waiting for calculations", total=prev) as pbar:
+        while prev > 0:
+            sleep(update)
+            current = sum(int(is_running(j)) for j in jids)
+            pbar.update(prev - current)
+            prev = current
