@@ -128,6 +128,7 @@ def run_local():
 
             if proc.returncode != 0:
                 fail = i
+                print(f"Command {cmd!r} failed.", file=sys.stderr)
                 break
 
         stdouts = {}
