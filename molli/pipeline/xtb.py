@@ -64,7 +64,7 @@ class XTBDriver(DriverBase):
             commands=[
                 (
                     f"""{self.executable} input.xyz --{method} --opt {crit} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1}"""
-                    f"""--iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} {misc or ""}""",
+                    f""" --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} {misc or ""}""",
                     "xtb",
                 ),
             ],
