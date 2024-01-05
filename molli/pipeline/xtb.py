@@ -147,25 +147,36 @@ class XTBDriver(DriverBase):
         M: Molecule,
         method: str = "gfn2",
         accuracy: float = 0.5,
+        xtbinp: str = "",
+        maxiter: int = 500,
     ):
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
 
         inp = JobInput(
             M.name,
-            command=f"""xtb input.xyz --{method} --charge {M.charge} --acc {accuracy:0.2f} --vfukui""",
+            commands=[
+                (
+                    f"""{self.executable} input.xyz --{method} --charge {M.charge} --acc {accuracy:0.2f} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} --vfukui""",
+                    "xtb",
+                ),
+            ],
             files={"input.xyz": M.dumps_xyz().encode()},
+            return_files=self.return_files,
         )
 
         return inp
 
     @atom_properties.post
-    def atom_properties(self, out: JobOutput, M: Molecule, **kwargs):
+    def atom_properties(
+        self,
+        out: JobOutput,
+        M: Molecule,
+        **kwargs,
+    ):
         from molli.parsing.xtbout import extract_xtb_atomic_properties
 
-        if pls := out.stdout:
-            # print(pls)
-
-            outdf = extract_xtb_atomic_properties(pls)
+        if res := out.stdouts[self.executable]:
+            outdf = extract_xtb_atomic_properties(res)
             for i, a in enumerate(M.atoms):
                 for j, property in enumerate(outdf.columns):
                     a.attrib[property] = outdf.iloc[i, j]

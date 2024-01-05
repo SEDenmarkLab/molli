@@ -37,6 +37,7 @@ from joblib import delayed, Parallel
 from molli.pipeline.xtb import XTBDriver
 from molli.config import BACKUP_DIR
 from molli.config import SCRATCH_DIR
+import importlib.util
 
 
 # a little clunky but will check if xTB is installed
@@ -46,6 +47,11 @@ try:
         _XTB_INSTALLED = True
 except FileNotFoundError:
     _XTB_INSTALLED = False
+
+
+def is_package_installed(pkg_name):
+    return importlib.util.find_spec(pkg_name) is not None
+
 
 _CURRENT_BACKUP_DIR = BACKUP_DIR
 _CURRENT_SCRATCH_DIR = SCRATCH_DIR
@@ -153,4 +159,46 @@ class XTBTC(ut.TestCase):
                     self.assertEqual(m.attrib["energy"], -102.602803640785)
                 if name == "10_5_c_cf0":
                     self.assertEqual(m.attrib["energy"], -115.729089277128)
+            cleanup_dirs()
+
+    @ut.skipUnless(is_package_installed("pandas"), "pandas is not installed")
+    def test_atom_properties_parallel(self):
+        xtb = XTBDriver(nprocs=4)
+
+        source = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+
+        target = ml.MoleculeLibrary(
+            ml.config.SCRATCH_DIR / "dest.mlib",
+            overwrite=True,
+            readonly=False,
+            comment="We did it!",
+        )
+
+        prep_dirs()
+
+        ml.pipeline.jobmap(
+            xtb.energy,
+            source,
+            target,
+            cache_dir=ml.config.BACKUP_DIR,
+            error_dir=_TEST_ERROR_DIR,
+            log_dir=_TEST_LOG_DIR,
+            scratch_dir=ml.config.SCRATCH_DIR,
+            scheduler="local",
+            n_workers=4,
+            n_jobs_per_worker=8,
+            verbose=True,
+            progress=True,
+        )
+
+        res = ml.MoleculeLibrary(ml.config.SCRATCH_DIR / "dest.mlib")
+
+        with res.reading():
+            for name in res:
+                m = res[name]
+                a = m.get_atom(0)
+                for att in a.attrib:
+                    attribs = [a.attrib[att] for a in m.atoms]
+                    self.assertEqual(len(m.atoms), len(attribs))
+                    self.assertTrue(attribs)
             cleanup_dirs()
