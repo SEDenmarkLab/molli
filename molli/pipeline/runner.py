@@ -47,41 +47,16 @@ arg_parser.add_argument(
 
 arg_parser.add_argument(
     "-o",
-    "--output",
+    "--output_dir",
     action="store",
-    required=True,
     type=Path,
-    metavar="<output_file>",
-)
-
-arg_parser.add_argument(
-    "-n",
-    "--nprocs",
-    action="store",
-    type=int,
-    default=1,
-    metavar="1",
+    default=None,
+    metavar="<output_dir>",
 )
 
 arg_parser.add_argument(
     "-s",
-    "--submit",
-    action="store",
-    type=str.lower,
-    default="local",
-    choices=["sge", "slurm", "local"],
-)
-
-arg_parser.add_argument("--scheduler_params", action="store", type=str, default="")
-
-arg_parser.add_argument(
-    "--scratch",
-    action="store",
-    default=None,
-)
-
-arg_parser.add_argument(
-    "--shared",
+    "--scratch_dir",
     action="store",
     default=None,
 )
@@ -94,8 +69,11 @@ def run_local():
     job_hash = job.hash
 
     # 1. Create a scratch directory if that does not exist yet for some reason.
-    scratch_dir = Path(parsed.scratch)
+    scratch_dir = Path(parsed.scratch_dir)
     scratch_dir.mkdir(parents=True, exist_ok=True)
+
+    output_dir = Path(parsed.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     _cwd_original = os.getcwd()
 
@@ -150,6 +128,7 @@ def run_local():
 
             if proc.returncode != 0:
                 fail = i
+                print(f"Command {cmd!r} failed.", file=sys.stderr)
                 break
 
         stdouts = {}
@@ -178,36 +157,10 @@ def run_local():
             stderrs=stderrs,
             files=retfiles,
         )
-        out.dump(parsed.output)
+
+        out.dump(output_dir / f"{parsed.job.stem}.out")
 
         if fail is not None or set(retfiles) != set(job.return_files):
             exit(1)
         else:
             exit(proc.returncode)
-
-
-def run_sched():
-    # so what we are trying to do here is to submit an otherwise "local job" to the queue.
-    parsed = arg_parser.parse_args()
-    with TemporaryDirectory(dir=parsed.shared) as cwd:
-        match parsed.submit:
-            case "sge":
-                _molli_run_path = Path(sys.executable).with_name("_molli_run")
-
-                sge_inp = _molli_run_path.as_posix() + " " + shlex.join(sys.argv[1:])
-
-                name = "molli_" + Path(parsed.job).stem
-
-                res = run(
-                    shlex.split(
-                        f"qsub -N {name} -V -terse -sync yes -wd {cwd} {parsed.scheduler_params}"
-                    ),
-                    encoding="utf8",
-                    input=sge_inp,
-                    capture_output=False,
-                )
-
-            case _:
-                raise NotImplementedError
-
-    exit(res.returncode)

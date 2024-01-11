@@ -49,10 +49,13 @@ class XTBDriver(DriverBase):
     def optimize_m(
         self,
         M: Molecule,
+        charge: int = None,
+        mult: int = None,
         method: str = "gff",
         crit: str = "loose",
         xtbinp: str = "",
         maxiter: int = 500,
+        misc: str = None,
     ):
         """Optimize a molecule with XTB"""
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
@@ -60,7 +63,8 @@ class XTBDriver(DriverBase):
             M.name,
             commands=[
                 (
-                    f"""{self.executable} input.xyz --{method} --opt {crit} --charge {M.charge} --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} --silent""",
+                    f"""{self.executable} input.xyz --{method} --opt {crit} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1}"""
+                    f""" --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} {misc or ""}""",
                     "xtb",
                 ),
             ],
@@ -107,9 +111,11 @@ class XTBDriver(DriverBase):
         return newens
 
     @Job().prep
-    def energy(
+    def energy_m(
         self,
         M: Molecule,
+        charge: int = None,
+        mult: int = None,
         method: str = "gfn2",
         accuracy: float = 0.5,
     ):
@@ -117,13 +123,13 @@ class XTBDriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            command=f"""{self.executable} input.xyz --{method} --charge {M.charge} --acc {accuracy:0.2f}""",
+            command=f"""{self.executable} input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f}""",
             files={"input.xyz": M.dumps_xyz().encode()},
         )
 
         return inp
 
-    @energy.post
+    @energy_m.post
     def energy(self, out: JobOutput, M: Molecule, **kwargs):
         if pls := out.stdout:
             for l in pls.split("\n")[::-1]:
@@ -133,9 +139,11 @@ class XTBDriver(DriverBase):
                     return float(m["eh"])
 
     @Job(return_files=()).prep
-    def atom_properties(
+    def atom_properties_m(
         self,
         M: Molecule,
+        charge: int = None,
+        mult: int = None,
         method: str = "gfn2",
         accuracy: float = 0.5,
     ):
@@ -143,14 +151,14 @@ class XTBDriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            command=f"""xtb input.xyz --{method} --charge {M.charge} --acc {accuracy:0.2f} --vfukui""",
+            command=f"""xtb input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f} --vfukui""",
             files={"input.xyz": M.dumps_xyz().encode()},
         )
 
         return inp
 
-    @atom_properties.post
-    def atom_properties(self, out: JobOutput, M: Molecule, **kwargs):
+    @atom_properties_m.post
+    def atom_properties_m(self, out: JobOutput, M: Molecule, **kwargs):
         from molli.parsing.xtbout import extract_xtb_atomic_properties
 
         if pls := out.stdout:
