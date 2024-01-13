@@ -48,7 +48,7 @@ class NWChemDriver(DriverBase):
     default_executable = "nwchem"
 
     # the nwchem .esp file contains BOTH optimized coordinates and esp charges
-    @Job(return_files=(r"*.esp",)).prep
+    @Job(return_files=("esp.esp",)).prep
     def optimize_atomic_esp_charges(
         self,
         M: Molecule,
@@ -57,12 +57,15 @@ class NWChemDriver(DriverBase):
         maxiter: int = 100,
         memory_total: int = 500, # memory in MB,
         optimize_geometry: bool = True, # optimize geometry before ESP calc?
+        range: float = 0.2, # nwchem esp params
+        probe: float = 0.1, # nwchem esp params
+        spacing: float = 0.025 # nwchem esp params
     ):
         """(Optionally) optimize molecule geometry with NWChem, then calculate atomic esp with NWChem esp module. ESPs are assigned as atom 'nwchem_esp_charge' Atom attributes in the returned Molecule object."""
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
         
         full_xyz = M.dumps_xyz()
-        xyz_block = "\n".join(full_xyz.split("\n")[2:])[:-3]
+        xyz_block = "\n".join(full_xyz.split("\n")[2:])
 
         _inp = (f"""title "{M.name} ESP Calculation"\n"""
                 f"""memory total {memory_total} mb\n"""
@@ -91,9 +94,9 @@ class NWChemDriver(DriverBase):
                 """\n"""
                 """esp\n"""
                 """    recalculate\n"""
-                """    range 0.2\n"""
-                """    probe 0.1\n"""
-                """    spacing 0.025\n"""
+                f"""    range {range}\n"""
+                f"""    probe {probe}\n"""
+                f"""    spacing {spacing}\n"""
                 """end\n"""
                 """\n"""
                 """task esp\n"""
