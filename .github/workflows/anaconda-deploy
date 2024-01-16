@@ -3,9 +3,8 @@ name: publish_conda
 on:
   release:
     types: [published]
-  push:
-    branches:
-      - anaconda-deploy
+  
+  pull_request:
     
 jobs:
   publish:
