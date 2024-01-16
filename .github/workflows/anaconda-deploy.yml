@@ -14,7 +14,7 @@ jobs:
     - name: publish-to-conda
       uses: MichaelsJP/conda-package-publish-action@v1.0.0
       with:
-        subDir: '.conda'
+        subDir: './conda-recipe/'
         AnacondaToken: ${{ secrets.CONDA_TOKEN }}
         platforms: 'all'
         override: true
