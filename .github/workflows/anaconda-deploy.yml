@@ -16,5 +16,5 @@ jobs:
       with:
         subDir: './conda-recipe/'
         AnacondaToken: ${{ secrets.CONDA_TOKEN }}
-        platforms: 'all'
+        platforms: 'win-64'
         override: true
