@@ -10,11 +10,23 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: publish-to-conda
-      uses: MichaelsJP/conda-package-publish-action@v1.0.0
+      uses: fcakyon/conda-publish-action@v1.3
       with:
-        subDir: './conda-recipe/'
-        AnacondaToken: ${{ secrets.CONDA_TOKEN }}
-        platforms: 'win-64'
-        override: true
+        subdir: 'conda-recipe'
+        anacondatoken: ${{ secrets.CONDA_TOKEN }}
+        platforms: 'win osx linux'
+        
+# jobs:
+#   publish:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v1
+#     - name: publish-to-conda
+#       uses: MichaelsJP/conda-package-publish-action@v1.0.0
+#       with:
+#         subDir: './conda-recipe/'
+#         AnacondaToken: ${{ secrets.CONDA_TOKEN }}
+#         platforms: 'win-64'
+#         override: true
