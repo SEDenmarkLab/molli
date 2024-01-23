@@ -53,7 +53,7 @@ jobs:
             conda
           #environment-file: environment.yml
           #cache-environment: true
-          generate-run-shell: true
+          #generate-run-shell: true
           condarc: |
             channel_priority: flexible
             channels:
