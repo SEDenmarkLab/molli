@@ -68,7 +68,7 @@ jobs:
           mkdir dist
           conda build --output-folder dist \
                       --label ${{ env.LABEL }} \
-                      recipes
+                      conda-recipe
 
       - name: Upload conda package
         #if: github.event_name == 'release'
