@@ -5,18 +5,94 @@ on:
     types: [published]
   
   pull_request:
-    
+
+
+
 jobs:
   publish:
+    name: Build and publish conda packages
     runs-on: ubuntu-latest
+
+    # need for activated env
+    defaults:
+      run:
+        shell: bash -l {0}
+
     steps:
-    - uses: actions/checkout@v2
-    - name: publish-to-conda
-      uses: fcakyon/conda-publish-action@v1.3
-      with:
-        subdir: 'conda-recipe'
-        anacondatoken: ${{ secrets.CONDA_TOKEN }}
-        platforms: 'win osx linux'
+      - uses: actions/checkout@v2
+
+      - name: get release info
+        id: release_info
+        run: |
+          # TODO: Parse/set VERSION number accordingly
+          
+          testing=$(echo $version | sed 's/[0-9\.]//g')
+          if [ "${{ github.event.release.tag_name }}" != "" ]; then
+            echo "LABEL=main" >> $GITHUB_ENV
+          else
+            echo "LABEL=rc" >> $GITHUB_ENV
+          fi
+
+      #- name: Cache conda
+      #  uses: actions/cache@v2
+      #  env:
+      #    # Increase this value to reset cache if environment.yml has not changed
+      #    CACHE_NUMBER: 0
+      #  with:
+      #    path: ~/conda_pkgs_dir
+      #    key:
+      #      ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('conda-recipe/meta.yml') }}
+
+      - name: Install micromamba
+        uses: mamba-org/setup-micromamba@v1
+        env:
+          ACTIONS_STEP_DEBUG: true
+        with:
+          create-args: >-
+            python=3.11
+            conda
+          #environment-file: environment.yml
+          #cache-environment: true
+          generate-run-shell: true
+          condarc: |
+            channel_priority: flexible
+            channels:
+              - conda-forge
+
+      - name: Build conda package
+        env:
+          ACTIONS_STEP_DEBUG: true
+        run: |
+          conda install conda-build
+          mkdir dist
+          conda build --output-folder dist \
+                      --label ${{ env.LABEL }} \
+                      recipes
+
+      - name: Upload conda package
+        #if: github.event_name == 'release'
+        env:
+          ACTIONS_STEP_DEBUG: true
+        run: |
+          # TODO: Parse/set VERSION number accordingly
+          
+          conda install -y anaconda-client
+          anaconda --token ${{ secrets.CONDA_TOKEN }} upload \
+                          --user molli \
+                          --label ${{ env.LABEL }} \
+                          dist/*/molli-1.0.0b2-*.tar.bz2
+    
+#jobs:
+#  publish:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: publish-to-conda
+#      uses: fcakyon/conda-publish-action@v1.3
+#      with:
+#        subdir: 'conda-recipe'
+#        anacondatoken: ${{ secrets.CONDA_TOKEN }}
+#        platforms: 'win osx linux'
         
 # jobs:
 #   publish:
