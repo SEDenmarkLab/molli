@@ -79,7 +79,7 @@ jobs:
           
           conda install -y anaconda-client
           anaconda --token ${{ secrets.CONDA_TOKEN }} upload \
-                          --user molli \
+                          --user esalx \
                           --label ${{ env.LABEL }} \
                           dist/*/molli-1.0.0b2-*.tar.bz2
     
