@@ -43,9 +43,7 @@ jobs:
         run: |
           conda install conda-build;
           mkdir conda_dist;
-          conda build --output-folder conda_dist \
-                      --label ${{ env.LABEL }} \
-                      conda-recipe
+          conda build --output-folder conda_dist --label ${{ env.LABEL }} conda-recipe;
       
       - name: Upload conda package
         env:
@@ -54,8 +52,5 @@ jobs:
         run: |
           # TODO: Parse/set VERSION number accordingly
           
-          conda install -y anaconda-client
-          anaconda --token ${{ secrets.CONDA_TOKEN }} upload \
-                          --user esalx \
-                          --label ${{ env.LABEL }} \
-                          conda_dist/*/molli-*.tar.bz2
+          conda install -y anaconda-client;
+          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --label ${{ env.LABEL }} conda_dist/*/molli-*.tar.bz2;
