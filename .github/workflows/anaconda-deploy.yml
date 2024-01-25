@@ -11,7 +11,7 @@ on:
 
 jobs:
   conda_build:
-    name: Build and upload conda package on ${{ matrix.os }}
+    name: Conda ${{ matrix.os }} build and upload 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -29,11 +29,13 @@ jobs:
             powershell
 
           create-args: >-
-            python=3.10
+            python=3.11
             conda
+            conda-build
+            anaconda-client
 
           environment-name: molli
-          
+
         #   #environment-file: environment.yml
         #   #cache-environment: true
         #   #generate-run-shell: true
@@ -47,16 +49,12 @@ jobs:
           ACTIONS_STEP_DEBUG: true
           LABEL: test
         run: |
-          conda install conda-build;
-          mkdir conda_dist;
-          conda build --output-folder conda_dist --label ${{ env.LABEL }} conda-recipe;
+          mkdir conda-dist;
+          conda build --output-folder conda-dist --label ${{ env.LABEL }} conda-recipe;
       
       - name: Upload conda package
         env:
           ACTIONS_STEP_DEBUG: true
           LABEL: test
         run: |
-          # TODO: Parse/set VERSION number accordingly
-          
-          conda install -y anaconda-client;
-          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --label ${{ env.LABEL }} conda_dist/*/molli-*.tar.bz2;
+          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --label ${{ env.LABEL }} conda-dist/*/molli-*.tar.bz2;
