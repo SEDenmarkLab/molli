@@ -898,6 +898,14 @@ class Conformer(Molecule):
     def _coords(self):
         return self._parent._coords[self._conf_id]
 
+    @property
+    def _atomic_charges(self):
+        return self._parent._atomic_charges[self._conf_id]
+
+    @property
+    def attrib(self):
+        return self._parent.attrib
+
     @_coords.setter
     def _coords(self, other):
         self._parent._coords[self._conf_id] = other
