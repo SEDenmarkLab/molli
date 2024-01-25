@@ -4,76 +4,57 @@ on:
   release:
     types: [published]
   
+  # Temporary: for debug purposes only
   pull_request:
 
 
 
 jobs:
-  publish:
-    name: Build and publish conda packages
-    runs-on: ubuntu-latest
+  conda_build:
+    name: Build conda package on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
-    # need for activated env
-    defaults:
-      run:
-        shell: bash -l {0}
-
+    matrix:
+      os:
+        - ubuntu-latest
+        - win-latest
+        - osx-latest
+      
     steps:
       - uses: actions/checkout@v2
-
-      - name: get release info
-        id: release_info
-        run: |
-          # TODO: Parse/set VERSION number accordingly
-          
-          testing=$(echo $version | sed 's/[0-9\.]//g')
-          if [ "${{ github.event.release.tag_name }}" != "" ]; then
-            echo "LABEL=main" >> $GITHUB_ENV
-          else
-            echo "LABEL=rc" >> $GITHUB_ENV
-          fi
-
-      #- name: Cache conda
-      #  uses: actions/cache@v2
-      #  env:
-      #    # Increase this value to reset cache if environment.yml has not changed
-      #    CACHE_NUMBER: 0
-      #  with:
-      #    path: ~/conda_pkgs_dir
-      #    key:
-      #      ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('conda-recipe/meta.yml') }}
 
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
         env:
           ACTIONS_STEP_DEBUG: true
-        with:
-          create-args: >-
-            python=3.11
-            conda
-          environment-name: molli
-          #environment-file: environment.yml
-          #cache-environment: true
-          #generate-run-shell: true
-          condarc: |
-            channel_priority: flexible
-            channels:
-              - conda-forge
+        # with:
+        #   create-args: >-
+        #     python=3.11
+        #     conda
+        #   environment-name: molli
+        #   #environment-file: environment.yml
+        #   #cache-environment: true
+        #   #generate-run-shell: true
+        #   # condarc: |
+        #   #   channel_priority: flexible
+        #   #   channels:
+        #   #     - conda-forge
 
       - name: Build conda package
         env:
           ACTIONS_STEP_DEBUG: true
+          LABEL: test
         run: |
-          conda install conda-build
-          mkdir dist
-          conda build --output-folder dist \
+          conda install conda-build;
+          mkdir conda_dist;
+          conda build --output-folder conda_dist \
                       --label ${{ env.LABEL }} \
                       conda-recipe
-
-      - name: Upload conda package
-        #if: github.event_name == 'release'
+      
+       - name: Upload conda package
         env:
           ACTIONS_STEP_DEBUG: true
+          LABEL: test
         run: |
           # TODO: Parse/set VERSION number accordingly
           
@@ -81,29 +62,4 @@ jobs:
           anaconda --token ${{ secrets.CONDA_TOKEN }} upload \
                           --user esalx \
                           --label ${{ env.LABEL }} \
-                          dist/*/molli-1.0.0b2-*.tar.bz2
-    
-#jobs:
-#  publish:
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@v2
-#    - name: publish-to-conda
-#      uses: fcakyon/conda-publish-action@v1.3
-#      with:
-#        subdir: 'conda-recipe'
-#        anacondatoken: ${{ secrets.CONDA_TOKEN }}
-#        platforms: 'win osx linux'
-        
-# jobs:
-#   publish:
-#     runs-on: ubuntu-latest
-#     steps:
-#     - uses: actions/checkout@v1
-#     - name: publish-to-conda
-#       uses: MichaelsJP/conda-package-publish-action@v1.0.0
-#       with:
-#         subDir: './conda-recipe/'
-#         AnacondaToken: ${{ secrets.CONDA_TOKEN }}
-#         platforms: 'win-64'
-#         override: true
+                          conda_dist/*/molli-*.tar.bz2
