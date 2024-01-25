@@ -78,3 +78,96 @@ class ConnectivityTC(ut.TestCase):
         b1 = ml.Bond(1, 2)
         b_pkl = pickle.dumps(b1)
         b2 = pickle.loads(b_pkl)
+
+    def test_append_bond_one_atom(self):
+        # m = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+        h1 = ml.Atom(ml.Element.H, label="H1")
+        h2 = ml.Atom("H", label="H2")
+        o3 = ml.Atom(ml.Element.O, label="O3")
+
+        cn = ml.Connectivity([h1, h2, o3])
+
+        b1 = ml.Bond(h1, o3, btype=ml.BondType.Single)
+        b2 = ml.Bond(h2, o3, btype=ml.BondType.Single)
+
+        cn.append_bonds(b1, b2)
+
+        h4 = ml.Atom("H", label="H4")
+        b3 = ml.Bond(cn.get_atom("O3"), h4, label="B3", btype=ml.BondType.Single)
+
+        cn.append_bond(b3)
+        self.assertEqual(cn.n_bonds, 3)
+        self.assertEqual(cn.n_atoms, 4)
+        self.assertEqual(cn.lookup_bond(o3, h4), b3)
+        self.assertEqual(cn.get_atom("H4"), h4)
+
+    def test_append_bond_two_atoms(self):
+        h1 = ml.Atom(ml.Element.H, label="H1")
+        h2 = ml.Atom("H", label="H2")
+        o3 = ml.Atom(ml.Element.O, label="O3")
+
+        cn = ml.Connectivity([h1, h2, o3])
+
+        b1 = ml.Bond(h1, o3, btype=ml.BondType.Single)
+        b2 = ml.Bond(h2, o3, btype=ml.BondType.Single)
+
+        cn.append_bonds(b1, b2)
+
+        h4 = ml.Atom("H", label="H4")
+        cl5 = ml.Atom("Cl", label="Cl5")
+        b3 = ml.Bond(h4, cl5, label="B3", btype=ml.BondType.Single)
+
+        cn.append_bond(b3)
+        self.assertEqual(cn.n_bonds, 3)
+        self.assertEqual(cn.n_atoms, 5)
+        self.assertEqual(cn.lookup_bond(h4, cl5), b3)
+        self.assertEqual(cn.get_atom("H4"), h4)
+        self.assertEqual(cn.get_atom("Cl5"), cl5)
+
+    def test_append_bonds_new_atoms(self):
+        h1 = ml.Atom(ml.Element.H, label="H1")
+        h2 = ml.Atom("H", label="H2")
+        o3 = ml.Atom(ml.Element.O, label="O3")
+
+        cn = ml.Connectivity([h1, h2, o3])
+
+        b1 = ml.Bond(h1, o3, btype=ml.BondType.Single)
+        b2 = ml.Bond(h2, o3, btype=ml.BondType.Single)
+
+        cn.append_bonds(b1, b2)
+
+        h4 = ml.Atom("H", label="H4")
+        cl5 = ml.Atom("Cl", label="Cl5")
+        b3 = ml.Bond(cn.get_atom("O3"), h4, label="B3", btype=ml.BondType.Single)
+        b4 = ml.Bond(h4, cl5, label="B4", btype=ml.BondType.Single)
+
+        cn.append_bonds(b3, b4)
+        self.assertEqual(cn.n_bonds, 4)
+        self.assertEqual(cn.n_atoms, 5)
+        self.assertEqual(cn.lookup_bond(o3, h4), b3)
+        self.assertEqual(cn.lookup_bond(h4, cl5), b4)
+        self.assertEqual(cn.get_atom("H4"), h4)
+
+    def test_extend_bonds_new_atoms(self):
+        h1 = ml.Atom(ml.Element.H, label="H1")
+        h2 = ml.Atom("H", label="H2")
+        o3 = ml.Atom(ml.Element.O, label="O3")
+
+        cn = ml.Connectivity([h1, h2, o3])
+
+        b1 = ml.Bond(h1, o3, btype=ml.BondType.Single)
+        b2 = ml.Bond(h2, o3, btype=ml.BondType.Single)
+
+        cn.append_bonds(b1, b2)
+
+        h4 = ml.Atom("H", label="H4")
+        cl5 = ml.Atom("Cl", label="Cl5")
+        b3 = ml.Bond(cn.get_atom("O3"), h4, label="B3", btype=ml.BondType.Single)
+        b4 = ml.Bond(h4, cl5, label="B4", btype=ml.BondType.Single)
+
+        cn.extend_bonds([b3, b4])
+        self.assertEqual(cn.n_bonds, 4)
+        self.assertEqual(cn.n_atoms, 5)
+        self.assertEqual(cn.lookup_bond(o3, h4), b3)
+        self.assertEqual(cn.lookup_bond(h4, cl5), b4)
+        self.assertEqual(cn.get_atom("H4"), h4)
