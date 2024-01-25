@@ -31,8 +31,6 @@ jobs:
           create-args: >-
             python=3.11
             conda
-            conda-build
-            anaconda-client
 
           environment-name: molli
 
@@ -43,6 +41,10 @@ jobs:
         #   #   channel_priority: flexible
         #   #   channels:
         #   #     - conda-forge
+      
+      - name: Install conda build and upload dependencies
+        run: |
+          conda install -y conda-build anaconda-client
 
       - name: Build conda package
         env:
