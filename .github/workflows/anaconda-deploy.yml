@@ -11,17 +11,17 @@ on:
 
 jobs:
   conda_build:
-    name: Build conda package on ${{ matrix.os }}
+    name: Build and upload conda package on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-
-    matrix:
-      os:
-        - ubuntu-latest
-        - win-latest
-        - osx-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - win-latest
+          - osx-latest
       
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
