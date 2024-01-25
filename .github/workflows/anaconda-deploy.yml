@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]        
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +47,7 @@ jobs:
                       --label ${{ env.LABEL }} \
                       conda-recipe
       
-       - name: Upload conda package
+      - name: Upload conda package
         env:
           ACTIONS_STEP_DEBUG: true
           LABEL: test
