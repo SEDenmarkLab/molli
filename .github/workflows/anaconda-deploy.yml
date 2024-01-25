@@ -13,6 +13,11 @@ jobs:
   conda_build:
     name: Conda ${{ matrix.os }} build and upload 
     runs-on: ${{ matrix.os }}
+    
+    defaults:
+      run:
+        shell: bash -l {0}
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -31,6 +36,7 @@ jobs:
           create-args: >-
             python=3.11
             conda
+
 
           environment-name: molli
 
