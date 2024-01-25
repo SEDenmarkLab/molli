@@ -27,11 +27,13 @@ jobs:
           init-shell: >-
             bash
             powershell
-            
-        #   create-args: >-
-        #     python=3.11
-        #     conda
-        #   environment-name: molli
+
+          create-args: >-
+            python=3.10
+            conda
+
+          environment-name: molli
+          
         #   #environment-file: environment.yml
         #   #cache-environment: true
         #   #generate-run-shell: true
