@@ -23,7 +23,11 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         env:
           ACTIONS_STEP_DEBUG: true
-        # with:
+        with:
+          init-shell: >-
+            bash
+            powershell
+            
         #   create-args: >-
         #     python=3.11
         #     conda
