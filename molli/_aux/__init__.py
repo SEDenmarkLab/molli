@@ -28,7 +28,6 @@ from .misc import (
     unique_path,
     load_external_module,
     catch_interrupt,
-    molli_aux_dir,
 )
 from . import db
 from .version import (
