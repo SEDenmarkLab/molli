@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   molli_test:
-    name: Test ${{ matrix.os }} py${{ matrix.py_version }} testing
+    name: Testing on py${{ matrix.py_version }}, ${{ matrix.os }} 
     runs-on: ${{ matrix.os }}
 
     # defaults:
@@ -46,7 +46,7 @@ jobs:
         
       - name: Install molli package
         run: |
-          pip install .
+          pip install . -vv
       
       - name: Run molli test suite
         working-directory: temp
