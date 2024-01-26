@@ -42,13 +42,14 @@ jobs:
       - name: Install dependencies for testing
         run: |
           python -m pip install --upgrade pip;
+          mkdir temp;
         
       - name: Install molli package
         run: |
           pip install .
       
       - name: Run molli test suite
-        working-directory: ./temp/testing
+        working-directory: temp
         run: |
           molli test -vvv
     
