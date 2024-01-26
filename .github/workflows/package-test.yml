@@ -1,0 +1,55 @@
+name: molli_package_test
+on:
+  push:
+    branches: 
+      - main
+      - dev
+
+  pull_request:
+       
+
+permissions:
+  contents: read
+
+name: Test ${{ matrix.os }} py${{ matrix.py_version }} testing
+  runs-on: ${{ matrix.os }}
+
+  # defaults:
+  #   run:
+  #     shell: bash -l {0}
+
+  strategy:
+    matrix:
+      os: 
+        - ubuntu-latest
+        - windows-latest 
+        - macos-latest
+      
+      py_version:
+        - 3.10
+        - 3.11
+        - 3.12
+  
+  steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.py_version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.py_version }}
+      
+    - name: Install dependencies for testing
+      run: |
+        python -m pip install --upgrade pip;
+      
+    - name: Install molli package
+      run: |
+        pip install .
+    
+    - name: Run molli test suite
+      working-directory: ./temp/testing
+      run: |
+        molli test -vvv
+    
+        
+
+    
