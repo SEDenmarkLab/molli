@@ -11,7 +11,8 @@ on:
 permissions:
   contents: read
 
-name: Test ${{ matrix.os }} py${{ matrix.py_version }} testing
+jobs:
+  name: Test ${{ matrix.os }} py${{ matrix.py_version }} testing
   runs-on: ${{ matrix.os }}
 
   # defaults:
