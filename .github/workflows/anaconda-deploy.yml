@@ -13,7 +13,7 @@ jobs:
   conda_build:
     name: Conda ${{ matrix.os }} build and upload 
     runs-on: ${{ matrix.os }}
-    
+
     defaults:
       run:
         shell: bash -l {0}
@@ -65,4 +65,4 @@ jobs:
           ACTIONS_STEP_DEBUG: true
           LABEL: test
         run: |
-          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --label ${{ env.LABEL }} conda-dist/*/molli-*.tar.bz2;
+          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --label ${{ env.LABEL }} --force conda-dist/*/molli-*.tar.bz2; 
