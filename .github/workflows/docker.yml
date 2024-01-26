@@ -9,15 +9,8 @@ name: Docker
 # secrets to be set in the project:
 # - GH_USERNAME : username that write push packages to the moleculemaker GitHub org
 # - GH_PASSWORD : PAT associated with the username
-on:
-  push:
-    branches:
-      - main
-      - develop
-      - ncsa-workflow
 
-  pull_request:
-  
+on: 
   # Trigger the workflow on release activity
   release:
     # Only use the types keyword to narrow down the activity types that will trigger your workflow.

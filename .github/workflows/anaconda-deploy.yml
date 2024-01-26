@@ -2,12 +2,11 @@ name: publish_conda
 
 on:
   release:
-    types: [published]
+    types:
+      - published
+      - edited
+      - created
   
-  # Temporary: for debug purposes only
-  pull_request:
-
-
 
 jobs:
   conda_build:
