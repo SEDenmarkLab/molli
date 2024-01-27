@@ -236,3 +236,17 @@ class CollectionsTC(ut.TestCase):
                 ens = destination[ens_name]
                 self.assertEqual(ens.attrib["name"], ens.name)
                 assert_allclose(ens.attrib["coords"], ens.coords)
+
+    def test_conformer_to_lib(self):
+        source = ml.ConformerLibrary(ml.files.cinchonidine_rd_conf, readonly=True)
+        destination = ml.MoleculeLibrary(
+            self.root / "test.clib",
+            overwrite=True,
+            readonly=False,
+            comment="This is intended to test conformer from an ensemble to Molecule Library",
+        )
+
+        with source.reading(), destination.writing():
+            for ens_name in source:
+                ens = source[ens_name]  # Read from source
+                destination[ens_name] = ens[0]

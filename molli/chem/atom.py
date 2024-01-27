@@ -1355,6 +1355,9 @@ class Promolecule:
                 else:
                     raise ValueError(f"Atom {_a} does not belong to this molecule.")
 
+            case Element():
+                return next(self.yield_atoms_by_element(_a))
+
             case int():
                 return self._atoms[_a]
 

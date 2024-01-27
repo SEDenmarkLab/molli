@@ -152,6 +152,10 @@ class PromoleculeTC(ut.TestCase):
         got = pm.get_atom("O3")
         self.assertEqual(id(got), id(oxygenatom))
 
+        #get as element
+        got = pm.get_atom(ml.Element.O)
+        self.assertEqual(id(got), id(oxygenatom))
+
         # get some nonsense, should raise error
         with self.assertRaises(ValueError):
             got = pm.get_atom(ml.Promolecule())  # promolecule

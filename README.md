@@ -1,6 +1,24 @@
+![Anaconda version](https://anaconda.org/esalx/molli/badges/version.svg)
+![Anaconda license](https://anaconda.org/esalx/molli/badges/license.svg)
+![Anaconda last updated](https://anaconda.org/esalx/molli/badges/latest_release_relative_date.svg)
+![Anaconda platforms](https://anaconda.org/esalx/molli/badges/platforms.svg)
+
 # `molli 1.0`: Molecular Toolbox Library
 
-(C) 2022 Alexander S. Shved and the Denmark laboratory
+https://github.com/SEDenmarkLab/molli
+
+Developed by:
+
+- Alexander S. Shved
+- Blake E. Ocampo   
+- Elena S. Burlova  
+- Casey L. Olen 
+- N. Ian Rinehart   
+
+[S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign](https://denmarkgroup.illinois.edu/)
+
+Copyright 2022-2023 The Board of Trustees of the University of Illinois.
+All Rights Reserved.
 
 # Installation and Building
 
