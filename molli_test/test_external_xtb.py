@@ -34,7 +34,7 @@ from pathlib import Path
 import shutil
 
 from joblib import delayed, Parallel
-from molli.external.xtb import XTBDriver
+from molli.pipeline.xtb import XTBDriver
 from molli.config import BACKUP_DIR
 from molli.config import SCRATCH_DIR
 

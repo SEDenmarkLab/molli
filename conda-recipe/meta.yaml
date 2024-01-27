@@ -15,12 +15,15 @@ package:
 about:
   home: https://github.com/SEDenmarkLab/molli
   license: MIT
+  license_file: LICENSE
   summary: "Molecular Library Toolkit"
   description: |
     Molli is a toolbox that allows storage and fast manipulations of full molecule and conformer ensembles.
     This project takes advantage of numpy mathematics in its core, as well as binary information storage.
     Molli offers a convenient interface to familiar chemical concepts such as Atom, Molecule, ConformerEnsemble, etc.
     See README.md for more details.
+  dev_url: https://github.com/SEDenmarkLab/molli
+  doc_url: https://molli.readthedocs.io/en/latest/
 
 source:
   path: ..
@@ -56,7 +59,11 @@ requirements:
 build:
   number: 0
   include_recipe: True
-  script: "python -m pip install --no-deps -vvv ." 
+  script: "python -m pip install --no-deps -vvv ."
+  entry_points:
+    - molli : "molli.__main__:main"
+    - _molli_run : "molli.pipeline.runner:run_local"
+    - _molli_run_sched : "molli.pipeline.runner:run_sched"
 
 test:
   imports:
