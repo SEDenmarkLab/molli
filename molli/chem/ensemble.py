@@ -169,6 +169,11 @@ class ConformerEnsemble(Connectivity):
             self._coords = np.array(other.coords)
             self._weights = np.array(other.weights)
 
+        if isinstance(other, Molecule):
+            self._coords = np.full((1, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros((1, self.n_atoms))
+            self._weights = np.ones((1,))
+
         if coords is not None:
             self.coords = coords
 
@@ -892,6 +897,14 @@ class Conformer(Molecule):
     @property
     def _coords(self):
         return self._parent._coords[self._conf_id]
+
+    @property
+    def _atomic_charges(self):
+        return self._parent._atomic_charges[self._conf_id]
+
+    @property
+    def attrib(self):
+        return self._parent.attrib
 
     @_coords.setter
     def _coords(self, other):

@@ -32,6 +32,7 @@ class DriverBase:
         nprocs: int = 1,
         envars: dict = None,
         check_exe: bool = True,
+        find: bool = True,
     ) -> None:
         self.executable = executable
         if hasattr(self, "default_executable"):
@@ -39,10 +40,12 @@ class DriverBase:
         self.nprocs = nprocs
         self.envars = envars
 
-        if check_exe and not self.which():
+        if check_exe and not (which_exe := self.which()):
             raise FileNotFoundError(
                 f"Requested executable {self.executable!r} for {self.__class__.__name__!r} is not reachable."
             )
+        elif find:
+            self.executable = which_exe
 
     def which(self):
         return shutil.which(self.executable)
