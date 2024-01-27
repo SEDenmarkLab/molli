@@ -9,6 +9,7 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 import molli.chem
+import molli
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -16,7 +17,7 @@ import molli.chem
 project = "Molli"
 copyright = "2022, Alexander Shved"
 author = "Alexander Shved"
-release = "1.0.0"
+release = molli.config.VERSION
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
