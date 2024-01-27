@@ -27,7 +27,6 @@ jobs:
         with:
           init-shell: >-
             bash
-            powershell
           create-args: >-
             python=3.11
             conda
