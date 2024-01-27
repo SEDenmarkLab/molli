@@ -725,6 +725,11 @@ class Connectivity(Promolecule):
         self._bonds.append(bond)
         bond.parent = self
 
+        if bond.a1 not in self.atoms:
+            self.append_atom(bond.a1)
+        if bond.a2 not in self.atoms:
+            self.append_atom(bond.a2)
+
     def append_bonds(self, *bonds: Bond) -> None:
         """Appends multiple bonds to the Connectivity instance
 
@@ -754,6 +759,11 @@ class Connectivity(Promolecule):
         self._bonds.extend(bonds)
         for b in bonds:
             b.parent = self
+
+            if b.a1 not in self.atoms:
+                self.append_atom(b.a1)
+            if b.a2 not in self.atoms:
+                self.append_atom(b.a2)
 
     def extend_bonds(self, bonds: Iterable[Bond]) -> None:
         """Extends the list of bonds to the Connectivity instance
