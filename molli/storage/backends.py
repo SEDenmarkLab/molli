@@ -25,7 +25,7 @@ from deprecated import deprecated
 import atexit
 from io import UnsupportedOperation
 import os
-from molli._aux import molli_aux_dir
+from molli._aux.lock import rwlock
 
 T = TypeVar("T")
 
@@ -62,9 +62,7 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
         if overwrite and readonly:
             raise ValueError("overwrite and readonly are mutually exclusive.")
 
-        self._lock = InterProcessReaderWriterLock(
-            molli_aux_dir(self._path) / (self._path.name + ".lock")
-        )
+        self._lock = InterProcessReaderWriterLock(rwlock(self._path))
 
         self._bufsize = (
             int(bufsize) if bufsize is not None else 131_072
@@ -86,9 +84,7 @@ class CollectionBackendBase(metaclass=abc.ABCMeta):
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self._lock = InterProcessReaderWriterLock(
-            molli_aux_dir(self._path) / (self._path.name + ".lock")
-        )
+        self._lock = InterProcessReaderWriterLock(rwlock(self._path))
 
     def begin_read(self):
         pass
@@ -270,19 +266,19 @@ class ZipCollectionBackend(CollectionBackendBase):
         with self._lock.write_lock():
             if not self._path.is_file():
                 with ZipFile(
-                self._path,
-                mode='x',          
+                    self._path,
+                    mode="x",
                 ):
                     pass
             elif overwrite:
                 with ZipFile(
                     self._path,
-                    mode='w',
+                    mode="w",
                 ):
                     pass
 
     def lock_acquire(self):
-        self._plock = InterProcessLock(self._path.with_name(self._path.name + ".lock"))
+        self._plock = InterProcessReaderWriterLock(rwlock(self._path))
         self._plock.acquire()
 
     def lock_release(self):
@@ -291,25 +287,27 @@ class ZipCollectionBackend(CollectionBackendBase):
 
     def begin_read(self):
         if is_zipfile(str(self._path)):
-            self._zipfile = ZipFile(self._path, mode='r')
-    
+            self._zipfile = ZipFile(self._path, mode="r")
+
     def end_read(self):
         self._zipfile.close()
-    
+
     def begin_write(self):
-        self._zipfile = ZipFile(self._path, mode='a')
+        self._zipfile = ZipFile(self._path, mode="a")
 
     def end_write(self):
         self._zipfile.close()
-        
+
     def get_path(self, key: str):
         return f"{key}"
 
     def update_keys(self):
-        self._keys = {name for name in self._zipfile.namelist() if name.endswith(self.ext)}
+        self._keys = {
+            name for name in self._zipfile.namelist() if name.endswith(self.ext)
+        }
 
     def _write(self, key: str, value: bytes):
-        self._zipfile.writestr(f'{self.get_path(key)}{self.ext}', value)
+        self._zipfile.writestr(f"{self.get_path(key)}{self.ext}", value)
 
     def _read(self, key: str) -> bytes:
         with self._zipfile.open(key) as f:
