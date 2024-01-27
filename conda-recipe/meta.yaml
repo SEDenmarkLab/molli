@@ -5,12 +5,12 @@
 
 {% set pyproject = load_file_data("../pyproject.toml", from_recipe_dir=True)  %}
 # tool.setuptools.dynamic
-# {% set version = pyproject.get('project').get('version') %}
+{% set version = environ.get('GIT_DESCRIBE_TAG', '0.0.99b9') %}
 
 
 package:
   name: molli
-  version: {{ GIT_DESCRIBE_TAG }}
+  version: {{ version }}
   
 about:
   home: https://github.com/SEDenmarkLab/molli
