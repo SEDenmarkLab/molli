@@ -41,7 +41,7 @@ autoyaml_level = 2
 autodoc_class_signature = "separated"
 
 # Removes the type hints from the documentation, this makes the documentation legible
-autodoc_typehints = "none"
+# autodoc_typehints = "none"
 
 templates_path = ["_templates"]
 exclude_patterns = []
