@@ -244,3 +244,15 @@ class ConformerEnsembleTC(ut.TestCase):
         m1 = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
         m_pkl = pickle.dumps(m1)
         m2 = pickle.loads(m_pkl)
+
+    def test_init_from_molecule(self):
+        m = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
+        m.charge = 1
+        m.mult = 2
+
+        ens = ml.ConformerEnsemble(m)
+        self.assertEqual(ens.charge, 1)
+        self.assertEqual(ens.mult, 2)
+        self.assertEqual(ens.coords.shape, (1, 44, 3))
+        self.assertEqual(ens.atomic_charges.shape, (1, 44))
+        self.assertEqual(ens.weights.shape, (1,))
