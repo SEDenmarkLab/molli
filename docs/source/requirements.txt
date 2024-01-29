@@ -75,3 +75,4 @@ urllib3==1.26.13
 webencodings==0.5.1
 yarg==0.1.9
 zipp==3.11.0
+furo
