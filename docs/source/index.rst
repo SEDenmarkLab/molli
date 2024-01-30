@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 .. include:: welcome.md
-
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :maxdepth: 2
