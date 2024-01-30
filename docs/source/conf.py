@@ -37,6 +37,13 @@ autodoc_member_order = "bysource"
 
 autoyaml_level = 2
 
+source_suffix = [".rst", ".md"]
+autodoc_typehints_format = "short"
+autodoc_type_aliases = {
+    "ArrayLike": "ArrayLike",
+}
+python_use_unqualified_type_names = True
+
 # Separates the class and the constructor signature, leading to the html page looking cleaner
 autodoc_class_signature = "separated"
 
