@@ -34,13 +34,13 @@ def rotation_matrix_from_vectors(
     Rotation Matrix (vector-to-vector definition)
     ---
 
-    Computes a 3x3 rotation matrix that transforms v1/|v1| -> v2/|v2|
+    Computes a 3x3 rotation matrix that transforms `v1/|v1| -> v2/|v2|`
     tol detects a situation where dot(v1, v2) ~ -1.0
     and returns a diag(-1,-1, 1) matrix instead. NOTE [Is this correct?!]
     This may be improved by figuring a more correct asymptotic behavior, but works for the present purposes.
 
     returns matrix [R], that satisfies the following equation:
-    v1 @ [R] / |v1| == v2 / |v2|
+    `v1 @ [R] / |v1| == v2 / |v2|`
 
     Inspired by
     https://en.wikipedia.org/wiki/Rotation_matrix

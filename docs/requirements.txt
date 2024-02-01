@@ -1,0 +1,5 @@
+ipykernel
+myst_parser
+sphinx-rtd-theme
+sphinx-autobuild
+nbsphinx

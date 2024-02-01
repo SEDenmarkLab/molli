@@ -1,0 +1,44 @@
+name: Mamba Build test
+
+on:
+  pull_request:
+  
+
+jobs:
+  mamba_build:
+    name: ${{ matrix.os }} -> mamba build
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install micromamba
+        uses: mamba-org/setup-micromamba@v1
+        env:
+          ACTIONS_STEP_DEBUG: true
+        with:
+          init-shell: >-
+            bash
+          create-args: >-
+            python=3.11
+            conda
+          environment-name: molli
+
+      - name: Install conda build and upload dependencies
+        run: |
+          conda install boa
+
+      - name: Build package
+        env:
+          ACTIONS_STEP_DEBUG: true
+        run: |
+          mkdir conda-dist;
+          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload;
