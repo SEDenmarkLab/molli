@@ -404,6 +404,17 @@ class ConformerEnsemble(Connectivity):
         self.dump_mol2(stream)
         return stream.getvalue()
 
+    def dump_xyz(self, stream: StringIO = None):
+        if stream is None:
+            return_string = True
+            stream = StringIO()
+
+        for conf in self:
+            conf.dump_xyz(stream)
+
+        if return_string:
+            return stream.getvalue()
+
     @property
     def n_conformers(self) -> int:
         """
