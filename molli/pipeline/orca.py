@@ -24,7 +24,7 @@ This file provides necessary functionality to interface with ORCA
 """
 
 
-from typing import Any, Generator, Callable
+from typing import Any, Generator, Callable, Iterable
 import molli as ml
 from subprocess import run, PIPE
 from pathlib import Path
@@ -36,7 +36,10 @@ from pprint import pprint
 from joblib import delayed, Parallel
 import numpy as np
 from dataclasses import dataclass
+
+from ..chem import Molecule, ConformerEnsemble
 from .job import Job, JobInput, JobOutput
+from .driver import DriverBase
 
 
 class Orca_Out_Recognize:
@@ -78,34 +81,6 @@ class Orca_Out_Recognize:
             self.end_lines = None
             self.orca_failed = None
 
-    def search_freqs(self, num_of_freqs: int):
-        """
-        Will return a dictionary of number and frequency associated with number (in cm**-1) starting at 6, i.e. {6: 2.82, 7: 16.77 ...} based on the number of frequencies requested
-        """
-        if self.orca_failed is None:
-            print(
-                "Orca failed calculation, no vibrational frequencies are registered. Returning None"
-            )
-            return None
-        reversed_all_out_lines = self.output_file.split("\n")[::-1]
-        # starts and indexes at the end of the file
-        for idx, line in enumerate(reversed_all_out_lines):
-            if "VIBRATIONAL FREQUENCIES" == line:
-                first_freq = idx - 10
-                break
-        final_freq = first_freq - num_of_freqs
-
-        freq_requested = reversed_all_out_lines[final_freq:first_freq]
-        freq_dict = dict()
-        for line in freq_requested[::-1]:
-            no_spaces = line.replace(" ", "")
-            freq_num = int(no_spaces.split(":")[0])
-            freq_value = float(no_spaces.split(":")[1].split("cm**-1")[0])
-
-            freq_dict.update({freq_num: freq_value})
-
-        return freq_dict
-
     def final_xyz(self):
         """
         Will return an xyz block only if the optimization has converged
@@ -129,49 +104,166 @@ class Orca_Out_Recognize:
             print("No Final XYZ detected")
             return None
 
+    def search_freqs(self, num_of_freqs: int):
+        """
+        Will return a dictionary of number and frequency associated with number (in cm**-1) starting at 6, i.e. {6: 2.82, 7: 16.77 ...} based on the number of frequencies requested
+        """
+        if self.orca_failed is None:
+            print(
+                "Orca failed calculation, no vibrational frequencies are registered. Returning None"
+            )
+            return None
 
-class ORCADriver:
-    def __init__(self, nprocs: int = 1) -> None:
-        self.nprocs = nprocs
-        self.backup_dir = ml.config.BACKUP_DIR
-        self.scratch_dir = ml.config.SCRATCH_DIR
-        self.backup_dir.mkdir(exist_ok=True)
-        self.scratch_dir.mkdir(exist_ok=True)
-        self.cache = Cache(self.backup_dir)
-        # self.cache = {}
+        if "freq" not in self.calc_type:
+            print(
+                "Current Orca calculation does not contain frequency calculation. Returning None"
+            )
+            return None
+        reversed_all_out_lines = self.output_file.split("\n")[::-1]
+        # starts and indexes at the end of the file
+        for idx, line in enumerate(reversed_all_out_lines):
+            if "VIBRATIONAL FREQUENCIES" == line:
+                first_freq = idx - 10
+                break
+        final_freq = first_freq - num_of_freqs
 
-    def get_cache(self, k):
-        # if k not in self.cache:
-        #     self.cache[k] = dict()
-        # return self.cache[k]
-        return self.cache
+        freq_requested = reversed_all_out_lines[final_freq:first_freq]
+        freq_dict = dict()
+        for line in freq_requested[::-1]:
+            no_spaces = line.replace(" ", "")
+            freq_num = no_spaces.split(":")[0]
+            freq_value = float(no_spaces.split(":")[1].split("cm**-1")[0])
+
+            freq_dict.update({freq_num: freq_value})
+
+        return freq_dict
+
+    def nbo_parse(self):
+        """
+        This is a prototype currently meant to try and parse the NBO population analysis. This returns 4 pieces of data in the following format:
+
+        - orb_homo_lumo = (homo, lumo)
+
+        - nat_charge_dict = {atom number : natural charge}
+
+        """
+
+        if "nbo" not in self.calc_type:
+            print(
+                "Current Orca calculation does not contain nbo analysis. Returning None"
+            )
+            return None
+
+        nbo_file_split = self.output_file.split("\n")
+
+        # Find the indices corresponding to unique pieces of the nbo output_file
+        for idx, line in enumerate(nbo_file_split):
+            if line == "ORBITAL ENERGIES":
+                first_orb = idx + 4
+                continue
+            if line == "Now starting NBO....":
+                last_orb = idx - 1
+            if line == " Summary of Natural Population Analysis:":
+                first_charge = idx + 6
+            if line == "                                 Natural Population":
+                last_charge = idx - 4
+            if (
+                line
+                == " SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS"
+            ):
+                first_pert = idx + 8
+            if line == " NATURAL BOND ORBITALS (Summary):":
+                last_pert = idx - 3
+                first_orb_energy = idx + 7
+            if line == " $CHOOSE":
+                last_orb_energy = idx - 9
+
+        # Orbital Parsing
+        orb_list = nbo_file_split[first_orb : last_orb + 1]
+        orb_dict = dict()
+        for line in orb_list:
+            orb_nums, orb_occs, orb_ehs, orb_evs = " ".join(line.split()).split(" ")
+            orb_num, orb_occ, orb_ehs, orb_ev = (
+                int(orb_nums),
+                float(orb_occs),
+                float(orb_ehs),
+                float(orb_evs),
+            )
+            orb_dict[orb_num] = orb_ev
+            if float(orb_occ) == 0:
+                homo = orb_dict[orb_num - 1]
+                lumo = orb_dict[orb_num]
+                orb_homo_lumo = (homo, lumo)
+                break
+
+        # Natural Charge Parsing
+        nat_charge_list = nbo_file_split[first_charge : last_charge + 1]
+        nat_charge_dict = dict()
+        for line in nat_charge_list:
+            atom, atom_nums, nat_charges, core, valence, rydberg, tot = " ".join(
+                line.split()
+            ).split(" ")
+            atom_num, nat_charge = int(atom_nums) - 1, float(nat_charges)
+            nat_charge_dict[atom_num] = nat_charge
+
+        return orb_homo_lumo, nat_charge_dict
+
+
+class ORCADriver(DriverBase):
+    default_executable = "orca"
 
     @Job(
         return_files=(
-            r"*.hess",
-            r"*.gbw",
-            r"*.out",
+            "m_orca.hess",
+            "m_orca.gbw",
         )
     ).prep
-    def orca_basic_calc(
+    def basic_calc_m(
         self,
-        M: ml.Molecule,
-        orca_path: str = "/opt/share/orca/5.0.2/orca",
+        M: Molecule,
         ram_setting: str = "900",
-        kohn_sham_type="rks",
+        kohn_sham_type: str = "rks",
         method: str = "b3lyp",
-        basis_set: str = "def2_tzvp",
-        calc_type="sp",
-        addtl_settings="rijcosx def2/j tightscf nopop miniprint",
+        basis_set: str = "def2-svp",
+        calc_type: str = "sp",
+        addtl_settings: str = "rijcosx def2/j tightscf nopop miniprint",
     ):
+        """Creates an Orca Input File and runs the calculations on a Molecule.
+        Here are the updates performed depending on the molecule:
+
+        Any Calculation
+        - `orca_success` (Attribute of Molecule as bool)
+
+        Optimization (opt)
+        - Updates coordinates of molecule if job is successful
+
+        Frequency (freq)
+        - `freq_dict` (Attribute of Molecule as dictionary of first 10 frequencies:
+          {'6': float, '7': float, ...})
+
+        NBO (nbo)
+        - `nbo_homo_lumo` (Attribute of Molecule as float)
+        - `nbo_nat_charge` (Attribute of individual atoms as float)
+
+        Parameters
+        ----------
+        M : Molecule
+            Molecule used for calculation
+        ram_setting : str, optional
+            Allocation of RAM per core used in MB, by default "900"
+        kohn_sham_type : str, optional
+            Indication of theory type such as Kohn-Sham or Hartree Fock, by default "rks"
+        method : str, optional
+            Level of Theory for DFT, by default "b3lyp"
+        basis_set : str, optional
+            Basis Set used in DFT calculation, by default "def2_svp"
+        calc_type : str, optional
+            Calculation type such as SP, OPT, OPT FREQ, or OPT FREQ, by default "sp"
+        addtl_settings : str, optional
+            Other changeable settings, by default "rijcosx def2/j tightscf nopop miniprint"
         """
-        General Orca Driver to Create a File and run calculations. Currently usable for the following calculations: "sp","opt","freq", "opt freq".
-        This currently cannot recognize different calculation types in a backup directory since the files are built from the "Molecule Object" name.
-        Consider doing different calculations in different folders to prevent loading incorrect files.
-        """
-        # Corrects xyz to be usable in Orca
-        full_xyz = M.dumps_xyz()
-        xyz_block = "\n".join(full_xyz.split("\n")[2:])[:-3]
+
+        xyz_block = M.dumps_xyz(write_header=False)
 
         _inp = f"""#{str.upper(calc_type)} {M.name}
 
@@ -182,97 +274,79 @@ class ORCADriver:
 !{kohn_sham_type} {method} {basis_set} {calc_type} {addtl_settings}
 
 *xyz {M.charge} {M.mult}
-{xyz_block}
-*
+{xyz_block}*
 
 
 """
         inp = JobInput(
             M.name,
-            command=f"""{orca_path} {M.name}_{calc_type}.inp""",
-            files={f"{M.name}_{calc_type}.inp": _inp.encode()},
+            commands=[(f"""{self.executable} m_orca.inp""", "orca")],
+            files={
+                "m_orca.inp": _inp.encode(),
+            },
+            return_files=self.return_files,
         )
 
         return inp
 
-    @orca_basic_calc.post
-    def orca_basic_calc(self, out: JobOutput, M: ml.Molecule, calc_type: str, **kwargs):
-        if _hess := out.files[f"{M.name}_{calc_type}.hess"]:
+    @basic_calc_m.post
+    def basic_calc_m(self, out: JobOutput, M: Molecule, calc_type: str, **kwargs):
+        if _hess := out.files[f"m_orca.hess"]:
             hess = _hess.decode()
         else:
             hess = None
-        if _gbw := out.files[f"{M.name}_{calc_type}.gbw"]:
-            gbw = _gbw.decode()
+        if _gbw := out.files[f"m_orca.gbw"]:
+            gbw = _gbw
         else:
             gbw = None
-        if _out := out.files[f"{M.name}_{calc_type}.out"]:
-            out = _out.decode()
-        else:
-            out = None
 
-        # final_dict = {
-        #     'mlmol': M,
-        #     'calc_type': calc_type,
-        #     'hess': hess,
-        #     'gbw': gbw,
-        #     'out': out
-        # }
         orca_obj = Orca_Out_Recognize(
             mlmol=M,
             calc_type=calc_type,
-            output_file=out,
+            output_file=out.stdouts["orca"],
             hess_file=hess,
             gbw_file=gbw,
         )
-        return orca_obj
 
+        # Creates a copy of the existing molecule and attributes
+        new_M = ml.Molecule(M)
 
-# if __name__ == "__main__":
-#     """
-#     To set the directories for scratch and backup, for now, use the following commands in the terminal as an example:
+        if orca_obj.orca_failed:
+            new_M.attrib["orca_success"] = False
+        else:
+            new_M.attrib["orca_success"] = True
 
-#     export MOLLI_SCRATCH_DIR="/home/blakeo2/new_molli/molli_dev/orca_testing/scratch_dir"
-#     export MOLLI_BACKUP_DIR="/home/blakeo2/new_molli/molli_dev/orca_testing/backup_dir"
+        if "opt" in calc_type.lower():
+            if orca_obj.orca_failed:
+                pass
+            else:
+                new_M.coords = ml.Molecule.loads_xyz(
+                    orca_obj.final_xyz(), name="obj"
+                ).coords
 
-#     Otherwise it defaults based to what is shown in the config.py file (~/.molli/*)
+        if hess:
+            new_M.attrib["freq_dict"] = orca_obj.search_freqs(10)
 
-#     """
+        if "nbo" in calc_type.lower():
+            homo_lumo, nat_charge_dict = orca_obj.nbo_parse()
+            new_M.attrib["nbo_homo_lumo"] = homo_lumo
+            for i, a in enumerate(M.atoms):
+                a.attrib["nbo_nat_charge"] = nat_charge_dict[i]
 
-#     ml.config.configure()
+        return new_M
 
-#     print(f"Scratch files writing to: {ml.config.SCRATCH_DIR}")
-#     print(f"Backup files writing to: {ml.config.BACKUP_DIR}")
+    basic_calc_ens = Job.vectorize(basic_calc_m)
 
-#     mlib = ml.MoleculeLibrary("orca_cinchona_test.mli")
-
-#     orca = ORCADriver(nprocs=32)
-
-#     # Cinchonidine Charges = 1
-#     for m in mlib:
-#         m.charge = 1
-
-#     # Cinchonidine Spin Multiplicity = 1
-#     for m in mlib:
-#         m.mult = 1
-
-#     # Note, currently the cache is based on the molecule name
-#     res = Parallel(n_jobs=4, verbose=50)(
-#         # delayed(crest.conformer_search)(m) for m in ml1_mols
-#         delayed(orca.orca_basic_calc)(
-#             M=m,
-#             orca_path="/opt/share/orca/5.0.2/orca",
-#             ram_setting="900",
-#             kohn_sham_type="rks",
-#             method="vwn5",
-#             basis_set="def2-svp",
-#             calc_type="sp",
-#             addtl_settings="rijcosx def2/j tightscf nopop miniprint",
-#         )
-#         for m in mlib
-#     )
-
-#     # with ml.ConformerLibrary.new(f'./final.cli') as lib:
-#     print(res)
-#     for orca_obj in res:
-#         print(orca_obj.final_xyz())
-#         raise ValueError()
+    @basic_calc_ens.reduce
+    def basic_calc_ens(
+        self, outputs: Iterable[Molecule], ens: ConformerEnsemble, *args, **kwargs
+    ):
+        """
+        General Orca Driver to Create an Orca Input File and run
+        calculations on a ConformerEnsemble.
+        """
+        newens = ConformerEnsemble(ens)
+        for i, (new_conf, old_conf) in enumerate(zip(outputs, newens)):
+            old_conf.coords = new_conf.coords
+            newens.attrib[f"orca_conf_{i}"] = new_conf.attrib
+        return newens
