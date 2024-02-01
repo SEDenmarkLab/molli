@@ -177,7 +177,7 @@ class XTBTC(ut.TestCase):
         prep_dirs()
 
         ml.pipeline.jobmap(
-            xtb.energy,
+            xtb.atom_properties_m,
             source,
             target,
             cache_dir=ml.config.BACKUP_DIR,
