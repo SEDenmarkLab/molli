@@ -83,8 +83,8 @@ class XTBDriver(DriverBase):
         M: Molecule,
         **kwargs,
     ):
-        if pls := out.files["xtbopt.xyz"]:
-            xyz = pls.decode()
+        if res := out.files["xtbopt.xyz"]:
+            xyz = res.decode()
 
             # the second line of the xtb output is not needed - it is the energy line
             xyz_coords = (
@@ -118,6 +118,8 @@ class XTBDriver(DriverBase):
         mult: int = None,
         method: str = "gfn2",
         accuracy: float = 0.5,
+        xtbinp: str = "",
+        maxiter: int = 2000,
     ):
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
 
@@ -125,18 +127,20 @@ class XTBDriver(DriverBase):
             M.name,
             command=f"""{self.executable} input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f}""",
             files={"input.xyz": M.dumps_xyz().encode()},
+            return_files=self.return_files,
         )
 
         return inp
 
     @energy_m.post
     def energy(self, out: JobOutput, M: Molecule, **kwargs):
-        if pls := out.stdout:
-            for l in pls.split("\n")[::-1]:
+        if res := out.stdouts[self.executable]:
+            for l in res.split("\n")[::-1]:
                 if m := re.match(
                     r"\s+\|\s+TOTAL ENERGY\s+(?P<eh>[0-9.-]+)\s+Eh\s+\|.*", l
                 ):
-                    return float(m["eh"])
+                    M.attrib["energy"] = float(m["eh"])
+                    return M
 
     @Job(return_files=()).prep
     def atom_properties_m(
@@ -146,6 +150,8 @@ class XTBDriver(DriverBase):
         mult: int = None,
         method: str = "gfn2",
         accuracy: float = 0.5,
+        xtbinp: str = "",
+        maxiter: int = 500,
     ):
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
 
@@ -153,6 +159,7 @@ class XTBDriver(DriverBase):
             M.name,
             command=f"""xtb input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f} --vfukui""",
             files={"input.xyz": M.dumps_xyz().encode()},
+            return_files=self.return_files,
         )
 
         return inp
@@ -161,10 +168,8 @@ class XTBDriver(DriverBase):
     def atom_properties_m(self, out: JobOutput, M: Molecule, **kwargs):
         from molli.parsing.xtbout import extract_xtb_atomic_properties
 
-        if pls := out.stdout:
-            # print(pls)
-
-            outdf = extract_xtb_atomic_properties(pls)
+        if res := out.stdouts[self.executable]:
+            outdf = extract_xtb_atomic_properties(res)
             for i, a in enumerate(M.atoms):
                 for j, property in enumerate(outdf.columns):
                     a.attrib[property] = outdf.iloc[i, j]
