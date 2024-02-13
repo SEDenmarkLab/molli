@@ -170,9 +170,9 @@ class ConformerEnsemble(Connectivity):
             self._weights = np.array(other.weights)
 
         if isinstance(other, Molecule):
-            self._coords = np.full((1, self.n_atoms, 3), np.nan)
-            self._atomic_charges = np.zeros((1, self.n_atoms))
-            self._weights = np.ones((1,))
+            self._coords = np.full((n_conformers or 1, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros((n_conformers or 1, self.n_atoms))
+            self._weights = np.ones((n_conformers or 1,))
 
         if coords is not None:
             self.coords = coords
@@ -469,8 +469,7 @@ class ConformerEnsemble(Connectivity):
     def filter(
         self,
         fx: Callable[[Conformer], bool],
-    ):
-        ...
+    ): ...
 
     def serialize(self):
         atom_id_map = {a: i for i, a in enumerate(self.atoms)}
