@@ -735,18 +735,31 @@ def jobmap_sge(
     verbose: bool = False,
     progress: bool = False,
     update: float = 10.0,
+    log_level: str = "warning",
+    strict_hash: bool = True,
 ):
     """
     This function maps a job using SGE cluster functionality.
     """
     # Step 1. Analyze source and destination.
     # Only keys not present in the destination will be run.
-    logger = logging.getLogger("molli.pipeline.jobmap_sge")
+    logger = logging.getLogger("molli.pipeline")
 
     if cache_dir is None:
         cache_dir = Path(source._path.stem + "." + job.name).absolute()
     else:
         cache_dir = Path(cache_dir).absolute()
+    cache_dir.mkdir(exist_ok=True, parents=True)
+
+    # This will configure logging into the file
+    log_file = cache_dir / "jobmap.log"
+    with open(log_file, "at") as f:
+        f.write(config.SPLASH)
+    _handler = logging.FileHandler(log_file)
+    logger.addHandler(_handler)
+    logger.setLevel(log_level.upper())
+
+    logger = logging.getLogger("molli.pipeline.jobmap")
 
     job_input_dir = cache_dir / "input"
     job_input_dir.mkdir(exist_ok=True, parents=True)
@@ -797,28 +810,62 @@ def jobmap_sge(
                 if (_out_fn := job_output_dir / f"{k}.out").is_file():
                     try:
                         _out = JobOutput.load(_out_fn)
-                    except:
-                        pass
+                    except Exception as xc:
+                        logger.debug(
+                            f"Cannot load output file {k}.out. Error: {xc}. The results will be computed."
+                        )
                     else:
-                        if _out.input_hash == _input.hash and _out.exitcode == 0:
+                        if (
+                            not strict_hash or _out.input_hash == _input.hash
+                        ) and _out.exitcode == 0:
+                            logger.debug(
+                                f"Found output file {k} successfully! Expensive calculation will be skipped."
+                            )
                             continue
+                        else:
+                            logger.debug(
+                                f"Found output file {k} successfully, but input hash differs: found {_out.input_hash!r} != expected {_input.hash!r}"
+                            )
                 _input.dump(job_input_dir / f"{k}.inp")
                 jobs_to_run.append(job_input_dir / f"{k}.inp")
+
             else:
                 L = 0
                 for i, _inp in enumerate(_input):
+                    L += 1
                     if (_out_fn := job_output_dir / f"{k}.{i}.out").is_file():
                         try:
                             _out = JobOutput.load(_out_fn)
-                        except:
-                            pass
+                        except Exception as xc:
+                            logger.debug(
+                                f"Cannot load output file {k}.{i}.out. Error: {xc}. The results will be computed."
+                            )
                         else:
-                            if _out.input_hash == _inp.hash and _out.exitcode == 0:
+                            if (
+                                not strict_hash or _out.input_hash == _input.hash
+                            ) and _out.exitcode == 0:
+                                logger.debug(
+                                    f"Found output file {k}.{i}.out successfully! Expensive calculation will be skipped."
+                                )
                                 continue
+                            else:
+                                logger.debug(
+                                    f"Found output file {k}.{i}.out, but the file unsuitable: \nexptd {_inp.hash!r} \nfound {_out.input_hash!r} \nexitcode {_out.exitcode}"
+                                )
+
                     _inp.dump(job_input_dir / f"{k}.{i}.inp")
                     jobs_to_run.append(f"{k}.{i}.inp")
-                    L += 1
+
                 job_len[k] = L
+
+    if jobs_to_run:
+        logger.debug(
+            f"Listing jobs to be run:\n  -"
+            + "\n  -".join(str(x) for x in jobs_to_run)
+            + f"\n-----------\n  total: {len(jobs_to_run)}"
+        )
+
+    logger.debug(f"{job_len}")
 
     # Step 3. Schedule the jobs through qsub
     # if batchsize is specified, jobs will be scheduled in batches
