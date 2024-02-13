@@ -516,6 +516,7 @@ def jobmap(
         cache_dir = Path(source._path.stem + "." + job.name).absolute()
     else:
         cache_dir = Path(cache_dir).absolute()
+    cache_dir.mkdir(exist_ok=True, parents=True)
 
     # This will configure logging into the file
     log_file = cache_dir / "jobmap.log"
@@ -627,7 +628,7 @@ def jobmap(
     if jobs_to_run:
         logger.debug(
             f"Listing jobs to be run:\n  -"
-            + "\n  -".join(jobs_to_run)
+            + "\n  -".join(str(x) for x in jobs_to_run)
             + f"\n-----------\n  total: {len(jobs_to_run)}"
         )
 
