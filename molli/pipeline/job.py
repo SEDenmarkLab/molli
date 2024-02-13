@@ -880,7 +880,7 @@ def jobmap_sge(
     ):
         script = (
             (qsub_header or "")
-            + f"\n\n {MOLLI_RUN} {jin} -o {job_output_dir.as_posix()} --s {scratch_dir.as_posix()}"
+            + f"\n\n {MOLLI_RUN} {(job_input_dir / jin).as_posix()} -o {job_output_dir.as_posix()} --s {scratch_dir.as_posix()}"
         )
 
         proc = run(
