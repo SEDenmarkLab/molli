@@ -332,6 +332,7 @@ class ORCADriver(DriverBase):
         input2: str = None,
         charge: int = None,
         mult: int = None,
+        orca_suffix=None,
         **kwargs,
     ):
         """
@@ -356,7 +357,7 @@ class ORCADriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            commands=[(f"""{self.executable} m_orca.inp""", "orca")],
+            commands=[(f"""{self.executable} m_orca.inp {orca_suffix or ''}""", "orca")],
             files={
                 "m_orca.inp": _inp.encode(),
             },
