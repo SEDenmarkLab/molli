@@ -357,7 +357,7 @@ class ORCADriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            commands=[(f"""{self.executable} m_orca.inp {orca_suffix or ''}""", "orca")],
+            commands=[(f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""", "orca")],
             files={
                 "m_orca.inp": _inp.encode(),
             },
