@@ -120,7 +120,7 @@ class Job(Generic[T_in, T_out]):
         self.return_files = return_files
         self.executable = executable
         self.nprocs = nprocs
-        self.envars = envars
+        self.envars = envars or dict()
         self.memory = memory
         self.name = name
         self.__doc__ = doc or ""
@@ -202,9 +202,9 @@ class Job(Generic[T_in, T_out]):
             or 1_000
         )
         self.envars = (
-            self.envars
-            | getattr(objtype, "envars", {})
+            getattr(objtype, "envars", {})
             | getattr(obj, "envars", {})
+            | self.envars
         )
 
         return self
