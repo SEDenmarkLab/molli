@@ -884,7 +884,9 @@ def jobmap_sge(
         )
 
         proc = run(
-            shlex.split(f"qsub -N {job.name}.{i+1} -shell n -V -terse -cwd -j y"),
+            shlex.split(
+                f"qsub {qsub_header} -N {job.name}.{i+1} -shell n -V -terse -cwd -j y"
+            ),
             input=script,
             cwd=job_work_dir,
             capture_output=True,
