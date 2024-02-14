@@ -357,7 +357,12 @@ class ORCADriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            commands=[(f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""", "orca")],
+            commands=[
+                (
+                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""",
+                    "orca",
+                )
+            ],
             files={
                 "m_orca.inp": _inp.encode(),
             },
@@ -609,6 +614,7 @@ class ORCADriver(DriverBase):
     @scan_dihedral.post
     def scan_dihedral(
         self,
+        output: JobOutput,
         M: Molecule,
         dihedral_atoms: tuple[ml.AtomLike],
         keywords: str = "rks b97-3c looseopt miniprint noprintmos",
@@ -617,4 +623,17 @@ class ORCADriver(DriverBase):
         mult: int = None,
         **kwargs,
     ):
-        pass
+        ensemble = ConformerEnsemble(M, n_conformers=n_steps)
+        conformer_attrib = []
+        i = 0
+        for m in parse_orca_props(output.files["m_orca_property.txt"].decode()):
+            # This is a bit of a messed up way of determining if Orca finished optimization step here
+            # We are gonna use it nonetheless
+            # ORCA only prints
+            if "ORCA/SCF_Electric_Properties" in m.attrib:
+                ensemble[i].coords = m.coords
+                conformer_attrib.append(m.attrib)
+                i += 1
+        ensemble.attrib["conformer_attrib"] = conformer_attrib
+
+        return ensemble
