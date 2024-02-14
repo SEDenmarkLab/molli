@@ -184,6 +184,7 @@ class XTBDriver(DriverBase):
         dihedral_atoms: tuple[AtomLike],
         method: str = "gfn2",
         accuracy: float = 0.5,
+        range_deg: tuple[float] = (0.0, +360.0),
         n_steps: int = 72,
         maxiter_per_step: int = 16,
         force_const: float = 0.5,
@@ -191,32 +192,34 @@ class XTBDriver(DriverBase):
         mult: int = None,
         **kwargs,
     ):
-        d0 = degrees(M.dihedral(*dihedral_atoms))
-        d1 = d0 + 360
+        d0 = degrees(M.dihedral(*dihedral_atoms)) + range_deg[0]
+        d1 = d0 + range_deg[1]
         idx = ",".join(str(x + 1) for x in M.get_atom_indices(*dihedral_atoms))
 
         inp_file = (
-            f"$constrain"
-            f"  force constant={force_const}"
-            f"  dihedral: {idx},{d0:0.3f}"
-            f"$scan"
-            f"  1: {d0},{d1},{n_steps}"
-            f"$opt"
-            f"  maxcycle={maxiter_per_step}"
-            f"$end"
+            f"$constrain\n"
+            f"  force constant={force_const}\n"
+            f"  dihedral: {idx},{d0:0.3f}\n"
+            f"$scan\n"
+            f"  1: {d0},{d1},{n_steps}\n"
+            f"$opt\n"
+            f"  maxcycle={maxiter_per_step}\n"
+            f"$end\n\n"
         )
 
         inp = JobInput(
             M.name,
             commands=[
-                f"""xtb mol.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f} --opt --input scan.inp""",
-                "xtb",
+                (
+                    f"""{self.executable} mol.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f} --opt --input scan.inp -P {self.nprocs} """,
+                    "xtb",
+                )
             ],
             files={
                 "mol.xyz": M.dumps_xyz().encode(),
                 "scan.inp": inp_file.encode(),
             },
-            return_files=("xtbscan.log"),
+            return_files=("xtbscan.log",),
         )
 
         return inp
@@ -229,6 +232,7 @@ class XTBDriver(DriverBase):
         dihedral_atoms: tuple[AtomLike],
         method: str = "gfn2",
         accuracy: float = 0.5,
+        range_deg: tuple[float] = (0.0, +360.0),
         n_steps: int = 72,
         maxiter_per_step: int = 16,
         force_const: float = 0.5,
@@ -244,7 +248,7 @@ class XTBDriver(DriverBase):
         energies = []
         i = 0
         while n := next(scan_io, None):
-            assert n == str(M.n_atoms)
+            assert int(n) == M.n_atoms
             _, nrg, _ = next(scan_io).split(maxsplit=2)
             energies.append(float(nrg))
 
