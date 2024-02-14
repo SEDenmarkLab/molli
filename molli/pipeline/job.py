@@ -202,9 +202,9 @@ class Job(Generic[T_in, T_out]):
             or 1_000
         )
         self.envars = (
-            getattr(objtype, "envars", {})
-            | getattr(obj, "envars", {})
-            | self.envars
+            (getattr(objtype, "envars", None) or {})
+            | (getattr(obj, "envars", None) or {})
+            | (self.envars or {})
         )
 
         return self
