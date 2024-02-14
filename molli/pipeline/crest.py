@@ -80,7 +80,7 @@ class CrestDriver(DriverBase):
         misc: str = None,
     ):
         #  -{method} -ewin {ewin:0.4f} -mdlen {mdlen:0.4f} -mddump {mddump:0.4f} -vbdump {vbdump:0.4f} -T {self.nprocs}"""
-        cmd = f"""{self.executable} --screen input.xyz -T {self.nprocs}"""
+        cmd = f"""{self.executable} -screen input.xyz -T {self.nprocs}"""
 
         if method:
             cmd += f" -{method}"
