@@ -908,7 +908,7 @@ def jobmap_sge(
             prev = current
 
     with source.reading(), destination.writing():
-        for key in tqdm(to_be_done, "Finalizing the calculations"):
+        for key in pb := tqdm(to_be_done, "Finalizing the calculations"):
             if job_len[key] is None:
                 try:
                     output = JobOutput.load(job_output_dir / f"{key}.out")
@@ -942,6 +942,7 @@ def jobmap_sge(
                 except Exception as xc:
                     logger.error(f"Failed to compute for {key=}")
                     logger.exception(xc)
+                    pb.write(f"Error for {key!r}: {xc}")
                 else:
                     destination[key] = result
                     logger.info(f"Successfully computed for {key=}")
