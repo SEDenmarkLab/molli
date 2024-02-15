@@ -453,8 +453,6 @@ class ORCADriver(DriverBase):
             ):
                 final_conformers.append(om)
 
-            final_conformers.append(om)
-
         new_ens = ml.ConformerEnsemble(final_conformers)
         new_ens._atoms = ens.atoms
         new_ens._bonds = ens.bonds
