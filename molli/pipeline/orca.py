@@ -426,7 +426,7 @@ class ORCADriver(DriverBase):
         outputs: Iterable[Molecule],
         ens: ConformerEnsemble,
         *args,
-        freq_threshold=-10.0,
+        freq_threshold=None,
         rmsd_threshold=0.1,
         **kwargs,
     ):
@@ -437,20 +437,18 @@ class ORCADriver(DriverBase):
         final_conformers = []
 
         for i, om in enumerate(outputs):
-            freqlist = om.attrib["ORCA/THERMOCHEMISTRY_Energies"][
-                "Vibrational frequencies"
-            ]
+            if freq_threshold is not None:
+                if "ORCA/THERMOCHEMISTRY_Energies" not in om.attrib:
+                    continue
+                else:
+                    freqlist = om.attrib["ORCA/THERMOCHEMISTRY_Energies"][
+                        "Vibrational frequencies"
+                    ]
 
-            low_freq = freqlist[5]
-            # if low_freq >= freq_threshold and len(final_conformers) == 0:
-            #     final_conformers.append(om)
-            #     continue
-            # else:
-            #     logging.info(
-            #         f"Conformer {i} of {ens}: low frequency detected: {low_freq:0.2f}"
-            #     )
+                    if freqlist[5] < freq_threshold:
+                        continue
 
-            if low_freq >= freq_threshold and all(
+            if all(
                 rmsd(m.coords, om.coords) > rmsd_threshold for m in final_conformers
             ):
                 final_conformers.append(om)
