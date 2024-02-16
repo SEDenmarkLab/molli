@@ -359,7 +359,7 @@ class ORCADriver(DriverBase):
             M.name,
             commands=[
                 (
-                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""",
+                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') if orca_suffix is not None else ''}""",
                     "orca",
                 )
             ],
@@ -548,7 +548,6 @@ class ORCADriver(DriverBase):
         new_ens = ConformerEnsemble(ens)
 
         mols = list(outputs)
-        print(mols[0].atoms[0].attrib)
 
         for i in range(ens.n_atoms):
             if "ORCA/EPRNMR_OrbitalShielding" not in mols[0].atoms[i].attrib:
@@ -561,7 +560,6 @@ class ORCADriver(DriverBase):
                 ]
             )
             new_ens.atoms[i].attrib["NMR_shielding"] = nmr_shieldings
-            print(nmr_shieldings)
 
         new_ens.attrib["conformer_properties"] = [c.attrib for c in mols]
 
