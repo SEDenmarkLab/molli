@@ -468,6 +468,7 @@ class ORCADriver(DriverBase):
         elements: Iterable[ml.Element] = (ml.Element.C,),
         charge: int = None,
         mult: int = None,
+        orca_suffix=None,
         **kwargs,
     ):
         """
@@ -495,7 +496,12 @@ class ORCADriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            commands=[(f"""{self.executable} m_orca.inp""", "orca")],
+            commands=[
+                (
+                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""",
+                    "orca",
+                )
+            ],
             files={
                 "m_orca.inp": _inp.encode(),
             },
@@ -570,6 +576,7 @@ class ORCADriver(DriverBase):
         n_steps: int = 36,
         charge: int = None,
         mult: int = None,
+        orca_suffix: str = None,
         **kwargs,
     ):
         from math import degrees
@@ -595,7 +602,12 @@ class ORCADriver(DriverBase):
 
         inp = JobInput(
             M.name,
-            commands=[(f"""{self.executable} m_orca.inp""", "orca")],
+            commands=[
+                (
+                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""",
+                    "orca",
+                )
+            ],
             files={
                 "m_orca.inp": _inp.encode(),
             },
