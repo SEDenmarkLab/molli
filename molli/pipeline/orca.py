@@ -498,7 +498,7 @@ class ORCADriver(DriverBase):
             M.name,
             commands=[
                 (
-                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""",
+                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') if orca_suffix is not None else ''}""",
                     "orca",
                 )
             ],
@@ -602,7 +602,7 @@ class ORCADriver(DriverBase):
             M.name,
             commands=[
                 (
-                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') or ''}""",
+                    f"""{self.executable} m_orca.inp {('"' + orca_suffix + '"') if orca_suffix is not None else ''}""",
                     "orca",
                 )
             ],
