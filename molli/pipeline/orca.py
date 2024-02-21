@@ -328,7 +328,9 @@ class ORCADriver(DriverBase):
         orca_suffix=None,
         **kwargs,
     ):
-        """Creates an ORCA input file
+        """Creates an Orca Input File and runs the calculations on a Molecule.
+        Here are the updates performed depending on the molecule:
+        TODO: Rewrite the documentation to better reflect the current state of things
 
         Parameters
         ----------
@@ -349,14 +351,8 @@ class ORCADriver(DriverBase):
 
         Returns
         -------
-        _type_
-            _description_
-        """
-        """
-        Creates an Orca Input File and runs the calculations on a Molecule.
-        Here are the updates performed depending on the molecule:
-        TODO: Rewrite the documentation to better reflect the current state of things
-
+        JobInput
+            The
         """
 
         xyz_block = M.dumps_xyz(write_header=False)
@@ -594,6 +590,30 @@ class ORCADriver(DriverBase):
         orca_suffix: str = None,
         **kwargs,
     ):
+        """Scan the Relaxed PES corresponding to the rotation around the specified dihedral angle.
+
+        Parameters
+        ----------
+        M : Molecule
+            Molecule object to compute
+        dihedral_atoms : tuple[ml.AtomLike]
+            tuple of for AtomLike instances. Middle atoms represent the axis for dihedral angle rotation
+        keywords : str, optional
+            ORCA keywords line that will be used for energy evaluation and optimizatiln, by default "rks b97-3c looseopt miniprint noprintmos"
+        n_steps : int, optional
+            Number of steps in which the dihedral PES will be sampled (angle increment: 360 degrees // n_steps), by default 36
+        charge : int, optional
+            Override for molecule net charge, by default None
+        mult : int, optional
+            Override for molecule net multiplicity, by default None
+        orca_suffix : str, optional
+            Arguments , by default None
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         from math import degrees
 
         d0 = degrees(M.dihedral(*dihedral_atoms))
