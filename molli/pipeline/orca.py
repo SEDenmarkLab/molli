@@ -328,6 +328,30 @@ class ORCADriver(DriverBase):
         orca_suffix=None,
         **kwargs,
     ):
+        """Creates an ORCA input file
+
+        Parameters
+        ----------
+        M : Molecule
+            Molecule object to run the calculations on
+        keywords : str, optional
+            This is the orca !-delimited block with keywords, by default "rks b97-3c energy"
+        input1 : str, optional
+            This is the orca %-delimited block that goes ABOVE the *xyz block (most of them follow into this category), by default None
+        input2 : str, optional
+            This is the orca %-delimited block that goes BELOW the *xyz block (notable example is the %eprnmr block), by default None
+        charge : int, optional
+            Override for Molecule's net charge, by default None
+        mult : int, optional
+            Override for Molecule's net multiplicity, by default None
+        orca_suffix : _type_, optional
+            These are the parameters that go after `/path/to/orca input.inp` line. This is how ORCA sets MPI variables., by default None
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         """
         Creates an Orca Input File and runs the calculations on a Molecule.
         Here are the updates performed depending on the molecule:
