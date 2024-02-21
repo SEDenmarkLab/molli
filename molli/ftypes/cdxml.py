@@ -113,6 +113,17 @@ def _cdxml_3dify_(s: StructureLike, _a1: AtomLike, _a2: AtomLike, *, sign=1):
                 )
 
 
+def validate_label(lbl: et.Element):
+    """
+    This validator is used to filter out all labels that are *not* intended as the compound labels
+    Valid label:
+        - only has one text child element
+        - that element font "face" attribute must be set to 1 (CDXML lingo: bold face)
+    """
+    _sub = lbl.findall("./s")
+    return len(_sub) == 1 and _sub[0].attrib.get("face", "0") == "1"
+
+
 def validate_fragment(frag: et.Element):
     """
     This is validator that removes invalid CDXML fragments
@@ -138,7 +149,10 @@ class CDXMLFile:
 
         # this finds all textboxes that fit under the definition
         # of face=1 (bold face, not chemically interpreted)
-        for xt in self.tree.findall(".//t/s[@face='1']..."):
+        for xt in filter(
+            validate_label,
+            self.tree.findall("./page/t") + self.tree.findall("./page/group/t"),
+        ):
             if (lbl := xt[0].text) in self.xlabels:
                 warn(
                     (

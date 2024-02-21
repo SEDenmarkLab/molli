@@ -1,6 +1,7 @@
 import molli as ml
 from io import StringIO
 import py3Dmol
+import shlex
 
 BGCOLOR = "black"
 WIDTH = "100%"
@@ -88,7 +89,7 @@ def view_structure(
     style = style or STYLE
 
     if view is None:
-        v = py3Dmol.view(width="100%", height=500)
+        v = py3Dmol.view(width="100%", height=height)
     else:
         v = view
     v.addModel(_dump_mol2(m), "mol2")
@@ -159,3 +160,39 @@ def view_ensemble_animated(
     view=None,
 ):
     pass
+
+
+from IPython.core.magic import register_line_magic
+
+
+@register_line_magic
+def mlib_view(line: str):
+    """This line magic allows to view mlib with a simple syntax"""
+    mlib_path, key, *rest = shlex.split(line)
+    v = py3Dmol.view(width="100%", height=HEIGHT)
+
+    mlib = ml.MoleculeLibrary(mlib_path, readonly=True)
+    with mlib.reading():
+        view_structure(mlib[key], view=v)
+
+        for k in rest:
+            v.addModel(
+                _dump_mol2(mlib[k]),
+                "mol2",
+            )
+
+    v.setStyle(STYLE)
+    v.update()
+
+
+@register_line_magic
+def clib_view(line: str):
+    """This line magic allows to view mlib with a simple syntax"""
+    clib_path, key = shlex.split(line)
+    v = py3Dmol.view(width="100%", height=HEIGHT)
+
+    mlib = ml.ConformerLibrary(clib_path, readonly=True)
+    with mlib.reading():
+        view_ensemble(mlib[key], view=v)
+
+    v.update()

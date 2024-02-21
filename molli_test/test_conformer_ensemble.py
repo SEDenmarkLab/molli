@@ -256,3 +256,7 @@ class ConformerEnsembleTC(ut.TestCase):
         self.assertEqual(ens.coords.shape, (1, 44, 3))
         self.assertEqual(ens.atomic_charges.shape, (1, 44))
         self.assertEqual(ens.weights.shape, (1,))
+
+    def test_dumps(self):
+        ens = ml.ConformerEnsemble.load_mol2(ml.files.pentane_confs_mol2)
+        ens.dumps_xyz()

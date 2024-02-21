@@ -30,6 +30,7 @@ class DriverBase:
         self,
         executable: str = None,
         nprocs: int = 1,
+        memory: int = None,
         envars: dict = None,
         check_exe: bool = True,
         find: bool = True,
@@ -39,6 +40,7 @@ class DriverBase:
             self.executable = self.executable or self.default_executable
         self.nprocs = nprocs
         self.envars = envars
+        self.memory = memory
 
         if check_exe and not (which_exe := self.which()):
             raise FileNotFoundError(

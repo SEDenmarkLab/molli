@@ -170,9 +170,9 @@ class ConformerEnsemble(Connectivity):
             self._weights = np.array(other.weights)
 
         if isinstance(other, Molecule):
-            self._coords = np.full((1, self.n_atoms, 3), np.nan)
-            self._atomic_charges = np.zeros((1, self.n_atoms))
-            self._weights = np.ones((1,))
+            self._coords = np.full((n_conformers or 1, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros((n_conformers or 1, self.n_atoms))
+            self._weights = np.ones((n_conformers or 1,))
 
         if coords is not None:
             self.coords = coords
@@ -404,6 +404,30 @@ class ConformerEnsemble(Connectivity):
         self.dump_mol2(stream)
         return stream.getvalue()
 
+    def dump_xyz(self, stream: StringIO):
+        """Dumps the .xyz file into the stream
+
+        Parameters
+        ----------
+        stream : StringIO, optional
+            Stream into which the xyz values are written.
+
+        """
+        for conf in self:
+            conf.dump_xyz(stream)
+
+    def dumps_xyz(self):
+        """Returns the string of the .xyz file
+
+        Returns
+        -------
+        str
+            String containing .xyz file of multi-conformer molecule.
+        """
+        stream = StringIO()
+        self.dump_xyz(stream)
+        return stream.getvalue()
+
     @property
     def n_conformers(self) -> int:
         """
@@ -458,8 +482,7 @@ class ConformerEnsemble(Connectivity):
     def filter(
         self,
         fx: Callable[[Conformer], bool],
-    ):
-        ...
+    ): ...
 
     def serialize(self):
         atom_id_map = {a: i for i, a in enumerate(self.atoms)}
