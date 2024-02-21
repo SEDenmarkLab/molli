@@ -46,13 +46,6 @@ from ..chem import ConformerEnsemble, Molecule
 from .driver import DriverBase
 from .job import Job, JobInput, JobOutput
 
-import re
-import molli as ml
-from warnings import warn
-from pprint import pprint
-from io import StringIO
-import numpy as np
-
 re_delim = re.compile(r"^# -+\s", flags=re.MULTILINE)
 re_geom_delim = re.compile(r"^-+ \!GEOMETRY\! -+\s", flags=re.MULTILINE)
 re_prop_block = re.compile(
