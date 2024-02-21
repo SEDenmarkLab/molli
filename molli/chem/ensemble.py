@@ -404,16 +404,29 @@ class ConformerEnsemble(Connectivity):
         self.dump_mol2(stream)
         return stream.getvalue()
 
-    def dump_xyz(self, stream: StringIO = None):
-        if stream is None:
-            return_string = True
-            stream = StringIO()
+    def dump_xyz(self, stream: StringIO):
+        """Dumps the .xyz file into the stream
 
+        Parameters
+        ----------
+        stream : StringIO, optional
+            Stream into which the xyz values are written.
+
+        """
         for conf in self:
             conf.dump_xyz(stream)
 
-        if return_string:
-            return stream.getvalue()
+    def dumps_xyz(self):
+        """Returns the string of the .xyz file
+
+        Returns
+        -------
+        str
+            String containing .xyz file of multi-conformer molecule.
+        """
+        stream = StringIO()
+        self.dump_xyz(stream)
+        return stream.getvalue()
 
     @property
     def n_conformers(self) -> int:

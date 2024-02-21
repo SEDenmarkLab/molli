@@ -107,7 +107,7 @@ class CrestDriver(DriverBase):
         return JobInput(
             ens.name,
             commands=[(cmd, "crest")],
-            files={"input.xyz": ens.dump_xyz().encode()},
+            files={"input.xyz": ens.dumps_xyz().encode()},
             return_files=["crest_ensemble.xyz"],
         )
 
