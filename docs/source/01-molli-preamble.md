@@ -1,15 +1,15 @@
-![Anaconda version](https://anaconda.org/esalx/molli/badges/version.svg)
-![Anaconda license](https://anaconda.org/esalx/molli/badges/license.svg)
-![Anaconda last updated](https://anaconda.org/esalx/molli/badges/latest_release_relative_date.svg)
-![Anaconda platforms](https://anaconda.org/esalx/molli/badges/platforms.svg)
-
-<img src="docs/imgs/molli_logo.svg" width="400">
-
 # `molli`: Molecular Toolbox Library
 
-https://github.com/SEDenmarkLab/molli
+## About `molli`
 
-Developed by:
+### Description
+
+Molli is a cross-platform toolbox written in modern Python (3.10+) that provides a convenient API for molecule manipulations, combinatorial library generation with stereochemical fidelity from plain CDXML files, as well as parallel computing interface. The main feature of molli is the full representation of molecular graphs, geometries and geometry ensembles with no implicit atoms. Additionally, a compact and extensible format for molecular library storage make it a useful tool for *in silico* library generation. `molli` is cross-platform code that runs on a wide range of hardware from laptops and workstations to distributed memory clusters.
+
+[Project homepage](https://github.com/SEDenmarkLab/molli) | 
+[Documentation (latest)](https://molli.readthedocs.io/)
+
+### Developed by
 
 - Alexander S. Shved
 - Blake E. Ocampo   
@@ -22,19 +22,17 @@ Developed by:
 Copyright 2022-2023 The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-# About `molli`
+## Installation
 
-Molli is a cross-platform toolbox written in modern Python (3.10+) that provides a convenient API for molecule manipulations, combinatorial library generation with stereochemical fidelity from plain CDXML files, as well as parallel computing interface. The main feature of molli is the full representation of molecular graphs, geometries and geometry ensembles with no implicit atoms. Additionally, a compact and extensible format for molecular library storage make it a useful tool for *in silico* library generation. `molli` is cross-platform code that runs on a wide range of hardware from laptops and workstations to distributed memory clusters. 
+`molli` is available as the source code distribution on GitHub. Additionally, convenient installation is provided in the form of a PyPi package and conda package.
 
-# Installation and Building
+```{note} 
+We routinely test the package on Linux and Windows OS. OSX support is tested upon the pull request submission using GitHub workflows. We can only offer limited support for that OS at this time. 
+```
 
-Molli is available as the source code distribution on GitHub. Additionally, convenient installation is provided in the form of a PyPi package and conda package.
+### Install using `pip`
 
-**Note**: We routinely test the package on Linux and Windows OS. OSX support is tested upon the pull request submission using GitHub workflows. We can only offer limited support for that OS at this time.
-
-## Install using `pip`
-
-### Installation from PyPI
+#### Installation from PyPI
 
 The easiest way to obtain molli is to obtain the latest [PyPI package](https://pypi.org/project/molli/). 
 ```bash
@@ -47,7 +45,7 @@ molli test -vv
 ```
 which will provide the current version (it is obtained dynamically from the Git tags and determined at the installation time) and run the full test suite to guarantee that the core functionality performs correctly.
 
-### Install from source
+#### Install from source
 
 Installation from source can offer a few advantages, such as the editable installation, or installing . This is convenient for users who wish to significantly alter their `molli` experience by modifying the core functionality
 
@@ -64,19 +62,20 @@ pip install -e git+https://github.com/SEDenmarkLab/molli.git#egg=molli
 pip install -e molli/ --config-settings editable_mode=compat
 ```
 
-## Install as a `conda` package
+### Install as a `conda` package
 
 Molli can be installed from a conda repository:
 
-**Note**: Conda setup is not fully configured yet, so you may expect that there will be slight changes to the syntax. For more information about the current installation instructions, please visit the [Anaconda repository](https://anaconda.org/esalx/molli)
-
+```{note}
+Conda setup is not fully configured yet, so you may expect that there will be slight changes to the syntax. For more information about the current installation instructions, please visit the [Anaconda repository](https://anaconda.org/esalx/molli)
+```
 ```bash
 conda install molli
 ```
 
-# Testing the installation
+## Testing the installation
 
-## Core functions
+### Core functions
 
 **Note**: By default, `molli` only tests the core functionality: the functions that *do not* depend on external computational or chemoinformatics packages, such as OpenBabel, RDKit, Orca, XTB and CREST. These tests are considered extended (see below).
 
@@ -87,7 +86,11 @@ python -m unittest molli_test # additional args
 molli test # additional args
 ```
 
-## Extended tests
+### Extended tests
+
+```{warning}
+This may change or not be available at the time of publication.
+```
 
 These tests are *automatically* invoked if the corresponding packages are either importable (that is, installed in the same `conda` environment or the corresponding Python virtual environment), or the corresponding executables can be located. An example of such extended test is found below (if [Environment Modules](https://modules.readthedocs.io/en/latest/) configures the packages on your machine)
 
@@ -96,11 +99,4 @@ module load xtb/6.4.1
 module load crest/2.11.1
 molli test -vv # Now this tests XTB and CREST driver
 ```
-
-
-# Hello, World!
-
-This section describes your first steps in molli package. 
-
-
 

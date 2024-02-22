@@ -3,18 +3,23 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. include:: welcome.md
-   :parser: myst_parser.sphinx_
+Table of Contents
+*****************
+
+.. toctree::
+   :caption: Table of Contents
 
 .. toctree::
    :maxdepth: 2
-   :caption: Getting Started
+   :caption: Introduction
 
-   installation.rst
+   01-molli-preamble.md
+   02-basics.md
+   03-visualization.md
 
 .. toctree::
-   :maxdepth: 2
-   :caption: API  
+   :maxdepth: 3
+   :caption: Detailed Package Documentation
 
    API/molli.chem/_index
    API/molli.data/_index
@@ -55,10 +60,9 @@
    miscellaneous/extensions
 
 
-------------------
 Indices and tables
-------------------
-
+******************
+* :ref:`toc`
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

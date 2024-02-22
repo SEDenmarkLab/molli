@@ -14,7 +14,7 @@ import molli
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Molli"
+project = "molli"
 copyright = "2022, Alexander Shved"
 author = "Alexander Shved"
 release = molli.config.VERSION
@@ -69,3 +69,4 @@ latex_engine = "xelatex"
 
 html_theme = "furo"
 html_static_path = ["_static"]
+html_logo = "../imgs/molli_logo.svg"
