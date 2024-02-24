@@ -100,3 +100,27 @@ module load crest/2.11.1
 molli test -vv # Now this tests XTB and CREST driver
 ```
 
+## Configuration
+
+`molli` utilizes a number of variables in order to know a few important directories and parameters. It is important to know what they default to and how to change them in order to maintain expected behavior. These variables can be found in the `ml.config` subpackage
+
+```{warning}
+This section is under development. Some of this information might change!
+```
+
+```{list-table} Molli Variables
+:header-rows: 1
+
+*   - `molli.config` variable
+    - Environment variable
+    - Default value
+*   - `HOME`
+    - `MOLLI_HOME`
+    - `~/.molli/`
+*   - `SCRATCH_DIR`
+    - `MOLLI_SCRATCH_DIR`
+    - `$MOLLI_HOME/scratch`
+*   - `SHARED_DIR`
+    - `MOLLI_SHARED_DIR`
+    - `$MOLLI_HOME/shared`
+```
