@@ -223,7 +223,7 @@ class CDXMLFile:
             else:
                 self.xfrag_cache[key] = frag
 
-        return self._parse_fragment(frag, Molecule, name=key)
+        return self._parse_fragment(frag, name=key)
 
     def _parse_atom_node(self, node: et.Element) -> Atom:
         """
@@ -251,7 +251,9 @@ class CDXMLFile:
                 else:
                     # NOTE: this is for the cases for when **chemdraw is true to itself in being inconsistent**
                     lbl = lbl or "AP0"
-            case "Fragment" | "Nickname":  # The latter is just a monkey patch. May break.
+            case (
+                "Fragment" | "Nickname"
+            ):  # The latter is just a monkey patch. May break.
                 elt = Element.Unknown
                 atyp = AtomType.AttachmentPoint
                 lbl = node.get("id")
@@ -293,9 +295,7 @@ class CDXMLFile:
 
         return Bond(a1, a2, btype=btype)
 
-    def _parse_fragment(
-        self, frag: et.Element, cls: type[Structure], name: str = None
-    ) -> Structure:
+    def _parse_fragment(self, frag: et.Element, name: str = None) -> Structure:
         atoms = []
         bonds = []
         coords = []
@@ -311,7 +311,7 @@ class CDXMLFile:
                     atom_idx[node.get("id")] = atom
                     coords.append(position(node))
 
-            result = cls(atoms, name=name, copy_atoms=False)
+            result = Molecule(atoms, name=name, copy_atoms=False)
             result.coords[:, 2] = 0
 
             for bd in frag.findall("./b"):
@@ -353,9 +353,9 @@ class CDXMLFile:
 
             # this handles composite structures
             for subfrag in frag.findall("./n/[fragment]"):
-                substruct = self._parse_fragment(subfrag.find("./fragment"), Structure)
+                substruct = self._parse_fragment(subfrag.find("./fragment"))
                 ap = result.get_atom(subfrag.get("id"))
-                result = cls.join(
+                result = Molecule.join(
                     result,
                     substruct,
                     ap,
