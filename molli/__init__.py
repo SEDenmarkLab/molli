@@ -87,3 +87,5 @@ from . import visual
 from .chem import *
 from .ftypes import *
 from . import descriptor
+
+from .loaders import *

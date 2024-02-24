@@ -37,6 +37,7 @@ from tempfile import NamedTemporaryFile
 import molli as ml
 import os
 from ctypes import POINTER, c_double
+from pathlib import Path
 
 try:
     from openbabel import openbabel as ob
@@ -114,8 +115,35 @@ def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
     return mol
 
 
+def load_obmol(
+    path: str | Path,
+    ext: str = "xyz",
+    connect_perceive: bool = False,
+    cls: type = Molecule,
+) -> ob.OBMol:
+    """
+    This function takes any file and creates an openbabel style mol format
+    """
+
+    conv = ob.OBConversion()
+    obmol = ob.OBMol()
+    conv.SetInFormat(ext)
+    conv.ReadFile(obmol, str(path))
+
+    if connect_perceive:
+        obmol.ConnectTheDots()
+        obmol.PerceiveBondOrders()
+
+    mlmol = from_obmol(obmol=obmol, cls=cls)
+
+    return mlmol
+
+
 def loads_obmol(
-    inp: str, ext: str = "xyz", connect_perceive: bool = False, cls: type = Molecule
+    inp: str,
+    ext: str = "xyz",
+    connect_perceive: bool = False,
+    cls: type = Molecule,
 ) -> ob.OBMol:
     """
     This function takes any file and creates an openbabel style mol format

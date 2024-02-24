@@ -28,6 +28,7 @@ from ..config import VERSION
 from enum import IntEnum
 import numpy as np
 import msgpack
+from pathlib import Path
 
 # =====================================
 # These schemas were used in the previous iterations of the serialization
@@ -450,13 +451,3 @@ DESCRIPTOR_ENS_V2 = {
     "atom_schema": ATOM_SCHEMA_V2,
     "bond_schema": BOND_SCHEMA_V2,
 }
-
-
-def load(
-    stream: IO,
-    format: str,
-    parser: Literal["molli", "openbabel", "obabel", None] = None,
-    type: Literal["molecule", "ensemble", None] | Type = None,
-):
-    """This is a universal loader of molecules / ensembles"""
-    pass
