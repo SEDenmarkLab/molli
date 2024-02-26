@@ -213,6 +213,7 @@ class NWChemDriver(DriverBase):
         range: float = 0.2,  # nwchem esp params
         probe: float = 0.1,  # nwchem esp params
         spacing: float = 0.025,  # nwchem esp params
+        **kwargs,
     ) -> Molecule:
         """Calculates ESPmin and ESPmax descriptors and can update coordinates. This
         is where the electrostatic potential/charge calculated is at a minimum and maximum
@@ -298,12 +299,13 @@ class NWChemDriver(DriverBase):
 
         return inp
 
-    @optimize_atomic_esp_charges_m.post
+    @calc_espmin_max_m.post
     def calc_espmin_max_m(
         self,
         out: JobOutput,
         M: Molecule,
-        update_geometry: bool = True,  # if we want to update our geometry to the optimized coordinates used for esp calculation
+        update_geometry: bool = True,
+        **kwargs,  # if we want to update our geometry to the optimized coordinates used for esp calculation
     ):
 
         if res := out.files[f"esp.esp"]:
