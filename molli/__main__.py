@@ -72,20 +72,26 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "-V",
-    "--VERBOSITY",
+    "-v",
+    "--verbose",
     action="store",
     metavar="0..5",
+    nargs="?",
     default=3,
+    const=3,
     type=int,
     help="Sets the level of verbosity for molli output. Negative numbers will remove all output. Defaults to 0.",
 )
 
 arg_parser.add_argument(
-    "-H", "--HELP", action="help", help="show help message and exit"
+    "-H",
+    "--HELP",
+    action="help",
+    help="show help message and exit",
 )
 
 arg_parser.add_argument(
+    "-V",
     "--VERSION",
     action="version",
     version=config.VERSION,
@@ -96,7 +102,7 @@ def main():
     parsed, unk_args = arg_parser.parse_known_args()
     cmd = parsed.COMMAND
 
-    if (verbosity := parsed.VERBOSITY) not in range(6):
+    if (verbosity := parsed.verbose) not in range(6):
         if verbosity > 5:
             verbosity = 5
         if verbosity < 0:
@@ -157,19 +163,22 @@ def main():
                     requested_module = import_module(f"molli.scripts.{m}")
                     requested_module.molli_main
                 except Exception as xc:
-                    with ml.aux.ForeColor("ltred"):
-                        print(f"molli {m}:\nERROR: {xc}\n")
+                    if verbosity > 3:
+                        with ml.aux.ForeColor("ltred"):
+                            print(f"molli {m}:\nERROR: {xc}\n")
                 else:
                     with ml.aux.ForeColor("green"):
                         print(f"molli {m}")
                     if isinstance(doc := requested_module.__doc__, str):
-                        print(doc.strip())
+                        if verbosity > 3:
+                            print(doc.strip() + "\n")
                     else:
                         with ml.aux.ForeColor("ltred"):
                             print("No documentation available")
 
                     if hasattr(requested_module, "arg_parser"):
-                        print(requested_module.arg_parser.format_usage())
+                        if verbosity > 4:
+                            print(requested_module.arg_parser.format_usage())
                     else:
                         with ml.aux.ForeColor("ltred"):
                             print("No documentation available")

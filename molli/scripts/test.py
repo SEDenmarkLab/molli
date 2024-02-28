@@ -33,6 +33,10 @@ MOLLI_VERSION = ml.__version__
 arg_parser = ArgumentParser("molli test", description=__doc__, add_help=False)
 
 
-def molli_main(args, **kwargs):
+def molli_main(args, verbosity=False, **kwargs):
     parsed, unknown = arg_parser.parse_known_args(args)
-    ut.main(module=molli_test, argv=["molli test", *unknown])
+    if verbosity >= 4:
+        v_arg = ("-vv",)
+    else:
+        v_arg = ()
+    ut.main(module=molli_test, argv=["molli test", *unknown, *v_arg])
