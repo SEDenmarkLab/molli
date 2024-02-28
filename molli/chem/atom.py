@@ -492,6 +492,7 @@ class AtomType(IntEnum):
     O_Sulfoxide = 205
     O_Sulfone = 206
     O_Carboxylate = 207
+    O_Nitro = 208
 
 
 class AtomStereo(IntEnum):
@@ -581,19 +582,19 @@ class Atom:
     atype: AtomType = attrs.field(
         default=AtomType.Regular,
         # kw_only=True,
-        repr=False
+        repr=False,
         # repr=lambda x: x.name,
     )
     stereo: AtomStereo = attrs.field(
         default=AtomStereo.Unknown,
         # kw_only=True,
-        repr=False
+        repr=False,
         # repr=lambda x: x.name,
     )
     geom: AtomGeom = attrs.field(
         default=AtomGeom.Unknown,
         # kw_only=True,
-        repr=False
+        repr=False,
         # repr=lambda x: x.name,
     )
 
@@ -1155,6 +1156,7 @@ class Promolecule:
                     self.charge = charge or pm.charge
                 if hasattr(pm, "mult"):
                     self.mult = mult or pm.mult
+                self.attrib = pm.attrib.copy() | self.attrib
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
