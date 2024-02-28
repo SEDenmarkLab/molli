@@ -32,8 +32,8 @@ from tqdm import tqdm
 import math
 
 arg_parser = ArgumentParser(
-    "molli inspect",
-    description="Read a molli library and perform some basic inspections.",
+    "molli ls",
+    description="Read a molli library and list its contents.",
 )
 
 arg_parser.add_argument(
@@ -52,12 +52,6 @@ arg_parser.add_argument(
     help="Collection type",
 )
 
-arg_parser.add_argument(
-    "--timeout",
-    default=1.0,
-    type=float,
-    help="Timeout for a reader lock acquisition",
-)
 
 arg_parser.add_argument(
     "-a",
@@ -115,7 +109,7 @@ def molli_main(args, verbose=False, **kwargs):
             exit(1)
 
     # We are going to assume homogeneity of the collection
-    with guard(timeout=parsed.timeout), warnings.catch_warnings():
+    with guard(), warnings.catch_warnings():
         if not verbose:
             warnings.filterwarnings("ignore")
 
