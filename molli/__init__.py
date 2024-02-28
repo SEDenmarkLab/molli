@@ -88,4 +88,5 @@ from .chem import *
 from .ftypes import *
 from . import descriptor
 
-from .loaders import *
+from .reader import *
+from .writer import *

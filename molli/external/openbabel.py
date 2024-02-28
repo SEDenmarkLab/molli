@@ -25,7 +25,16 @@ OpenBabel package
 """
 
 from __future__ import annotations
-from ..chem import Molecule, ConformerEnsemble, Element, Bond
+from ..chem import (
+    Molecule,
+    ConformerEnsemble,
+    Element,
+    Bond,
+    BondType,
+    AtomType,
+    BondStereo,
+    AtomStereo,
+)
 from typing import Any, List, Iterable, Generator, TypeVar, Generic, Dict
 from enum import Enum
 import numpy as np
@@ -41,6 +50,7 @@ from pathlib import Path
 
 try:
     from openbabel import openbabel as ob
+    from openbabel import pybel as pb
 except:
     raise ImportError("OpenBabel is not installed in this environment")
 
@@ -100,17 +110,41 @@ def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
     charge = obmol.GetTotalCharge()
     mult = obmol.GetTotalSpinMultiplicity()
     name = obmol.GetTitle()
+    mol: Molecule
     mol = cls(name=name, n_atoms=n_atoms, charge=charge, mult=mult)
     for i in range(n_atoms):
         a: ob.OBAtom = obmol.GetAtomById(i)
         mol.coords[i] = [a.GetX(), a.GetY(), a.GetZ()]
-        mol.atoms[i].element = a.GetAtomicNum()
-        mol.atoms[i].isotope = a.GetIsotope()
+        ma = mol.atoms[i]
+        ma.element = a.GetAtomicNum()
+        ma.isotope = a.GetIsotope()
+        ma.formal_charge = a.GetFormalCharge()
+        ma.formal_spin = a.GetSpinMultiplicity() - 1
+        if a.IsAromatic():
+            ma.atype = AtomType.Aromatic
+        elif a.IsAmideNitrogen():
+            ma.atype = AtomType.N_Amide
+        elif a.IsCarboxylOxygen():
+            ma.atype = AtomType.O_Carboxylate
+        else:
+            h = a.GetHyb()
+            if h in range(1, 4):
+                ma.atype = AtomType(34 - h)
 
     for j in range(n_bonds):
         b: ob.OBBond = obmol.GetBondById(j)
         ai1, ai2 = b.GetBeginAtomIdx() - 1, b.GetEndAtomIdx() - 1
-        mol.connect(ai1, ai2)
+        mb = mol.connect(ai1, ai2)
+
+        if b.IsAromatic():
+            mb.btype = BondType.Aromatic
+        elif b.IsAmide():
+            mb.btype = BondType.Amide
+        else:
+            mb.btype = BondType(b.GetBondOrder())
+
+    pbmd = pb.MoleculeData(obmol)
+    mol.attrib |= dict(pbmd.items())
 
     return mol
 
@@ -163,15 +197,43 @@ def loads_obmol(
     return mlmol
 
 
+def load_all_obmol(path, ext, connect_perceive: bool = False, cls: type = Molecule):
+    """
+    Requires creation of a temporary file, loads all files in an object
+    """
+    conv = ob.OBConversion()
+    conv.SetInFormat(ext)
+    conv.SetOptions("m", ob.OBConversion.INOPTIONS)
+    obmol = ob.OBMol()
+    notatend = conv.ReadFile(obmol, str(path))
+    mols = list()
+
+    while notatend:
+        if connect_perceive:
+            obmol.ConnectTheDots()
+            obmol.PerceiveBondOrders()
+        mlmol = from_obmol(obmol)
+        mols.append(mlmol)
+        obmol = ob.OBMol()
+        notatend = conv.Read(obmol)
+
+    return mols
+
+
 def loads_all_obmol(data, ext, connect_perceive: bool = False, cls: type = Molecule):
     """
     Requires creation of a temporary file, loads all files in an object
     """
+    if isinstance(data, bytes):
+        _mode = "w+b"
+    else:
+        _mode = "w+t"
+
     with NamedTemporaryFile(
         dir=ml.config.SCRATCH_DIR,
         prefix="obabel-",
         suffix=f"{ext}",
-        mode="w+b",
+        mode=_mode,
         delete=False,
     ) as tf:
         tf.write(data)
@@ -184,10 +246,10 @@ def loads_all_obmol(data, ext, connect_perceive: bool = False, cls: type = Molec
     mols = list()
 
     while notatend:
-        mlmol = from_obmol(obmol)
         if connect_perceive:
             obmol.ConnectTheDots()
             obmol.PerceiveBondOrders()
+        mlmol = from_obmol(obmol)
         mols.append(mlmol)
         obmol = ob.OBMol()
         notatend = conv.Read(obmol)
