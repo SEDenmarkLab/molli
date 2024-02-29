@@ -793,6 +793,27 @@ class Connectivity(Promolecule):
         """
         self.append_bonds(*bonds)
 
+    def connect_like(self, other: Connectivity):
+        """
+        Connect the atoms in current instance like they are connected in `other`
+
+        This function assumes that the equivalent atom indices are the same in both sequences.
+
+        Parameters
+        ----------
+        other : Connectivity
+            Instance to copy the connectivity from
+        """
+        assert self.n_atoms == other.n_atoms, "Atoms must match"
+        assert self.elements == other.elements, "Elements must match"
+
+        atom_map = dict(zip(other.atoms, self.atoms))
+        self._bonds = [
+            b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=self)
+            for b in other.bonds
+        ]
+
+
     def del_bond(self, b: Bond) -> None:
         """Deletes a bond from the Connectivity instance
 
