@@ -74,13 +74,9 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "-v",
     "--verbose",
-    action="store",
-    metavar="0..5",
-    nargs="?",
-    default=3,
-    const=3,
-    type=int,
-    help="Sets the level of verbosity for molli output. Negative numbers will remove all output. Defaults to 0.",
+    action="count",
+    default=0,
+    help="Sets the level of verbosity for molli output.",
 )
 
 arg_parser.add_argument(
@@ -102,22 +98,14 @@ def main():
     parsed, unk_args = arg_parser.parse_known_args()
     cmd = parsed.COMMAND
 
-    if (verbosity := parsed.verbose) not in range(6):
-        if verbosity > 5:
-            verbosity = 5
-        if verbosity < 0:
-            verbosity = 0
-        print(
-            f"Expected verbosity in [0, 5]. Adjusted value: {verbosity}",
-            file=sys.stderr,
-        )
+    log_lvl = 30 - max(parsed.verbose or 0, 3) * 10
 
     #########################################
     # TODO Set up the logger HERE!
     # This will make sure that all molli stuff is now fully captured.
-    logging.basicConfig(level=50 - verbosity * 10, handlers=[logging.NullHandler()])
+    logging.basicConfig(level=log_lvl, handlers=[logging.NullHandler()])
     logger = logging.getLogger("molli")
-    logger.setLevel(50 - verbosity * 10)
+    logger.setLevel(log_lvl)
 
     if parsed.LOG is None:
         ch = logging.StreamHandler()
@@ -126,10 +114,10 @@ def main():
             f.write(ml.config.SPLASH)
         ch = logging.FileHandler(parsed.LOG)
 
-    ch.setLevel(50 - verbosity * 10)
+    ch.setLevel(log_lvl)
 
     host = gethostname()
-    if verbosity > 4:
+    if parsed.verbose >= 3:
         formatter = logging.Formatter(
             "{levelname:s}: {message:s} ({name:s}:{lineno} {asctime:s})",
             style="{",
@@ -163,21 +151,21 @@ def main():
                     requested_module = import_module(f"molli.scripts.{m}")
                     requested_module.molli_main
                 except Exception as xc:
-                    if verbosity > 3:
+                    if parsed.verbose >= 2:
                         with ml.aux.ForeColor("ltred"):
                             print(f"molli {m}:\nERROR: {xc}\n")
                 else:
                     with ml.aux.ForeColor("green"):
                         print(f"molli {m}")
                     if isinstance(doc := requested_module.__doc__, str):
-                        if verbosity > 3:
+                        if parsed.verbose >= 1:
                             print(doc.strip() + "\n")
                     else:
                         with ml.aux.ForeColor("ltred"):
                             print("No documentation available")
 
                     if hasattr(requested_module, "arg_parser"):
-                        if verbosity > 4:
+                        if parsed.verbose >= 2:
                             print(requested_module.arg_parser.format_usage())
                     else:
                         with ml.aux.ForeColor("ltred"):
@@ -195,7 +183,8 @@ def main():
 
                 try:
                     _code = (
-                        requested_module.molli_main(unk_args, verbosity=verbosity) or 0
+                        requested_module.molli_main(unk_args, verbosity=parsed.verbose)
+                        or 0
                     )
                 except KeyboardInterrupt:
                     logger.error("Keyboard interrupt")

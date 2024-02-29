@@ -206,7 +206,7 @@ def _aeif_worker(
                 of[k] = aeif
 
 
-def molli_main(args, verbosity: int = 0, **kwargs):
+def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
     logger = getLogger("molli.scripts.gbca")
 
