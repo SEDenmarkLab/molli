@@ -123,7 +123,7 @@ class Molecule(Structure):
                     f" {(self.n_atoms,)}"
                 )
 
-    def dump_mol2(self, stream: StringIO) -> None:
+    def dump_mol2(self, stream: StringIO = None) -> None:
         """Dumps the mol2 block into the output stream
 
         Parameters
