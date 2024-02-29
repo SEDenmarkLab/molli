@@ -71,51 +71,6 @@ class ConformerEnsemble(Connectivity):
         ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
     """
 
-    # old one
-    # def __init__(
-    #     self,
-    #     other: ConformerEnsemble = None,
-    #     /,
-    #     n_conformers: int = 0,
-    #     n_atoms: int = 0,
-    #     *,
-    #     name: str = None,
-    #     charge: int = None,
-    #     mult: int = None,
-    #     coords: ArrayLike = None,
-    #     weights: ArrayLike = None,
-    #     atomic_charges: ArrayLike = None,
-    #     copy_atoms: bool = False,
-    #     **kwds,
-    # ):
-    #     super().__init__(
-    #         other,
-    #         n_atoms=n_atoms,
-    #         name=name,
-    #         copy_atoms=copy_atoms,
-    #         charge=charge,
-    #         mult=mult,
-    #         **kwds,
-    #     )
-
-    #     self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
-    #     self._atomic_charges = np.zeros((self.n_atoms,))
-    #     self._weights = np.ones((n_conformers,))
-
-    #     if isinstance(other, ConformerEnsemble):
-    #         self.atomic_charges = atomic_charges
-    #         self.coords = other.coords
-    #         self.weights = other.weights
-    #     else:
-    #         if coords is not None:
-    #             self.coords = coords
-
-    #         if atomic_charges is not None:
-    #             self.atomic_charges = atomic_charges
-
-    #         if weights is not None:
-    #             self.weights = weights
-
     def __init__(
         self,
         other: ConformerEnsemble = None,
