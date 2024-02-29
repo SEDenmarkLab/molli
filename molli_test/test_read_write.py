@@ -46,7 +46,10 @@ class ReadWriteTC(ut.TestCase):
         assert_array_almost_equal(ens1.coords, ens2.coords, 4)
         self.assertEqual(ens1.n_conformers, 7)
 
-    @ut.skipIf(is_package_installed("openbabel"), "Openbabel is not installed")
+    @ut.skipIf(
+        is_package_installed("openbabel"),
+        "Openbabel is installed, this function will be tested otherwise.",
+    )
     def test_loads(self):
         mol1 = ml.loads(ml.files.dendrobine_mol2.read_text(), "mol2")
         mol2 = ml.loads(ml.files.dendrobine_xyz.read_text(), "xyz")
@@ -65,15 +68,21 @@ class ReadWriteTC(ut.TestCase):
         self.assertListEqual(mol1.elements, mol3.elements)
         assert_array_almost_equal(mol1.coords, mol3.coords, 4)
 
-    @ut.skipIf(is_package_installed("openbabel"), "Openbabel is not installed")
+    @ut.skipIf(
+        is_package_installed("openbabel"),
+        "Openbabel is installed, this function will be tested otherwise.",
+    )
     def test_load_all(self):
-        ml.load_all(ml.files.zincdb_fda_molv3, parser="openbabel")
+        ml.load_all(ml.files.zincdb_fda_molv3, parser="molli")
 
     def test_load_all_ob(self):
         ml.load_all(ml.files.zincdb_fda_mol2, parser="molli")
         ml.load_all(ml.files.zincdb_fda_molv3, parser="openbabel")
 
-    @ut.skipIf(is_package_installed("openbabel"), "Openbabel is not installed")
+    @ut.skipIf(
+        is_package_installed("openbabel"),
+        "Openbabel is installed, this function will be tested otherwise.",
+    )
     def test_loads_all(self):
         ml.loads_all(ml.files.zincdb_fda_mol2.read_text(), "mol2", parser="molli")
 
