@@ -51,6 +51,7 @@ from numpy.typing import ArrayLike
 from warnings import warn
 from io import StringIO
 from pathlib import Path
+from deprecated import deprecated
 
 
 class ConformerEnsemble(Connectivity):
@@ -204,6 +205,7 @@ class ConformerEnsemble(Connectivity):
         self._atomic_charges[:] = other
 
     @classmethod
+    @deprecated("This function has been replaced with `load_mol2`", version="1.0.0")
     def from_mol2(
         cls: type[ConformerEnsemble],
         input: str | StringIO,
@@ -217,12 +219,7 @@ class ConformerEnsemble(Connectivity):
         mol2io = StringIO(input) if isinstance(input, str) else input
         mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
 
-        res = cls(mols)
-
-        for i, m in enumerate(mols):
-            res._coords[i] = m.coords
-
-        return res
+        return cls(mols)
 
     @classmethod
     def load_mol2(
@@ -262,13 +259,9 @@ class ConformerEnsemble(Connectivity):
             stream = input
 
         with stream:
-            res = cls.from_mol2(
-                stream,
-                name=name,
-                source_units=source_units,
-            )
+            mols = Molecule.load_all_mol2(stream, source_units=source_units)
 
-        return res
+        return cls(mols, name=name)
 
     @classmethod
     def loads_mol2(
@@ -304,14 +297,85 @@ class ConformerEnsemble(Connectivity):
         """
 
         stream = StringIO(input)
-        with stream:
-            res = cls.from_mol2(
-                stream,
-                name=name,
-                source_units=source_units,
-            )
+        return cls.load_mol2(stream)
 
-        return res
+    @classmethod
+    def load_xyz(
+        cls: type[ConformerEnsemble],
+        input: str | Path | IO,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> ConformerEnsemble:
+        """Loads xyz from a file path, string, or stream
+
+        Parameters
+        ----------
+        cls : type[ConformerEnsemble]
+            Class to be loaded into
+        input : str | Path | IO
+            File path, string, or stream
+        name : str, optional
+            Name for ConformerEnsemble, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        ConformerEnsemble
+            Returns ConformerEnsemble
+
+        Examples
+        -------
+            >>> ml.ConformerEnsemble.load_xyz(ml.files.pentane_confs_xyz)
+            ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
+        """
+
+        if isinstance(input, str | Path):
+            stream = open(input, "rt")
+        else:
+            stream = input
+
+        with stream:
+            mols = Molecule.load_all_xyz(stream, source_units=source_units)
+
+        return cls(mols, name=name)
+
+    @classmethod
+    def loads_xyz(
+        cls: type[ConformerEnsemble],
+        input: str,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> ConformerEnsemble:
+        """Loads xyz from a string
+
+        Parameters
+        ----------
+        cls : type[ConformerEnsemble]
+            Class to be loaded into
+        input : str
+            xyz block as string
+        name : str, optional
+            Name for ConformerEnsemble, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        ConformerEnsemble
+            Returns ConformerEnsemble
+
+        Examples
+        -------
+            >>> with open(ml.files.pentane_confs_xyz, 'r') as f:
+            >>>     ml.ConformerEnsemble.loads_xyz(f.read())
+            ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
+        """
+
+        stream = StringIO(input)
+        return cls.load_xyz(stream)
 
     def dump_mol2(self, stream: StringIO = None) -> None:
         """Dumps the multi-mol2 block into the output stream
