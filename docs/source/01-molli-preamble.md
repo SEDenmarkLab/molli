@@ -1,4 +1,5 @@
 # `molli`: Molecular Toolbox Library
+release {sub-ref}`release`
 
 ## About `molli`
 

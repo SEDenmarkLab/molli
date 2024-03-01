@@ -62,7 +62,6 @@ Table of Contents
 
 Indices and tables
 ******************
-* :ref:`toc`
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
