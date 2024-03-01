@@ -472,10 +472,12 @@ class AtomType(IntEnum):
     CoordinationCenter = 10
     Hypervalent = 20
 
-    # Main Group Types
-    MainGroup_sp3 = 31
-    MainGroup_sp2 = 32
-    MainGroup_sp = 33
+    sp3 = 31
+    sp2 = 32
+    sp = 33
+    # These are discouraged, but mostly left for compatibility
+    sp3d = 34
+    sp3d2 = 35
 
     # Non-atom placeholders
     Dummy = 100
@@ -492,6 +494,7 @@ class AtomType(IntEnum):
     O_Sulfoxide = 205
     O_Sulfone = 206
     O_Carboxylate = 207
+    O_Nitro = 208
 
 
 class AtomStereo(IntEnum):
@@ -517,6 +520,9 @@ class AtomStereo(IntEnum):
 
     Delta = 20
     Lambda = 21
+
+    Tet_CW = 30
+    Tet_CCW = 31
 
 
 class AtomGeom(IntEnum):
@@ -581,19 +587,19 @@ class Atom:
     atype: AtomType = attrs.field(
         default=AtomType.Regular,
         # kw_only=True,
-        repr=False
+        repr=False,
         # repr=lambda x: x.name,
     )
     stereo: AtomStereo = attrs.field(
         default=AtomStereo.Unknown,
         # kw_only=True,
-        repr=False
+        repr=False,
         # repr=lambda x: x.name,
     )
     geom: AtomGeom = attrs.field(
         default=AtomGeom.Unknown,
         # kw_only=True,
-        repr=False
+        repr=False,
         # repr=lambda x: x.name,
     )
 
@@ -950,13 +956,13 @@ class Atom:
                     self.geom = AtomGeom.R4_Tetrahedral
 
             case "3":
-                self.atype = AtomType.MainGroup_sp3
+                self.atype = AtomType.sp3
 
             case "2":
-                self.atype = AtomType.MainGroup_sp2
+                self.atype = AtomType.sp2
 
             case "1":
-                self.atype = AtomType.MainGroup_sp
+                self.atype = AtomType.sp
 
             case "ar":
                 self.atype = AtomType.Aromatic
@@ -1026,13 +1032,13 @@ class Atom:
             case _, AtomType.Dummy, _:
                 return f"Du.{self.element.symbol}"
 
-            case _, AtomType.MainGroup_sp, _:
+            case _, AtomType.sp, _:
                 return f"{self.element.symbol}.1"
 
-            case _, AtomType.MainGroup_sp2, _:
+            case _, AtomType.sp2, _:
                 return f"{self.element.symbol}.2"
 
-            case _, AtomType.MainGroup_sp3, _:
+            case _, AtomType.sp3, _:
                 return f"{self.element.symbol}.3"
 
             case Element.C, _, _:
@@ -1155,6 +1161,7 @@ class Promolecule:
                     self.charge = charge or pm.charge
                 if hasattr(pm, "mult"):
                     self.mult = mult or pm.mult
+                self.attrib = pm.attrib.copy() | self.attrib
 
             case [*atoms] if all(isinstance(a, Atom) for a in atoms):
                 if copy_atoms:
