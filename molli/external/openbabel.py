@@ -89,12 +89,12 @@ def to_obmol(
         a2_idx = mol.get_atom_index(b.a2)
         obb: ob.OBBond = obm.AddBond(a1_idx + 1, a2_idx + 1, int(b.order))
 
-    obm.SetTotalCharge(mol.charge)
-    obm.SetTotalSpinMultiplicity(mol.mult)
+    obm.SetTotalCharge(getattr(mol, "charge", 0))
+    obm.SetTotalSpinMultiplicity(getattr(mol, "mult", 1))
     obm.EndModify()
     obm.PerceiveBondOrders()
 
-    obm.SetTitle(mol.name)
+    obm.SetTitle(getattr(mol, "name", "unnamed"))
 
     return obm
 
