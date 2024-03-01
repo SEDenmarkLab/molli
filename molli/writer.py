@@ -144,167 +144,142 @@ supported_fmts_obabel = {
 
 def dump(
     obj: ml.Molecule | ml.ConformerEnsemble,
-    path: str | Path,
+    io_or_path: str | Path | IO,
     fmt: str = None,
-    key: str = None,
     *,
-    parser: Literal["molli", "openbabel", "obabel"] = "molli",
-    otype: Literal["molecule", "ensemble", None] | Type = "molecule",
-    name: str = None,
-) -> ml.Molecule | ml.ConformerEnsemble:
-    """Dump a file as a molecule object
+    key: str = None,
+    writer: Literal["molli", "openbabel", "obabel"] = "molli",
+    mode: Literal["a", "w"] = "a",
+    obflags: str = None,
+    **kwargs,
+):
+    """
+    Dump an object into a stream
+
+    A file name can be provided instead (in that case the stream is opened)
 
     Parameters
     ----------
-    path : str | Path
-        Path to the file
-    key : str, optional
-        If a molecular format supports retrieval by a key, use this key to
+    obj : ml.Molecule | ml.ConformerEnsemble
+        Object to be written
+    io_or_path : str | Path | IO
+        Stream or file path to write into
     fmt : str, optional
-        format of the chemical file, by default None
-    parser : Literal[&quot;molli&quot;, &quot;openbabel&quot;, &quot;obabel&quot;], optional
-        Parser of the chemical file, by default "molli"
-    otype : Literal[&quot;molecule&quot;, &quot;ensemble&quot;, None] | Type, optional
-        Output type, by default "molecule"
-    name : str, optional
-        Rename the molecule on the fly, by default None
-
-    Returns
-    -------
-    ml.Molecule | ml.ConformerEnsemble
-        Returns an instance of Molecule or ConformerEnsemble, whichever corresponds to the file contents
-
-    Raises
-    ------
-    ValueError
-        If the file format cannot be matched to a parser
+        Format. If file name is given, it can also be automatically guessed from the extension.
+    key : str, optional
+        Unused in most cases, unless a chemical library supports a separate key, by default None
+    writer : Literal[&quot;molli&quot;, &quot;openbabel&quot;, &quot;obabel&quot;], optional
+        Only molli or openbabel are valid choices for now, by default "molli"
+    mode : Literal[&quot;a&quot;, &quot;w&quot;], optional
+        If a file name is given, this determines the file open mode, by default "a"
     """
+    assert mode in {"a", "w"}
 
-    if otype == "molecule":
-        otype = ml.Molecule
-    elif otype == "ensemble":
-        otype = ml.ConformerEnsemble
+    if isinstance(io_or_path, (str, Path)):
+        to_be_closed = True
+        stream = open(io_or_path, mode=mode)
+        fmt = fmt or Path(io_or_path).suffix[1:]
+    else:
+        stream = io_or_path
 
-    path = Path(path)
+    try:
+        match writer.lower():
+            case "molli":
+                if fmt not in supported_fmts_molli:
+                    if fmt in supported_fmts_obabel:
+                        raise ValueError(
+                            f"Unsupported format {fmt!r} for writer 'molli'. Try writer='openbabel'."
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unsupported format {fmt!r} for writer 'molli'. It isn't supported by openbabel either. Things must be grim indeed... "
+                        )
 
-    # Default format is deduced from the file suffix.
-    if fmt is None:
-        fmt = path.suffix[1:]
+                match fmt:
+                    case "xyz":
+                        obj.dump_xyz(stream, **kwargs)
 
-    match parser.lower():
-        case "molli":
-            if fmt not in supported_fmts_molli:
-                if fmt in supported_fmts_obabel:
+                    case "mol2":
+                        obj.dump_mol2(stream, **kwargs)
+
+            case "openbabel" | "obabel":
+                if fmt not in supported_fmts_obabel:
                     raise ValueError(
-                        f"Unsupported format {fmt!r} for parser 'molli'. Try parser='openbabel'."
-                    )
-                else:
-                    raise ValueError(
-                        f"Unsupported format {fmt!r} for parser 'molli'. It isn't supported by openbabel either. Things must be grim indeed... "
+                        f"Unsupported format {fmt!r} for parser 'openbabel'. Things must be grim indeed... "
                     )
 
-            match fmt:
-                case "xyz":
-                    with open(path, "rt") as f:
-                        return otype.load_xyz(f, name=name)
+                from molli.external import openbabel
+                from openbabel import pybel
 
-                case "mol2":
-                    with open(path, "rt") as f:
-                        return otype.load_mol2(f, name=name)
+                for c in (
+                    obj if isinstance(obj, ml.ConformerEnsemble) else (obj,)
+                ):  # This assumes conformer ensemble
+                    txt = pybel.Molecule(openbabel.to_obmol(c)).write(
+                        format=fmt,
+                        opt=kwargs | {x: None for x in (obflags or "")},
+                    )
+                    stream.write(txt)
 
-                case "cdxml":
-                    cdxf = ml.CDXMLFile(path)
-                    return otype(cdxf._parse_fragment(cdxf.xfrags[0], name=name))
-
-        case "openbabel" | "obabel":
-            if fmt not in supported_fmts_obabel:
-                raise ValueError(
-                    f"Unsupported format {fmt!r} for parser 'openbabel'. Things must be grim indeed... "
-                )
-
-            from molli.external import openbabel
-
-            return openbabel.load_obmol(path, ext=fmt, connect_perceive=True, cls=otype)
-
-        case _:
-            raise ValueError(f"Molli currently does not support parser {parser!r}")
+            case _:
+                raise ValueError(f"Molli currently does not support parser {writer!r}")
+    except:
+        raise
+    finally:
+        if to_be_closed:
+            stream.close()
 
 
 def dumps(
-    data: str,
-    fmt: str = None,
-    key: str = None,
+    obj: ml.Molecule | ml.ConformerEnsemble,
+    fmt: str,
     *,
-    parser: Literal["molli", "openbabel", "obabel"] = "molli",
-    otype: Literal["molecule", "ensemble", None] | Type = "molecule",
-    name: str = None,
-) -> ml.Molecule | ml.ConformerEnsemble:
-    """Load a file as a molecule object
+    writer: Literal["molli", "openbabel", "obabel"] = "molli",
+    obflags: str = None,
+    **kwargs,
+):
+    """
+    Returns a string representation of the molecular object
+
+    **NOTE: this function will sequentially convert all conformers of the ensemble
+    and dump them sequentially into the resulting string.**
+
 
     Parameters
     ----------
-    data : str
-        Molecule data
-    key : str, optional
-        If a molecular format supports retrieval by a key, use this key to
-    fmt : str, optional
-        format of the chemical file, by default None
-    parser : Literal[&quot;molli&quot;, &quot;openbabel&quot;, &quot;obabel&quot;], optional
-        Parser of the chemical file, by default "molli"
-    otype : Literal[&quot;molecule&quot;, &quot;ensemble&quot;, None] | Type, optional
-        Output type, by default "molecule"
-    name : str, optional
-        Rename the molecule on the fly, by default None
+    obj : ml.Molecule | ml.ConformerEnsemble
+        Object for output purposes
+    fmt : str
+        Format of the output. E. g. `mol2`, `smi` etc.
+    writer : Literal[&quot;molli&quot;, &quot;openbabel&quot;, &quot;obabel&quot;], optional
+        Writer, by default "molli"
+    obflags : str, optional
+        Sequence of flags for openbabel output, by default None
 
     Returns
     -------
-    ml.Molecule | ml.ConformerEnsemble
-        Returns an instance of Molecule or ConformerEnsemble, whichever corresponds to the file contents
+    str
+        String representation of the molecule or ensemble
 
-    Raises
-    ------
-    ValueError
-        If the file format cannot be matched to a parser
     """
 
-    if otype == "molecule":
-        otype = ml.Molecule
-    elif otype == "ensemble":
-        otype = ml.ConformerEnsemble
-
-    path = Path(path)
-
-    # Default format is deduced from the file suffix.
-    if fmt is None:
-        fmt = path.suffix[1:]
-
-    match parser.lower():
+    match writer.lower():
         case "molli":
             if fmt not in supported_fmts_molli:
                 if fmt in supported_fmts_obabel:
                     raise ValueError(
-                        f"Unsupported format {fmt!r} for parser 'molli'. Try parser='openbabel'."
+                        f"Unsupported format {fmt!r} for writer 'molli'. Try writer='openbabel'."
                     )
                 else:
                     raise ValueError(
-                        f"Unsupported format {fmt!r} for parser 'molli'. It isn't supported by openbabel either. Things must be grim indeed... "
+                        f"Unsupported format {fmt!r} for writer 'molli'. It isn't supported by openbabel either. Things must be grim indeed... "
                     )
 
             match fmt:
                 case "xyz":
-                    with open(path, "rt") as f:
-                        return otype.loads_xyz(f, name=name)
+                    return obj.dumps_xyz(**kwargs)
 
                 case "mol2":
-                    with open(path, "rt") as f:
-                        return otype.loads_mol2(f, name=name)
-
-                case "cdxml":
-                    raise NotImplementedError(
-                        "At this time cdxml can only be parsed from a file source"
-                    )
-                    cdxf = ml.CDXMLFile(data)
-                    return otype(cdxf._parse_fragment(cdxf.xfrags[0], name=name))
+                    return obj.dumps_mol2(**kwargs)
 
         case "openbabel" | "obabel":
             if fmt not in supported_fmts_obabel:
@@ -313,189 +288,26 @@ def dumps(
                 )
 
             from molli.external import openbabel
+            from openbabel import pybel
 
-            return openbabel.load_obmol(path, ext=fmt, connect_perceive=True, cls=otype)
-
-        case _:
-            raise ValueError(f"Molli currently does not support parser {parser!r}")
-
-
-def dump_all(
-    path: str | Path,
-    fmt: str = None,
-    key: str = None,
-    *,
-    parser: Literal["molli", "openbabel", "obabel"] = "molli",
-    otype: Literal["molecule", "ensemble", None] | Type = "molecule",
-    name: str = None,
-) -> ml.Molecule | ml.ConformerEnsemble:
-    """Load a file as a molecule object
-
-    Parameters
-    ----------
-    path : str | Path
-        Path to the file
-    key : str, optional
-        If a molecular format supports retrieval by a key, use this key to
-    fmt : str, optional
-        format of the chemical file, by default None
-    parser : Literal[&quot;molli&quot;, &quot;openbabel&quot;, &quot;obabel&quot;], optional
-        Parser of the chemical file, by default "molli"
-    otype : Literal[&quot;molecule&quot;, &quot;ensemble&quot;, None] | Type, optional
-        Output type, by default "molecule"
-    name : str, optional
-        Rename the molecule on the fly, by default None
-
-    Returns
-    -------
-    ml.Molecule | ml.ConformerEnsemble
-        Returns an instance of Molecule or ConformerEnsemble, whichever corresponds to the file contents
-
-    Raises
-    ------
-    ValueError
-        If the file format cannot be matched to a parser
-    """
-
-    if otype == "molecule":
-        otype = ml.Molecule
-    elif otype == "ensemble":
-        otype = ml.ConformerEnsemble
-
-    path = Path(path)
-
-    # Default format is deduced from the file suffix.
-    if fmt is None:
-        fmt = path.suffix[1:]
-
-    match parser.lower():
-        case "molli":
-            if fmt not in supported_fmts_molli:
-                if fmt in supported_fmts_obabel:
-                    raise ValueError(
-                        "Unsupported format {fmt!r} for parser 'molli'. Try parser='openbabel'."
+            txts = []
+            for c in (
+                obj if isinstance(obj, ml.ConformerEnsemble) else (obj,)
+            ):  # This assumes conformer ensemble
+                txts.append(
+                    pybel.Molecule(openbabel.to_obmol(c)).write(
+                        format=fmt,
+                        opt=kwargs | {x: None for x in (obflags or "")},
                     )
-                else:
-                    raise ValueError(
-                        "Unsupported format {fmt!r} for parser 'molli'. It isn't supported by openbabel either. Things must be grim indeed... "
-                    )
-
-            match fmt:
-                case "xyz":
-                    with open(path, "rt") as f:
-                        return otype.load_all_xyz(f, name=name)
-
-                case "mol2":
-                    with open(path, "rt") as f:
-                        return otype.load_all_mol2(f, name=name)
-
-                case "cdxml":
-                    cdxf = ml.CDXMLFile(path)
-                    return [
-                        otype(cdxf._parse_fragment(fg, name=name)) for fg in cdxf.xfrags
-                    ]
-
-        case "openbabel" | "obabel":
-            if fmt not in supported_fmts_obabel:
-                raise ValueError(
-                    "Unsupported format {fmt!r} for parser 'openbabel'. Things must be grim indeed... "
                 )
 
-            from molli.external import openbabel
-
-            return openbabel.loads_all_obmol(
-                path, ext=fmt, connect_perceive=True, cls=otype
-            )
+            return "".join(txts)
 
         case _:
-            raise ValueError(f"Molli currently does not support parser {parser!r}")
+            raise ValueError(f"Molli currently does not support parser {writer!r}")
 
 
-def dumps_all(
-    path: str | Path,
-    fmt: str = None,
-    key: str = None,
-    *,
-    parser: Literal["molli", "openbabel", "obabel"] = "molli",
-    otype: Literal["molecule", "ensemble", None] | Type = "molecule",
-    name: str = None,
-) -> ml.Molecule | ml.ConformerEnsemble:
-    """Load a file as a molecule object
-
-    Parameters
-    ----------
-    path : str | Path
-        Path to the file
-    key : str, optional
-        If a molecular format supports retrieval by a key, use this key to
-    fmt : str, optional
-        format of the chemical file, by default None
-    parser : Literal[&quot;molli&quot;, &quot;openbabel&quot;, &quot;obabel&quot;], optional
-        Parser of the chemical file, by default "molli"
-    otype : Literal[&quot;molecule&quot;, &quot;ensemble&quot;, None] | Type, optional
-        Output type, by default "molecule"
-    name : str, optional
-        Rename the molecule on the fly, by default None
-
-    Returns
-    -------
-    ml.Molecule | ml.ConformerEnsemble
-        Returns an instance of Molecule or ConformerEnsemble, whichever corresponds to the file contents
-
-    Raises
-    ------
-    ValueError
-        If the file format cannot be matched to a parser
-    """
-
-    if otype == "molecule":
-        otype = ml.Molecule
-    elif otype == "ensemble":
-        otype = ml.ConformerEnsemble
-
-    path = Path(path)
-
-    # Default format is deduced from the file suffix.
-    if fmt is None:
-        fmt = path.suffix[1:]
-
-    match parser.lower():
-        case "molli":
-            if fmt not in supported_fmts_molli:
-                if fmt in supported_fmts_obabel:
-                    raise ValueError(
-                        "Unsupported format {fmt!r} for parser 'molli'. Try parser='openbabel'."
-                    )
-                else:
-                    raise ValueError(
-                        "Unsupported format {fmt!r} for parser 'molli'. It isn't supported by openbabel either. Things must be grim indeed... "
-                    )
-
-            match fmt:
-                case "xyz":
-                    with open(path, "rt") as f:
-                        return otype.loads_all_xyz(f, name=name)
-
-                case "mol2":
-                    with open(path, "rt") as f:
-                        return otype.loads_all_mol2(f, name=name)
-
-                case "cdxml":
-                    cdxf = ml.CDXMLFile(path)
-                    return otype(cdxf._parse_fragment(cdxf.xfrags[0], name=name))
-
-        case "openbabel" | "obabel":
-            if fmt not in supported_fmts_obabel:
-                raise ValueError(
-                    "Unsupported format {fmt!r} for parser 'openbabel'. Things must be grim indeed... "
-                )
-
-            from molli.external import openbabel
-
-            return openbabel.load_obmol(path, ext=fmt, connect_perceive=True, cls=otype)
-
-        case _:
-            raise ValueError(f"Molli currently does not support parser {parser!r}")
-
-
-__all__ = ("dump", "dumps", "dump_all", "dumps_all")
+__all__ = (
+    "dump",
+    "dumps",
+)
