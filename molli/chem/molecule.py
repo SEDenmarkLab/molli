@@ -156,7 +156,7 @@ class Molecule(Structure):
         stream.write("@<TRIPOS>ATOM\n")
         for i, a in enumerate(self.atoms):
             x, y, z = self.coords[i]
-            c = self.atomic_charges[i]
+            c = self.atomic_charges[i] or 0.0
             label = a.label or a.element.symbol
             atype = a.get_mol2_type() or a.element.symbol
             stream.write(
