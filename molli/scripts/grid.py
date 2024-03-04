@@ -170,7 +170,7 @@ def _nearest(
     max_dist=2.0,
     dtype=np.int32,
 ):
-    _lk_path = ml.aux.molli_aux_dir(_gfpath) / (_gfpath.name + ".lock")
+    _lk_path = ml.aux.rwlock(_gfpath)
     lock = fasteners.InterProcessReaderWriterLock(_lk_path)
     with lock.read_lock():
         with h5py.File(_gfpath, mode="r") as h5f:
@@ -265,17 +265,22 @@ def molli_main(args, **kwargs):
         print(f"Requested to calculate grid pruning with {max_dist=:0.3f} {eps=:0.3f}")
 
         with h5py.File(out_path, "a") as f:
-            g = f.create_group("grid_pruned_idx")
-            for result in tqdm(
-                parallel(
-                    _pruning(library, grid, batch, max_dist=max_dist, eps=eps)
-                    for batch in ml.aux.batched(keys, parsed.batchsize)
-                ),
-                desc="Computing pruned grids",
-                total=ml.aux.len_batched(keys, parsed.batchsize),
-            ):
-                for key, pruned in result.items():
-                    g.create_dataset(key, data=pruned, dtype=parsed.dtype)
+            g = f.require_group("grid_pruned_idx")
+            prune_keys_tbd = sorted(set(keys).difference(g.keys()))
+
+            if prune_keys_tbd:
+                for result in tqdm(
+                    parallel(
+                        _pruning(library, grid, batch, max_dist=max_dist, eps=eps)
+                        for batch in ml.aux.batched(prune_keys_tbd, parsed.batchsize)
+                    ),
+                    desc="Computing pruned grids",
+                    total=ml.aux.len_batched(prune_keys_tbd, parsed.batchsize),
+                ):
+                    for key, pruned in result.items():
+                        g.create_dataset(key, data=pruned, dtype=parsed.dtype)
+            else:
+                print("Skipping the pruning: all keys have been found already!")
 
     if parsed.nearest:
         for result in tqdm(
@@ -289,7 +294,7 @@ def molli_main(args, **kwargs):
                 )
                 for batch in ml.aux.batched(keys, parsed.batchsize)
             ),
-            desc="Finding nearest atoms to the pruned grid points.",
+            desc="Nearest atoms:",
             total=ml.aux.len_batched(keys, parsed.batchsize),
         ):
             pass

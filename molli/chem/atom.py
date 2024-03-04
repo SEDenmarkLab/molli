@@ -1094,6 +1094,9 @@ class Atom:
             case _, _, AtomGeom.R4_Tetrahedral:
                 return f"{self.element.symbol}.th"
 
+            case _:
+                return self.element.symbol
+
 
 AtomLike = Atom | int | str | Element
 """
