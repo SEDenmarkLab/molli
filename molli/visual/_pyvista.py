@@ -51,16 +51,18 @@ def draw_ballnstick(
 
     lines = [(2, b.a1.idx, b.a2.idx) for b in s.bonds]
 
-    tubes = pv.PolyData(s.coords, lines=lines).tube(radius=0.05, n_sides=12)
+    if lines:
 
-    plt.add_mesh(
-        tubes,
-        smooth_shading=True,
-        color="silver",
-        diffuse=0.60,
-        ambient=0.40,
-        # silhouette=True,
-    )
+        tubes = pv.PolyData(s.coords, lines=lines).tube(radius=0.05, n_sides=12)
+
+        plt.add_mesh(
+            tubes,
+            smooth_shading=True,
+            color="silver",
+            diffuse=0.60,
+            ambient=0.40,
+            # silhouette=True,
+        )
 
     if _tobeshown:
         plt.show()

@@ -3,6 +3,8 @@
 ![Anaconda last updated](https://anaconda.org/esalx/molli/badges/latest_release_relative_date.svg)
 ![Anaconda platforms](https://anaconda.org/esalx/molli/badges/platforms.svg)
 
+<img src="docs/imgs/molli_logo.svg" width="400">
+
 # `molli`: Molecular Toolbox Library
 
 https://github.com/SEDenmarkLab/molli

@@ -14,10 +14,11 @@ import molli
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Molli"
+project = "molli"
 copyright = "2022, Alexander Shved"
 author = "Alexander Shved"
 release = molli.config.VERSION
+version = ".".join(release.split(".")[:3])
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -69,3 +70,9 @@ latex_engine = "xelatex"
 
 html_theme = "furo"
 html_static_path = ["_static"]
+html_logo = "../imgs/molli_logo.svg"
+html_title = f"molli {version} documentation"
+
+html_theme_options = {
+    "sidebar_hide_name": True,
+}

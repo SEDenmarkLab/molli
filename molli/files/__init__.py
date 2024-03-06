@@ -55,6 +55,10 @@ dendrobine_xyz = ROOT / "dendrobine.xyz"
 pentane_confs_xyz = ROOT / "pentane_confs.xyz"
 dummy_xyz = ROOT / "dummy.xyz"
 
+# SDF V3000 MOL molecules
+dendrobine_molv3 = ROOT / "dendrobine.mol"
+zincdb_fda_molv3 = ROOT / "zincdb_fda.mol"
+pentane_confs_molv3 = ROOT / "pentane_confs.mol"
 
 substituents_cdxml = ROOT / "substituents.cdxml"
 parser_demo_cdxml = ROOT / "parser_demo.cdxml"

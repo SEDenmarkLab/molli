@@ -36,3 +36,4 @@ from .version import (
     assert_molli_version_in_range,
 )
 from .iterators import sglob, dglob, batched, len_batched
+from .lock import rwlock

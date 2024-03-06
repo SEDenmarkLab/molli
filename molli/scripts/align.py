@@ -101,7 +101,7 @@ def scipy_kabsch_wrapper(P, Q):
     return rotation.as_matrix(), rmsd_
 
 
-def molli_main(args, config=None, output=None, **kwargs):
+def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
 
     # -------------------Reading arguments--------------------------#

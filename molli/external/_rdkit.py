@@ -50,6 +50,10 @@ from rdkit.Chem import rdMolDescriptors
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem.Draw import IPythonConsole
 
+from openbabel.pybel import readstring
+from rdkit.Chem import MolToMolBlock
+from molli.external.openbabel import from_obmol
+
 
 def visualize_mols(
     name: str,
@@ -87,6 +91,16 @@ def visualize_mols(
         )
         with open(f"{name}.png", "wb") as f:
             f.write(_img.data)
+
+
+def from_rdkit_mol(rdkit_mol):
+    """This function imports an existing RDKit molecule object and converts it to the molli Molecule object"""
+
+    sdf = MolToMolBlock(rdkit_mol)
+    pbmol = readstring("sdf", sdf)
+    mol = from_obmol(pbmol.OBMol)
+
+    return mol
 
 
 def create_rdkit_mol(

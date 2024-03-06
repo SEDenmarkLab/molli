@@ -123,7 +123,7 @@ class Molecule(Structure):
                     f" {(self.n_atoms,)}"
                 )
 
-    def dump_mol2(self, stream: StringIO) -> None:
+    def dump_mol2(self, stream: StringIO = None) -> None:
         """Dumps the mol2 block into the output stream
 
         Parameters
@@ -156,7 +156,7 @@ class Molecule(Structure):
         stream.write("@<TRIPOS>ATOM\n")
         for i, a in enumerate(self.atoms):
             x, y, z = self.coords[i]
-            c = self.atomic_charges[i]
+            c = self.atomic_charges[i] or 0.0
             label = a.label or a.element.symbol
             atype = a.get_mol2_type() or a.element.symbol
             stream.write(
