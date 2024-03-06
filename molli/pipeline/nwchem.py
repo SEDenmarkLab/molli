@@ -55,7 +55,6 @@ class NWChemDriver(DriverBase):
         basis: str = "def2-svp",
         functional: str = "b3lyp",
         maxiter: int = 100,
-        memory_total: int = 500,  # memory in MB,
         optimize_geometry: bool = True,  # optimize geometry before ESP calc?
         range: float = 0.2,  # nwchem esp params
         probe: float = 0.1,  # nwchem esp params
@@ -76,8 +75,6 @@ class NWChemDriver(DriverBase):
             DFT Functional used, by default "b3lyp"
         maxiter : int, optional
             Maximum number of iterations, by default 100
-        memory_total : int, optional
-            Total Memory to use in MB, by default 500
         optimize_geometry : bool, optional
             Optimize geometry using DFT, by default True
 
@@ -96,7 +93,7 @@ class NWChemDriver(DriverBase):
 
         _inp = (
             f"""title "{M.name} ESP Calculation"\n"""
-            f"""memory total {memory_total} mb\n"""
+            f"""memory total {self.memory} mb\n"""
             """echo\n"""
             """start\n"""
             """\n"""
@@ -208,7 +205,6 @@ class NWChemDriver(DriverBase):
         basis: str = "def2-svp",
         functional: str = "b3lyp",
         maxiter: int = 100,
-        memory_total: int = 500,  # memory in MB,
         optimize_geometry: bool = True,  # optimize geometry before ESP calc?
         range: float = 0.2,  # nwchem esp params
         probe: float = 0.1,  # nwchem esp params
@@ -229,8 +225,6 @@ class NWChemDriver(DriverBase):
             DFT Functional used, by default "b3lyp"
         maxiter : int, optional
             Maximum number of iterations, by default 100
-        memory_total : int, optional
-            Total Memory to use in MB, by default 500
         optimize_geometry : bool, optional
             Optimize geometry using DFT, by default True
 
@@ -247,7 +241,7 @@ class NWChemDriver(DriverBase):
 
         _inp = (
             f"""title "{M.name} ESP Calculation"\n"""
-            f"""memory total {memory_total} mb\n"""
+            f"""memory total {self.memory} mb\n"""
             """echo\n"""
             """start\n"""
             """\n"""
