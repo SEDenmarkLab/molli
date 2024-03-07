@@ -122,13 +122,22 @@ class XTBDriver(DriverBase):
         accuracy: float = 0.5,
         xtbinp: str = "",
         maxiter: int = 2000,
+        misc: str = None,
     ):
-        assert isinstance(M, Molecule), "User did not pass a Molecule object!"
+        # assert isinstance(M, Molecule), "User did not pass a Molecule object!"
 
         inp = JobInput(
             M.name,
-            command=f"""{self.executable} input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f}""",
-            files={"input.xyz": M.dumps_xyz().encode()},
+            commands=[
+                (
+                    f"""{self.executable} input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f}"""
+                    f""" --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} {misc or ""}""",
+                    "xtb",
+                )
+            ],
+            files={
+                "input.xyz": M.dumps_xyz().encode(),
+            },
             return_files=self.return_files,
         )
 
@@ -154,13 +163,22 @@ class XTBDriver(DriverBase):
         accuracy: float = 0.5,
         xtbinp: str = "",
         maxiter: int = 500,
+        misc: str = None,
     ):
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
 
         inp = JobInput(
             M.name,
-            command=f"""xtb input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f} --vfukui""",
-            files={"input.xyz": M.dumps_xyz().encode()},
+            commands=[
+                (
+                    f"""{self.executable} input.xyz --{method} --charge {charge or M.charge} --uhf {(mult or M.mult) - 1} --acc {accuracy:0.2f} --vfukui"""
+                    f""" --iterations {maxiter} {"--input param.inp" if xtbinp else ""} -P {self.nprocs} {misc or ""}""",
+                    "xtb",
+                )
+            ],
+            files={
+                "input.xyz": M.dumps_xyz().encode(),
+            },
             return_files=self.return_files,
         )
 
@@ -170,7 +188,7 @@ class XTBDriver(DriverBase):
     def atom_properties_m(self, out: JobOutput, M: Molecule, **kwargs):
         from molli.parsing.xtbout import extract_xtb_atomic_properties
 
-        if res := out.stdouts[self.executable]:
+        if res := out.stdouts["xtb"]:
             outdf = extract_xtb_atomic_properties(res)
             for i, a in enumerate(M.atoms):
                 for j, property in enumerate(outdf.columns):

@@ -13,6 +13,7 @@ class CrestDriver(DriverBase):
         charge: int = None,
         mult: int = None,
         method: str = None,
+        temp: float = None,
         ewin: float = None,
         mdlen: float = None,
         mddump: float = None,
@@ -34,7 +35,7 @@ class CrestDriver(DriverBase):
 
         cmd += f" -chrg {charge} -uhf {mult - 1}"
 
-        for var in "ewin", "mdlen", "mddump", "vbdump":
+        for var in "ewin", "mdlen", "mddump", "vbdump", "temp":
             if (val := locals()[var]) is not None:
                 cmd += f" -{var} {val:0.4f}"
 
@@ -72,6 +73,7 @@ class CrestDriver(DriverBase):
         charge: int = None,
         mult: int = None,
         method: str = None,
+        temp: float = None,
         ewin: float = None,
         mdlen: float = None,
         mddump: float = None,
@@ -93,7 +95,7 @@ class CrestDriver(DriverBase):
 
         cmd += f" -chrg {charge} -uhf {mult - 1}"
 
-        for var in "ewin", "mdlen", "mddump", "vbdump":
+        for var in "ewin", "mdlen", "mddump", "vbdump", "temp":
             if (val := locals()[var]) is not None:
                 cmd += f" -{var} {val:0.4f}"
 
