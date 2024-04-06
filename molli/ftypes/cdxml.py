@@ -242,6 +242,22 @@ class CDXMLFile:
         isot = node.get("Isotope")
         isot = None if isot is None else int(isot)
 
+        # Formal charge
+        charge = int(node.get("Charge", 0))
+
+        # Formal spin
+        #   note: molli atomic attribute of spin is the
+        spin2 = node.get("Radical")
+        match spin2:
+            case "Doublet":
+                spin2 = 1
+
+            case "Singlet":
+                spin2 = 2
+
+            case _:
+                spin2 = 0
+
         match node.get("NodeType"):
             case "ExternalConnectionPoint":
                 elt = Element.Unknown
@@ -273,7 +289,14 @@ class CDXMLFile:
                 # Or at least make it consistent.
                 # lbl = node.get("Element") or "C"
 
-        return Atom(elt, isotope=isot, label=lbl, atype=atyp)
+        return Atom(
+            elt,
+            isotope=isot,
+            label=lbl,
+            atype=atyp,
+            formal_charge=charge,
+            formal_spin=spin2,
+        )
 
     def _parse_bond(self, bd: et.Element, atom_idx: dict[str, Atom]) -> Bond:
         a1 = atom_idx[bd.get("B")]
@@ -367,5 +390,11 @@ class CDXMLFile:
             raise SyntaxError(
                 f"Invalid syntax encountered in fragment id=\"{frag.get('id')}\""
             ) from xc
+
+        total_charge = sum(a.formal_charge or 0 for a in result.atoms)
+        total_spin2 = sum(a.formal_spin or 0 for a in result.atoms)
+
+        result.charge = total_charge
+        result.mult = total_spin2 + 1
 
         return result
