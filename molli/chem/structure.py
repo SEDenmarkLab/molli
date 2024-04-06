@@ -950,7 +950,12 @@ class Structure(CartesianGeometry, Connectivity):
             atoms = [a for a in self.atoms if a.element.group in range(13, 17)]
 
         for a in atoms:
-            if (diff := a.implicit_valence - int(self.bonded_valence(a))) >= 0:
+            hs_to_add = 0
+
+            if a.formal_charge == 0 and a.formal_spin == 0:
+                hs_to_add = a.implicit_valence - int(self.bonded_valence(a))
+
+            if hs_to_add > 0:
                 neighbors = list(self.connected_atoms(a))
                 a_coord = self.get_atom_coord(a)
                 if len(neighbors) == 3:
