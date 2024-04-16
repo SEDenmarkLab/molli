@@ -162,6 +162,13 @@ arg_parser.add_argument(
     default=False,
 )
 
+arg_parser.add_argument(
+    "--shortname",
+    action="store_true",
+    help="If mode is `same`, only one substituent name will be added to the name.",
+    default=False,
+)
+
 
 @delayed
 def _ml_assemble(
@@ -172,7 +179,7 @@ def _ml_assemble(
     obopt: Callable = None,
     separator: str = "_",
     distance: float = None,
-    same: bool = True,
+    shortname: bool = False,
 ):
     results = {}
     for substituent_combo in substituent_combos:
@@ -188,7 +195,7 @@ def _ml_assemble(
                 dist=distance,
                 optimize_rotation=True,
             )
-        if same:
+        if shortname:
             deriv.name = separator.join([core.name, substituent_combo[0].name])
         else:
             deriv.name = separator.join(
@@ -334,6 +341,7 @@ def molli_main(args, **kwargs):
                     obopt=obopt,
                     separator=parsed.separator,
                     distance=parsed.distance,
+                    shortname=(parsed.mode == "same" and parsed.shortname),
                 )
                 for (c, i), sb in product(
                     zip(cores, ap_indices),
