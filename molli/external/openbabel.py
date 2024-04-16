@@ -82,7 +82,9 @@ def to_obmol(
         else:
             x, y, z = mol.coords[i]
         oba.SetVector(x, y, z)
-        oba.SetFormalCharge(0)
+        oba.SetFormalCharge(a.formal_charge)
+        oba.SetPartialCharge(mol.atomic_charges[i])
+        oba.SetSpinMultiplicity(abs(a.formal_spin) + 1)
 
     for j, b in enumerate(mol.bonds):
         a1_idx = mol.get_atom_index(b.a1)
@@ -92,7 +94,7 @@ def to_obmol(
     obm.SetTotalCharge(getattr(mol, "charge", 0))
     obm.SetTotalSpinMultiplicity(getattr(mol, "mult", 1))
     obm.EndModify()
-    obm.PerceiveBondOrders()
+    # obm.PerceiveBondOrders()
 
     obm.SetTitle(getattr(mol, "name", "unnamed"))
 
@@ -112,6 +114,7 @@ def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
     name = obmol.GetTitle()
     mol: Molecule
     mol = cls(name=name, n_atoms=n_atoms, charge=charge, mult=mult)
+    atomic_charges = []
     for i in range(n_atoms):
         a: ob.OBAtom = obmol.GetAtomById(i)
         mol.coords[i] = [a.GetX(), a.GetY(), a.GetZ()]
@@ -120,6 +123,8 @@ def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
         ma.isotope = a.GetIsotope()
         ma.formal_charge = a.GetFormalCharge()
         ma.formal_spin = a.GetSpinMultiplicity() - 1
+        atomic_charges.append(a.GetPartialCharge())
+
         if a.IsAromatic():
             ma.atype = AtomType.Aromatic
         elif a.IsAmideNitrogen():
@@ -130,6 +135,8 @@ def from_obmol(obmol: ob.OBMol, cls: type = Molecule) -> Molecule:
             h = a.GetHyb()
             if h in range(1, 4):
                 ma.atype = AtomType(34 - h)
+
+    mol.atomic_charges = atomic_charges
 
     for j in range(n_bonds):
         b: ob.OBBond = obmol.GetBondById(j)
@@ -328,6 +335,16 @@ def dumps_obmol(mol: Molecule | ConformerEnsemble, ftype: str, encode=False):
             return write
 
 
+def calc_charges(
+    mol: Molecule,
+    *,
+    method: str = "gasteiger",
+    dummy: Element | str = Element.H,
+):
+    "This calculates the charges according to the specified method"
+    obm = to_obmol(mol)
+
+
 def obabel_optimize(
     mol: Molecule,
     *,
@@ -335,7 +352,7 @@ def obabel_optimize(
     max_steps: int = 1000,
     coord_displace: float | bool = False,
     tol: float = 1e-4,
-    dummy: Element | str = Element.Cl,
+    dummy: Element | str = Element.H,
     inplace: bool = False,
 ) -> Molecule:
     """
@@ -346,13 +363,39 @@ def obabel_optimize(
     obm = to_obmol(mol, dummy=dummy, coord_displace=coord_displace)
     obff = ob.OBForceField.FindForceField(ff)
 
-    obff.Setup(obm)
+    # This is *necessary* to ensure that the FF can handle the molecule
+    if not obff.Setup(obm):
+        raise RuntimeError(f"Cannot set up {ff=} for {mol!r}")
+
     obff.SteepestDescent(max_steps, tol)
     obff.GetCoordinates(obm)
+
+    e_tot = obff.Energy()
+    e_bond = obff.E_Bond()
+    e_angle = obff.E_Angle()
+    e_strbnd = obff.E_StrBnd()
+    e_torsion = obff.E_Torsion()
+    e_oop = obff.E_OOP()
+    e_vdw = obff.E_VDW()
+    e_elstat = obff.E_Electrostatic()
+
+    e_attrib = {
+        f"OpenBabel_{ff}": {
+            "Energy": e_tot,
+            "E_bond": e_bond,
+            "E_angle": e_angle,
+            "E_strbnd": e_strbnd,
+            "E_torsion": e_torsion,
+            "E_OOP": e_oop,
+            "E_vdW": e_vdw,
+            "E_elstat": e_elstat,
+        }
+    }
 
     optimized = coord_from_obmol(obm)
 
     if inplace:
         mol.coords = optimized
+        mol.attrib |= e_attrib
     else:
-        return Molecule(mol, coords=optimized)
+        return Molecule(mol, coords=optimized, attrib=e_attrib)
