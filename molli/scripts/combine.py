@@ -206,12 +206,9 @@ def _ml_assemble(
             deriv.add_implicit_hydrogens()
 
         if callable(obopt):
-            try:
-                obopt(deriv)
-            except:
-                deriv = None
+            obopt(deriv)
 
-        results[deriv.name] = deriv
+        results[deriv.name] = None
 
     return results
 
