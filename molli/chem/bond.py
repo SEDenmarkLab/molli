@@ -278,9 +278,9 @@ class Bond:
         """
 
         if schema is None:
-            return attrs.asdict(self)
-        else:
-            return {a: getattr(self, a, None) for a in schema}
+            schema = self.__slots__[:-2]
+
+        return {a: getattr(self, a, None) for a in schema}
 
     def as_tuple(self, schema: List[str] = None) -> tuple:
         """Returns the bond as a tuple
@@ -308,9 +308,9 @@ class Bond:
         """
 
         if schema is None:
-            return attrs.astuple(self)
-        else:
-            return tuple(getattr(self, a, None) for a in schema)
+            schema = self.__slots__[:-2]
+        
+        return tuple(getattr(self, a, None) for a in schema)
 
     def __contains__(self, other: Atom) -> bool:
         """Checks if atom is in the bond
