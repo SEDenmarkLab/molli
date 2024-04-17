@@ -208,7 +208,7 @@ def _ml_assemble(
         if callable(obopt):
             obopt(deriv)
 
-        results[deriv.name] = None
+        results[deriv.name] = deriv
 
     return results
 
