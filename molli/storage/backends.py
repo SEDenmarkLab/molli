@@ -343,7 +343,7 @@ class UkvCollectionBackend(CollectionBackendBase):
             comment = ""
 
         # This access needs to be very restrictive to prevent collisions
-        with self._lock.write_lock():
+        with self._lock.read_lock():
             if not self._path.is_file():
                 with UKVFile(
                     self._path,
