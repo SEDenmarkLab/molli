@@ -38,6 +38,7 @@ __all__ = [
     "test",
     "map",
     "merge",
+    "pick",
 ]
 
 __all__.sort()
