@@ -40,6 +40,9 @@ import multiprocessing as mp
 import os
 from math import comb, perm, factorial
 from joblib import Parallel, delayed
+from molli._aux.mpi import detect_mpi_launch
+from tempfile import TemporaryDirectory
+from pathlib import Path
 
 OS_NCORES = os.cpu_count() // 2
 
@@ -77,7 +80,7 @@ arg_parser.add_argument(
     "--batchsize",
     action="store",
     metavar=1,
-    default=256,
+    default=1,
     type=int,
     help="Number of molecules to be processed at a time on a single core",
 )
@@ -94,13 +97,6 @@ arg_parser.add_argument(
     "--overwrite",
     action="store_true",
     help="Overwrite the target files if they exist (default is false)",
-    default=False,
-)
-
-arg_parser.add_argument(
-    "--mpi",
-    action="store_true",
-    help="Use mpi as parallelization backend. Requires `mpi4py` package to be installed.",
     default=False,
 )
 
@@ -126,16 +122,63 @@ def molli_main(args, **kwargs):
 
     OUT_CTYPE: ml.storage.Collection = getattr(_ext_module, "OUT_CTYPE", None)
 
-    if parsed.mpi:
-        raise NotImplementedError
+    source = IN_CTYPE(parsed.target, readonly=True)
+
+    if OUT_CTYPE is not None:
+        destination = OUT_CTYPE(
+            parsed.output,
+            readonly=False,
+            overwrite=parsed.overwrite,
+        )
+
+    # This is the name of the scratch directory, if needed
+
+    if detect_mpi_launch():
+        # This should occur only if molli was called like `mpirun -n 4 molli map ...`
+        # and therefore we will need a different mode or parallelization
+        from mpi4py import MPI
+
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        size = comm.Get_size()
+
+        if comm.Get_rank() == 0:
+            if parsed.nprocs > 1:
+                print(
+                    "Using molli map with mpiexec or -n parameter are mutually exclusive."
+                )
+                comm.Abort(1)
+
+            print(f"Detected an mpi launch with {size=}")
+
+            with source.reading():
+                keys = sorted(source.keys())
+
+            keys_split = [keys[s::size] for s in range(size)]
+        else:
+            keys_split = 0
+
+        keys_split = comm.scatter(keys_split, root=0)
+
+        # Each process will be writing in its own output file
+        # At the end all outputs will be concatenated
+
+        with TemporaryDirectory(dir=ml.config.SCRATCH_DIR) as td:
+            # Create a temporary folder in the SCRATCH
+            temp_fname = Path(td) / Path(parsed.output).name + f".{rank:0>4}"
+            if OUT_CTYPE is not None:
+                dest_temp = OUT_CTYPE(
+                    temp_fname,
+                    readonly=False,
+                    overwrite=parsed.overwrite,
+                )
+
+            with dest_temp.writing(), source.reading():
+                for k in keys_split:
+                    res = _ext_module.main(source[k])
+                    dest_temp[k] = res
+
     else:
-
-        source = IN_CTYPE(parsed.target, readonly=True)
-
-        if OUT_CTYPE is not None:
-            destination = OUT_CTYPE(
-                parsed.output, readonly=False, overwrite=parsed.overwrite
-            )
 
         parallel = Parallel(n_jobs=parsed.nprocs, return_as="generator")
 
