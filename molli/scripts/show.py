@@ -66,6 +66,14 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
+    "-it",
+    "--itype",
+    action="store",
+    default=None,
+    help="Input file type",
+)
+
+arg_parser.add_argument(
     "-ot",
     "--otype",
     action="store",
@@ -120,7 +128,7 @@ def molli_main(args, **kwargs):
 
     path = Path(parsed.library_or_mol)
 
-    libtype = parsed.otype or path.suffix[1:]
+    libtype = parsed.itype or path.suffix[1:]
 
     if libtype == "mlib":
         lib = ml.MoleculeLibrary(path, readonly=True)
