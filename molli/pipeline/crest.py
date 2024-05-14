@@ -39,9 +39,8 @@ class CrestDriver(DriverBase):
             if (val := locals()[var]) is not None:
                 cmd += f" -{var} {val:0.4f}"
 
-        if chk_topo:
-            if not chk_topo:
-                cmd += " --noreftopo"
+        if not chk_topo:
+            cmd += " --noreftopo"
 
         if misc is not None:
             cmd += f" {misc}"
@@ -99,9 +98,8 @@ class CrestDriver(DriverBase):
             if (val := locals()[var]) is not None:
                 cmd += f" -{var} {val:0.4f}"
 
-        if chk_topo:
-            if not chk_topo:
-                cmd += " --noreftopo"
+        if not chk_topo:
+            cmd += " --noreftopo"
 
         if misc is not None:
             cmd += f" {misc}"
