@@ -120,6 +120,21 @@ class StructureTC(ut.TestCase):
 
         np.testing.assert_allclose(s1_coord, sub_coord)
 
+        pro1 = ml.Promolecule(s1)
+        pro1.atoms
+
+        con1 = ml.Connectivity(s1)
+        con1.atoms
+        con1.bonds
+
+        struct1 = ml.Structure(s1)
+        struct1.atoms
+        struct1.bonds
+
+        m1 = ml.Molecule(s1)
+        m1.atoms
+        m1.bonds
+
     def test_del_atom(self):
         s1 = ml.Structure.load_mol2(ml.files.dendrobine_mol2)
         s1.del_atom(0)
