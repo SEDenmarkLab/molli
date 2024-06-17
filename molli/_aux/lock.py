@@ -13,4 +13,4 @@ def rwlock(path: str | Path):
     key = abspath.as_posix().encode()
     h = sha3_512(key).digest()
     (lkdir := config.SHARED_DIR / "lock").mkdir(exist_ok=True, parents=True)
-    return lkdir / urlsafe_b64encode(h)
+    return lkdir / f"{urlsafe_b64encode(h).decode()}.lock"

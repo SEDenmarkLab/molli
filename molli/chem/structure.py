@@ -45,7 +45,11 @@ from . import (
     Element,
     DistanceUnit,
 )
-from ..math import rotation_matrix_from_vectors, _optimize_rotation
+from ..math import (
+    rotation_matrix_from_vectors,
+    _optimize_rotation,
+    rotation_matrix_from_axis,
+)
 from ..parsing import read_mol2
 import re
 from io import StringIO, BytesIO
@@ -453,8 +457,7 @@ class Structure(CartesianGeometry, Connectivity):
         return self.dump_mol2()
 
     @classmethod
-    def from_dict(self):
-        ...
+    def from_dict(self): ...
 
     @classmethod
     def join(
@@ -831,10 +834,10 @@ class Structure(CartesianGeometry, Connectivity):
 
         match max_bond_order, n_bonds:
             case 1 if a.element.group in range(14, 19):
-                a.atype = AtomType.MainGroup_sp3
+                a.atype = AtomType.sp3
 
             case 14, 2:
-                a.atype = AtomType.MainGroup_sp2
+                a.atype = AtomType.sp2
 
     def perceive_bond_properties(self) -> None:
         """Currently Not Implemented
@@ -845,6 +848,51 @@ class Structure(CartesianGeometry, Connectivity):
         raise NotImplementedError(
             "perceive_bond_properties is Currently Not Implemented"
         )
+
+    def rotate_dihedral(self, atoms: tuple[AtomLike], target_angle: float):
+        """This procedure rotates the substructure"""
+        dihedral = self.dihedral(*atoms)
+        rotation_angle = target_angle - dihedral
+        ax = self.vector(atoms[1], atoms[2])
+        origin = self.get_atom_coord(atoms[1])
+
+        # Define the rotation matrix
+        R = rotation_matrix_from_axis(ax, rotation_angle)
+
+        # substructure to be rotated
+        substruct = self.substructure(self.yield_bfs(atoms[1], atoms[2]))
+
+        substruct.translate(-origin)
+        substruct.transform(R)
+        substruct.translate(origin)
+
+    def remove_substituent(self, a1: AtomLike, a2: AtomLike, *, ap_label: str = None):
+        """This removes the substituent from the"""
+        c2 = self.get_atom_coord(a2)
+
+        for a in tuple(self.yield_bfs(a1, a2)):
+            self.del_atom(a)
+
+        self.add_atom(
+            a := Atom(
+                element=Element.Unknown,
+                atype=AtomType.AttachmentPoint,
+                label=ap_label,
+            ),
+            c2,
+        )
+        self.connect(a1, a)
+
+    def split(
+        self,
+        a1: AtomLike,
+        a2: AtomLike,
+        *,
+        ap1_label: str = None,
+        ap2_label: str = None,
+    ):
+        """This is a stub of the function that splits"""
+        raise NotImplementedError
 
     def del_atom(self, _a: AtomLike):
         """Deletes an atom from the Structure

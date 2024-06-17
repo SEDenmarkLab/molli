@@ -1,19 +1,19 @@
 # ================================================================================
-# This file is part of `molli 1.0` 
+# This file is part of `molli 1.0`
 # (https://github.com/SEDenmarkLab/molli)
-# 
+#
 # Developed by Alexander S. Shved <shvedalx@illinois.edu>
-# 
+#
 # S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign
 # https://denmarkgroup.illinois.edu/
-# 
-# Copyright 2022-2023 The Board of Trustees of the University of Illinois. 
+#
+# Copyright 2022-2023 The Board of Trustees of the University of Illinois.
 # All Rights Reserved.
-# 
-# Licensed under the terms MIT License 
+#
+# Licensed under the terms MIT License
 # The License is included in the distribution as LICENSE file.
-# You may not use this file except in compliance with the License. 
-# 
+# You may not use this file except in compliance with the License.
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 # ================================================================================
 
@@ -37,8 +37,9 @@ There are three main ways to configure the variables:
 import os, sys
 from pathlib import Path
 import logging
+from importlib.metadata import version as _get_version
 
-VERSION = "1.0.0b2"
+VERSION = _get_version("molli")
 
 HOME: Path = Path("~/.molli").expanduser()
 USER_DATA_DIR: Path = HOME / "user_data"
@@ -46,14 +47,31 @@ BACKUP_DIR: Path = HOME / "backup"
 SCRATCH_DIR: Path = HOME / "scratch"
 SHARED_DIR: Path = HOME / "shared"
 
-SPLASH = f"""
-         __    __     ______     __         __         __    
-        /\ "-./  \   /\  __ \   /\ \       /\ \       /\ \   
-        \ \ \-./\ \  \ \ \/\ \  \ \ \____  \ \ \____  \ \ \  
-         \ \_\ \ \_\  \ \_____\  \ \_____\  \ \_____\  \ \_\ 
-          \/_/  \/_/   \/_____/   \/_____/   \/_____/   \/_/ 
 
-                --- version {VERSION} ---
+SPLASH = f"""                                                                                
+                 ******                                                         
+                 ******                                                         
+                     ****                                                       
+                       ****                                                     
+                         ****                                   ,@&*            
+                           *,**                  ####   /###  %@    @,          
+                             ***,                @@@@   %@@@** %,@@**           
+        ,,,,  (@@     /@@#     *,**********%     @@@@***%@@@    ,,,,            
+        @@@@@@@@@@@@@@@@@@@@/  ,,*@@@@@@@@@@*****@@@@   %@@@    @@@@            
+        @@@@    /@@@*    @@@@ @*@@@@    ,/@@@@*% @@@@   %@@@    @@@@            
+        @@@@    /@@@     @@@@ */@@@        @@@** @@@@   %@@@    @@@@            
+        @@@@    /@@@     @@@@ #*@@@@      @@@@*@ @@@@   %@@@    @@@@            
+        @@@@    /@@@     @@@@  @,@@@@@@@@@@@@*@**@@@@   %@@@    @@@@            
+                               *,*,*,/@@/*,/       *,*,*                        
+                            ,***,                      @*****@                  
+                          /****                             ****,***/           
+                        &***/                                 #*,***(           
+                      @*,*#                                                     
+                    @***&                                                       
+                ******%                                                         
+                /*****%                                                         
+                                                            
+{f'--- version {VERSION} ---':^80}
 """
 
 

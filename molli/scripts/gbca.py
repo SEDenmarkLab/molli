@@ -144,7 +144,7 @@ def _aso_worker(
     weighted: bool = False,
     dtype: str | np.dtype = "float32",
 ):
-    _lk_path = ml.aux.molli_aux_dir(_gfpath) / (_gfpath.name + ".lock")
+    _lk_path = ml.aux.rwlock(_gfpath)
     lock = fasteners.InterProcessReaderWriterLock(_lk_path)
 
     with lock.read_lock():
@@ -178,7 +178,7 @@ def _aeif_worker(
     weighted: bool = False,
     dtype: str | np.dtype = "float32",
 ):
-    _lk_path = ml.aux.molli_aux_dir(_gfpath) / (_gfpath.name + ".lock")
+    _lk_path = ml.aux.rwlock(_gfpath)
     lock = fasteners.InterProcessReaderWriterLock(_lk_path)
 
     with lock.read_lock():
@@ -206,7 +206,7 @@ def _aeif_worker(
                 of[k] = aeif
 
 
-def molli_main(args, verbosity: int = 0, **kwargs):
+def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
     logger = getLogger("molli.scripts.gbca")
 
@@ -242,11 +242,6 @@ def molli_main(args, verbosity: int = 0, **kwargs):
     logger.info(
         f"To be computed: {len(keys)} ensembles. Skipping {len(library) - len(keys)}"
     )
-
-    if existing:
-        logger.debug("Ensembles skipped:\n  -" + "\n  -".join(existing))
-    if keys:
-        logger.debug("Ensembles to be computed:\n  - " + "\n  - ".join(keys))
 
     if len(keys) == 0:
         logger.info("Nothing to compute. Exiting.")

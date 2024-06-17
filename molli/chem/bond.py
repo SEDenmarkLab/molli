@@ -725,6 +725,11 @@ class Connectivity(Promolecule):
         self._bonds.append(bond)
         bond.parent = self
 
+        if bond.a1 not in self.atoms:
+            self.append_atom(bond.a1)
+        if bond.a2 not in self.atoms:
+            self.append_atom(bond.a2)
+
     def append_bonds(self, *bonds: Bond) -> None:
         """Appends multiple bonds to the Connectivity instance
 
@@ -755,6 +760,11 @@ class Connectivity(Promolecule):
         for b in bonds:
             b.parent = self
 
+            if b.a1 not in self.atoms:
+                self.append_atom(b.a1)
+            if b.a2 not in self.atoms:
+                self.append_atom(b.a2)
+
     def extend_bonds(self, bonds: Iterable[Bond]) -> None:
         """Extends the list of bonds to the Connectivity instance
 
@@ -782,6 +792,27 @@ class Connectivity(Promolecule):
             Bond(a1=0, a2=39, label=None, btype=Single, stereo=Unknown, f_order=1.0)
         """
         self.append_bonds(*bonds)
+
+    def connect_like(self, other: Connectivity):
+        """
+        Connect the atoms in current instance like they are connected in `other`
+
+        This function assumes that the equivalent atom indices are the same in both sequences.
+
+        Parameters
+        ----------
+        other : Connectivity
+            Instance to copy the connectivity from
+        """
+        assert self.n_atoms == other.n_atoms, "Atoms must match"
+        assert self.elements == other.elements, "Elements must match"
+
+        atom_map = dict(zip(other.atoms, self.atoms))
+        self._bonds = [
+            b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=self)
+            for b in other.bonds
+        ]
+
 
     def del_bond(self, b: Bond) -> None:
         """Deletes a bond from the Connectivity instance

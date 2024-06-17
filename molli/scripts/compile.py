@@ -31,33 +31,61 @@ from tqdm import tqdm
 
 arg_parser = ArgumentParser(
     "molli compile",
-    description="Compile a lot of files into a molli collection",
+    description="Compile matching files into a molli collection. Both conformer libraries and molecule libraries are supported.",
 )
 
 arg_parser.add_argument(
     "sources",
-    metavar="<file_or_glob.mol2>",
+    metavar="<file_or_glob>",
     action="store",
     type=str,
     nargs="*",
-    help="New style collection to be made",
+    help="List of source files or a glob pattern.",
 )
 
 arg_parser.add_argument(
     "-o",
     "--output",
-    metavar="MLI_FILE",
+    metavar="LIB_FILE",
     action="store",
     type=str,
-    default=...,
+    required=True,
     help="New style collection to be made",
 )
 
 arg_parser.add_argument(
-    "--name_as_file_stem",
+    "-t",
+    "--type",
+    action="store",
+    type=str.lower,
+    default="molecule",
+    choices=["molecule", "ensemble"],
+    help="Type of object to be imported",
+)
+
+arg_parser.add_argument(
+    "-p",
+    "--parser",
+    action="store",
+    type=str.lower,
+    default="molli",
+    choices=["openbabel", "obabel", "molli"],
+    help="Parser to be used to import the molecule object",
+)
+
+arg_parser.add_argument(
+    "--stem",
     action="store_true",
     default=False,
     help="Renames the conformer ensemble to match the file stem",
+)
+
+arg_parser.add_argument(
+    "-s",
+    "--split",
+    action="store_true",
+    default=False,
+    help="This is only compatible with the choice of type `molecule`. In this case all files are treated as multi-molecule files",
 )
 
 arg_parser.add_argument(
@@ -68,30 +96,52 @@ arg_parser.add_argument(
     help="Increase the amount of output",
 )
 
+arg_parser.add_argument(
+    "--overwrite",
+    action="store_true",
+    default=False,
+    help="Overwrite the destination collection",
+)
+
 
 def molli_main(args, **kwargs):
-    print("This routine will compile all requested mol2 files into a single collection")
     parsed = arg_parser.parse_args(args)
     files = []
     for source in parsed.sources:
         files.extend(glob(source))
 
-    if parsed.verbose:
-        for i, fn in enumerate(files):
-            print(f"{i+1:>10} | {fn}")
+    if files:
+        print(f"Matched {len(files)} files for importing.")
+    else:
+        print("No suitable molecule files were found. Aborting.")
+        exit(1)
 
-    with ml.ConformerLibrary.new(parsed.output, overwrite=False) as lib:
-        print("\nImporting mol2 files:")
-        for fn in (pb := tqdm(files, dynamic_ncols=True)):
+    if parsed.split:
+        raise NotImplementedError(
+            "Splitting multimolecule files has not been implemented yet."
+        )
+
+    if parsed.type == "conformer":
+        library = ml.ConformerLibrary(
+            parsed.output,
+            overwrite=parsed.overwrite,
+            readonly=False,
+        )
+
+    elif parsed.type == "molecule":
+        library = ml.MoleculeLibrary(
+            parsed.output,
+            overwrite=parsed.overwrite,
+            readonly=False,
+        )
+
+    with library.writing():
+        for fn in (pb := tqdm(files, dynamic_ncols=True, desc="Importing molecules")):
             fp = Path(fn)
-            if parsed.name_as_file_stem:
+            if parsed.stem:
                 name = fp.stem
             else:
                 name = None
-
-            ens = ml.ConformerEnsemble.load_mol2(fn, name=name)
-
-            if parsed.verbose:
-                pb.write(f"{fn} --> {ens!r}")
-
-            lib.append(ens.name, ens)
+            mol = ml.load(fn, parser=parsed.parser, otype=parsed.type, name=name)
+            name = mol.name
+            library[name] = mol

@@ -51,6 +51,7 @@ from numpy.typing import ArrayLike
 from warnings import warn
 from io import StringIO
 from pathlib import Path
+from deprecated import deprecated
 
 
 class ConformerEnsemble(Connectivity):
@@ -70,51 +71,6 @@ class ConformerEnsemble(Connectivity):
         >>> ml.ConformerEnsemble(mol_list)
         ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
     """
-
-    # old one
-    # def __init__(
-    #     self,
-    #     other: ConformerEnsemble = None,
-    #     /,
-    #     n_conformers: int = 0,
-    #     n_atoms: int = 0,
-    #     *,
-    #     name: str = None,
-    #     charge: int = None,
-    #     mult: int = None,
-    #     coords: ArrayLike = None,
-    #     weights: ArrayLike = None,
-    #     atomic_charges: ArrayLike = None,
-    #     copy_atoms: bool = False,
-    #     **kwds,
-    # ):
-    #     super().__init__(
-    #         other,
-    #         n_atoms=n_atoms,
-    #         name=name,
-    #         copy_atoms=copy_atoms,
-    #         charge=charge,
-    #         mult=mult,
-    #         **kwds,
-    #     )
-
-    #     self._coords = np.full((n_conformers, self.n_atoms, 3), np.nan)
-    #     self._atomic_charges = np.zeros((self.n_atoms,))
-    #     self._weights = np.ones((n_conformers,))
-
-    #     if isinstance(other, ConformerEnsemble):
-    #         self.atomic_charges = atomic_charges
-    #         self.coords = other.coords
-    #         self.weights = other.weights
-    #     else:
-    #         if coords is not None:
-    #             self.coords = coords
-
-    #         if atomic_charges is not None:
-    #             self.atomic_charges = atomic_charges
-
-    #         if weights is not None:
-    #             self.weights = weights
 
     def __init__(
         self,
@@ -168,6 +124,11 @@ class ConformerEnsemble(Connectivity):
             self._atomic_charges = np.array(other.atomic_charges)
             self._coords = np.array(other.coords)
             self._weights = np.array(other.weights)
+
+        if isinstance(other, Molecule):
+            self._coords = np.full((n_conformers or 1, self.n_atoms, 3), np.nan)
+            self._atomic_charges = np.zeros((n_conformers or 1, self.n_atoms))
+            self._weights = np.ones((n_conformers or 1,))
 
         if coords is not None:
             self.coords = coords
@@ -244,6 +205,7 @@ class ConformerEnsemble(Connectivity):
         self._atomic_charges[:] = other
 
     @classmethod
+    @deprecated("This function has been replaced with `load_mol2`", version="1.0.0")
     def from_mol2(
         cls: type[ConformerEnsemble],
         input: str | StringIO,
@@ -257,12 +219,7 @@ class ConformerEnsemble(Connectivity):
         mol2io = StringIO(input) if isinstance(input, str) else input
         mols = Molecule.load_all_mol2(mol2io, name=name, source_units=source_units)
 
-        res = cls(mols)
-
-        for i, m in enumerate(mols):
-            res._coords[i] = m.coords
-
-        return res
+        return cls(mols)
 
     @classmethod
     def load_mol2(
@@ -302,13 +259,9 @@ class ConformerEnsemble(Connectivity):
             stream = input
 
         with stream:
-            res = cls.from_mol2(
-                stream,
-                name=name,
-                source_units=source_units,
-            )
+            mols = Molecule.load_all_mol2(stream, source_units=source_units)
 
-        return res
+        return cls(mols, name=name)
 
     @classmethod
     def loads_mol2(
@@ -344,14 +297,85 @@ class ConformerEnsemble(Connectivity):
         """
 
         stream = StringIO(input)
-        with stream:
-            res = cls.from_mol2(
-                stream,
-                name=name,
-                source_units=source_units,
-            )
+        return cls.load_mol2(stream)
 
-        return res
+    @classmethod
+    def load_xyz(
+        cls: type[ConformerEnsemble],
+        input: str | Path | IO,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> ConformerEnsemble:
+        """Loads xyz from a file path, string, or stream
+
+        Parameters
+        ----------
+        cls : type[ConformerEnsemble]
+            Class to be loaded into
+        input : str | Path | IO
+            File path, string, or stream
+        name : str, optional
+            Name for ConformerEnsemble, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        ConformerEnsemble
+            Returns ConformerEnsemble
+
+        Examples
+        -------
+            >>> ml.ConformerEnsemble.load_xyz(ml.files.pentane_confs_xyz)
+            ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
+        """
+
+        if isinstance(input, str | Path):
+            stream = open(input, "rt")
+        else:
+            stream = input
+
+        with stream:
+            mols = Molecule.load_all_xyz(stream, source_units=source_units)
+
+        return cls(mols, name=name)
+
+    @classmethod
+    def loads_xyz(
+        cls: type[ConformerEnsemble],
+        input: str,
+        *,
+        name: str = None,
+        source_units: str = "Angstrom",
+    ) -> ConformerEnsemble:
+        """Loads xyz from a string
+
+        Parameters
+        ----------
+        cls : type[ConformerEnsemble]
+            Class to be loaded into
+        input : str
+            xyz block as string
+        name : str, optional
+            Name for ConformerEnsemble, by default None
+        source_units : str, optional
+            Units to be used in loading, by default "Angstrom"
+
+        Returns
+        -------
+        ConformerEnsemble
+            Returns ConformerEnsemble
+
+        Examples
+        -------
+            >>> with open(ml.files.pentane_confs_xyz, 'r') as f:
+            >>>     ml.ConformerEnsemble.loads_xyz(f.read())
+            ConformerEnsemble(name='pentane', formula='C5 H12', n_conformers=7)
+        """
+
+        stream = StringIO(input)
+        return cls.load_xyz(stream)
 
     def dump_mol2(self, stream: StringIO = None) -> None:
         """Dumps the multi-mol2 block into the output stream
@@ -397,6 +421,30 @@ class ConformerEnsemble(Connectivity):
 
         stream = StringIO()
         self.dump_mol2(stream)
+        return stream.getvalue()
+
+    def dump_xyz(self, stream: StringIO):
+        """Dumps the .xyz file into the stream
+
+        Parameters
+        ----------
+        stream : StringIO, optional
+            Stream into which the xyz values are written.
+
+        """
+        for conf in self:
+            conf.dump_xyz(stream)
+
+    def dumps_xyz(self):
+        """Returns the string of the .xyz file
+
+        Returns
+        -------
+        str
+            String containing .xyz file of multi-conformer molecule.
+        """
+        stream = StringIO()
+        self.dump_xyz(stream)
         return stream.getvalue()
 
     @property
@@ -453,8 +501,7 @@ class ConformerEnsemble(Connectivity):
     def filter(
         self,
         fx: Callable[[Conformer], bool],
-    ):
-        ...
+    ): ...
 
     def serialize(self):
         atom_id_map = {a: i for i, a in enumerate(self.atoms)}
@@ -892,6 +939,14 @@ class Conformer(Molecule):
     @property
     def _coords(self):
         return self._parent._coords[self._conf_id]
+
+    @property
+    def _atomic_charges(self):
+        return self._parent._atomic_charges[self._conf_id]
+
+    @property
+    def attrib(self):
+        return self._parent.attrib
 
     @_coords.setter
     def _coords(self, other):
