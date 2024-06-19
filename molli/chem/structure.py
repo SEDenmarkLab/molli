@@ -954,6 +954,24 @@ class Structure(CartesianGeometry, Connectivity):
 
             if a.formal_charge == 0 and a.formal_spin == 0:
                 hs_to_add = a.implicit_valence - int(self.bonded_valence(a))
+            else:
+                # # Fun starts here
+                paired_els = max(
+                    a.valence_electrons
+                    - a.formal_charge
+                    - a.formal_spin
+                    - a.implicit_valence, 0
+                )
+                paired_els = paired_els + paired_els % 2
+                hs_to_add = (
+                    a.valence_electrons
+                    - a.formal_charge
+                    - a.formal_spin
+                    - paired_els
+                    - int(self.bonded_valence(a))
+                )
+
+            diff = hs_to_add
 
             if hs_to_add > 0:
                 neighbors = list(self.connected_atoms(a))
