@@ -450,6 +450,15 @@ IMPLICIT_VALENCE = {
 }
 """This is the expected number of bonds for main group elements"""
 
+VALENCE_ELECTRONS = {
+    13: 3,
+    14: 4,
+    15: 5,
+    16: 6,
+    17: 7,
+    18: 8,
+}
+
 
 class AtomType(IntEnum):
     """The AtomType class is an Enumeration class for assigning atom
@@ -935,6 +944,11 @@ class Atom:
             '#daa520'
         """
         return self.element.color_cpk
+
+    @property
+    def valence_electrons(self) -> int:
+        """Returns the number of valence electrons"""
+        return VALENCE_ELECTRONS[self.element.group]
 
     def set_mol2_type(self, m2t: str):
         if "." in m2t:
