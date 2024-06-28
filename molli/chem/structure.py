@@ -953,28 +953,31 @@ class Structure(CartesianGeometry, Connectivity):
             hs_to_add = 0
 
             if a.formal_charge == 0 and a.formal_spin == 0:
-                hs_to_add = a.implicit_valence - int(self.bonded_valence(a))
+                hs_to_add = a.implicit_valence - ceil(self.bonded_valence(a))
             else:
                 # # Fun starts here
                 paired_els = max(
-                    a.valence_electrons
-                    - a.formal_charge
-                    - a.formal_spin
-                    - a.implicit_valence, 0
+                    a.valence_electrons - a.implicit_valence,
+                    0,
                 )
-                paired_els = paired_els + paired_els % 2
+
                 hs_to_add = (
                     a.valence_electrons
                     - a.formal_charge
                     - a.formal_spin
+                    - ceil(self.bonded_valence(a))
                     - paired_els
-                    - int(self.bonded_valence(a))
                 )
 
             diff = hs_to_add
 
             if hs_to_add > 0:
-                neighbors = list(self.connected_atoms(a))
+
+                neighbors = list(
+                    a
+                    for a in self.connected_atoms(a)
+                    if a.atype != AtomType.CoordinationCenter
+                )
                 a_coord = self.get_atom_coord(a)
                 if len(neighbors) == 3:
                     vec = mean_plane(self.coord_subset(neighbors))
