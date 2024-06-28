@@ -316,6 +316,9 @@ class CDXMLFile:
             case _:
                 btype = BondType(int(_order))
 
+        if bd.get("Display") == "Dash":
+            btype = BondType.Ligand
+
         return Bond(a1, a2, btype=btype)
 
     def _parse_fragment(self, frag: et.Element, name: str = None) -> Structure:
@@ -324,10 +327,18 @@ class CDXMLFile:
         coords = []
         atom_idx = {}
         bond_idx = {}
+        centers = []
+        multiattachments = {}
 
         try:
             # iterate over all nodes
             for node in frag.findall("./n"):
+                # This is to handle the case of multi-attachments
+                # like in the case of Cp-ligands
+                if node.get("NodeType") == "MultiAttachment":
+                    multiattachments[node.get("id")] = node.get("Attachments").split()
+                    continue
+
                 atom = self._parse_atom_node(node)
                 if atom is not None:
                     atoms.append(atom)
@@ -338,9 +349,31 @@ class CDXMLFile:
             result.coords[:, 2] = 0
 
             for bd in frag.findall("./b"):
-                b = self._parse_bond(bd, atom_idx)
-                result.bonds.append(b)
-                bond_idx[bd.get("id")] = b
+                B, E = map(bd.get, "BE")
+                center = None
+
+                if B in multiattachments:
+                    center = E
+                    attached = multiattachments[B]
+                elif E in multiattachments:
+                    center = B
+                    attached = multiattachments[E]
+
+                if center is not None:
+                    f_order = 1 / len(attached) 
+                    centers.append(center)
+                    for t in attached:
+                        result.connect(
+                            atom_idx[center],
+                            atom_idx[t],
+                            btype=BondType.Ligand,
+                            # btype=BondType.Dummy,
+                            f_order=f_order,
+                        )
+                else:
+                    b = self._parse_bond(bd, atom_idx)
+                    result.bonds.append(b)
+                    bond_idx[bd.get("id")] = b
 
             result.coords[:, :2] = coords
 
@@ -356,7 +389,10 @@ class CDXMLFile:
             result.translate(-result.centroid())
 
             for bd in frag.findall("./b[@Display]"):
-                b = bond_idx[bd.get("id")]
+                if (bdid := bd.get("id")) not in bond_idx:
+                    continue
+
+                b = bond_idx[bdid]
                 i1, i2 = result.get_atom_indices(b.a1, b.a2)
 
                 match bd.get("Display"):
@@ -373,6 +409,19 @@ class CDXMLFile:
                         _cdxml_3dify_(result, i1, i2, sign=+2)
                     case _:
                         pass
+
+            # This translates the central atom to the average of z coords
+            for center in centers:
+                a = atom_idx[center]
+                aid = result.index_atom(a)
+                a.atype = AtomType.CoordinationCenter
+                connected = list(result.connected_atoms(a))
+                connected_coords = result.coord_subset(connected)
+                avg_connected_z = (
+                    np.max(connected_coords[:, 2]) - np.min(connected_coords[:, 2])
+                ) / 2
+
+                result.coords[aid, 2] = avg_connected_z
 
             # this handles composite structures
             for subfrag in frag.findall("./n/[fragment]"):
