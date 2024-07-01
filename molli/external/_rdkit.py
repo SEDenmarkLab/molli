@@ -393,6 +393,169 @@ def from_rdmol(rdmol: PropertyMol | Chem.Mol) -> ml.Molecule:
 
     return mol
 
+def rd_visualize(
+    file_path: str,
+    rd_list: list,
+    subImgSize=(250, 250),
+    legendFontSize=30,
+    molsPerRow=5,
+    legend_prop: str = "_Name",
+    highlight_atom_prop:str = None,
+    highlight_bond_prop:str = None,
+) -> None:
+    '''This visualizes a list of RDkit Molecule objects as an SVG. Atoms and Bonds can be highlighted if properties are assigned to the indiivdual Atoms and Bonds
+
+    Parameters
+    ----------
+    file_path : str
+        Path for SVG to be written to
+    rd_list : list
+        List of RDKit Molecule Objects
+    subImgSize : tuple, optional
+        Controls the size of Individual Molecule Images, by default (250, 250)
+    legendFontSize : int, optional
+        Font Size of the Legend, by default 30
+    molsPerRow : int, optional
+        Number of Molecules visualized per row, by default 5
+    legend_prop : str, optional
+        Property of RDKit Molecule used to label molecules on the grid, by default "_Name"
+    highlight_atom_prop : str, optional
+        Property of RDKit Atoms used to identify which atoms should be highlighted, by default None
+    highlight_bond_prop : str, optional
+        Property of RDKit Bonds used to identify which bonds should be highlighted, by default None
+
+    Returns
+    -------
+    None
+
+    '''
+    if len(rd_list) == 0:
+        raise ValueError('List of RDKit Molecules is empty!')
+    else:
+        nRows = len(rd_list) // molsPerRow
+        if len(rd_list) % molsPerRow:
+            nRows += 1
+        fullSize = (molsPerRow * subImgSize[0], nRows * subImgSize[1])
+
+        d2d = rdMolDraw2D.MolDraw2DSVG(
+            fullSize[0], fullSize[1], subImgSize[0], subImgSize[1]
+        )
+        d2d.drawOptions().legendFontSize = legendFontSize
+        highlight_atoms_vals = list()
+        highlight_bonds_vals = list()
+
+        # This finds the atoms that contain the property if applicable
+        # if highlight_atom_prop and highlight_bond_prop:
+        for rdmol in rd_list:
+            if highlight_atom_prop:
+                assert isinstance(highlight_atom_prop, str), f'Atom Property not a string, it is a {type(highlight_atom_prop)}: {highlight_atom_prop}'
+                sub_atoms = [int(a.GetIdx()) for a in rdmol.GetAtoms() if a.HasProp(highlight_atom_prop)]
+                highlight_atoms_vals.append(sub_atoms)
+            if highlight_bond_prop:
+                assert isinstance(highlight_bond_prop, str), f'Bond Property not a string, it is a {type(highlight_bond_prop)}: {highlight_bond_prop}'
+                sub_bonds = [int(b.GetIdx()) for b in rdmol.GetBonds() if b.HasProp(highlight_bond_prop)]
+                highlight_bonds_vals.append(sub_bonds)
+
+        if not highlight_atom_prop and not highlight_bond_prop:
+            highlight_atoms_vals = None
+            highlight_bonds_vals = None
+
+        legends = [i.GetProp(legend_prop) if i.HasProp(legend_prop) else '' for i in rd_list]
+        d2d.DrawMolecules(
+            rd_list,
+            highlightAtoms=highlight_atoms_vals,
+            highlightBonds=highlight_bonds_vals,
+            legends=legends,
+        )
+        d2d.FinishDrawing()
+
+        with open(file_path, "w") as f:
+            f.write(d2d.GetDrawingText())
+
+def ml_rd_visualize(
+    file_path: str,
+    obj: ml.Molecule | ml.MoleculeLibrary | list,
+    via:str='sdf',
+    remove_hs=True,
+    set_atts=True,
+    subImgSize=(250, 250),
+    legendFontSize=30,
+    molsPerRow=5,
+    legend_prop: str = "_Name",
+    highlight_atom_prop:str = None,
+    highlight_bond_prop:str = None,
+) -> None:
+    '''This visualizes a list, Molecule, or MoleculeLibrary via RDKit's SVG viewer and Molli's implementation. 
+    Atoms and Bonds can be highlighted if properties are assigned to the indiivdual Atoms and Bonds of the RDKit object.
+
+    Parameters
+    ----------
+    file_path : str
+        Path for SVG to be written to
+    obj : ml.Molecule | ml.MoleculeLibrary | list
+        Input to convert to RDKit Object
+    via : str, optional
+        Extension format to use, by default 'sdf'
+    remove_hs : bool, optional
+        Removes hydrogens from the representation when creating RDKit mol, by default True
+    set_atts : bool, optional
+        Prototype that attempts to set attributes that exist within a Molli Molecule, inlcuding atoms, bonds, and full molecule, by default False
+    subImgSize : tuple, optional
+        Controls the size of Individual Molecule Images, by default (250, 250)
+    legendFontSize : int, optional
+        Font Size of the Legend, by default 30
+    molsPerRow : int, optional
+        Number of Molecules visualized per row, by default 5
+    legend_prop : str, optional
+        Property of RDKit Molecule used to label molecules on the grid, by default "_Name"
+    highlight_atom_prop : str, optional
+        Property of RDKit Atoms used to identify which atoms should be highlighted, by default None
+    highlight_bond_prop : str, optional
+        Property of RDKit Bonds used to identify which bonds should be highlighted, by default None
+    '''
+    cls = type(obj)
+
+    ml_list = []
+    # print(list)
+    match cls:
+        case ml.Molecule:
+            ml_list.append(obj)
+
+        case ml.MoleculeLibrary:
+            with obj.reading():
+                for k in obj:
+                    ml_list.append(obj[k])
+        case list:
+            ml_list.extend(obj)
+
+    rd_list = []
+
+    for m in ml_list:
+        rdmol = to_rdmol(
+        m=m,
+        via=via,
+        remove_hs=remove_hs,
+        set_atts=set_atts,
+    )
+        rd_list.append(rdmol)
+
+    except_rdlist = []
+    no_except_rd_list = [x if not isinstance(x,tuple) else except_rdlist.append(x) for x in rd_list]
+
+    if len(except_rdlist) != 0:
+        print(f'There were {len(except_rdlist)} that caused exceptions upon processing:\n{except_rdlist}')
+
+    rd_visualize(
+        file_path=file_path,
+        rd_list=no_except_rd_list,
+        subImgSize=subImgSize,
+        legendFontSize=legendFontSize,
+        molsPerRow=molsPerRow,
+        legend_prop=legend_prop,
+        highlight_atom_prop=highlight_atom_prop,
+        highlight_bond_prop=highlight_bond_prop
+    )
+
 def canonicalize_rdmol(rdmol, sanitize=False) -> PropertyMol:
     """
     Returns canonicalized RDKit mol generated from a canonicalized RDKit SMILES string.
