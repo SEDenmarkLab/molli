@@ -373,18 +373,27 @@ def to_rdmol(m:ml.Molecule, via='sdf', remove_hs=True, set_atts=False) -> Proper
     else:
         return (m.name, ValueError(f'Incorrect object type created from RDKitMol: {type(rdmol)} for.'))
 
-def from_rdkit_mol(rdkit_mol):
-    """This function imports an existing RDKit molecule object and converts it to the molli Molecule object"""
+def from_rdmol(rdmol: PropertyMol | Chem.Mol) -> ml.Molecule:
+    '''This function converts an RDKit Mol into a Molli Molecule utilizing Openbabel and MolToMolBlock within RDKit
 
-    sdf = MolToMolBlock(rdkit_mol)
+    Parameters
+    ----------
+    rdmol : PropertyMol | Chem.Mol
+        RDKit Molecule Object
+
+    Returns
+    -------
+    ml.Molecule
+        Molli Molecule Object
+    '''
+
+    sdf = MolToMolBlock(rdmol)
     pbmol = readstring("sdf", sdf)
     mol = from_obmol(pbmol.OBMol)
 
     return mol
 
-
-
-def canonicalize_rdkit_mol(rdkit_mol, sanitize=False) -> PropertyMol:
+def canonicalize_rdmol(rdmol, sanitize=False) -> PropertyMol:
     """
     Returns canonicalized RDKit mol generated from a canonicalized RDKit SMILES string.
 
@@ -395,16 +404,16 @@ def canonicalize_rdkit_mol(rdkit_mol, sanitize=False) -> PropertyMol:
     The Current implementation will only add the "_Name" property
     """
 
-    can_smiles = Chem.MolToSmiles(rdkit_mol, canonical=True)
-    can_rdkit_mol = Chem.MolFromSmiles(can_smiles, sanitize=sanitize)
+    can_smiles = Chem.MolToSmiles(rdmol, canonical=True)
+    can_rdmol = Chem.MolFromSmiles(can_smiles, sanitize=sanitize)
 
-    if rdkit_mol.HasProp("_Name"):
-        can_rdkit_mol.SetProp("_Name", rdkit_mol.GetProp("_Name"))
+    if rdmol.HasProp("_Name"):
+        can_rdmol.SetProp("_Name", rdmol.GetProp("_Name"))
 
-    return can_rdkit_mol
+    return can_rdmol
 
 
-def can_mol_order(rdkit_mol):
+def can_mol_order(rdmol):
     """
     This a function tries to match the indexes of the canonicalized smiles string/molecular graph to a Molli Molecule object.
     Any inputs to this function will AUTOMATICALLY ADD HYDROGENS (make them explicit) to the RDKit mol object. This function returns 3 objects:
@@ -416,34 +425,34 @@ def can_mol_order(rdkit_mol):
     Important Notes:
     - It will only have "_Kekulize_Issue" if the initial object had this property set (i.e. if it ran into an issue in the in initial instantiation)
     - The canonical rdkit mol object will have the "Canonical SMILES with hydrogens" available as the property: "_Canonical_SMILES_w_H"
-    - There may be some properties missing as the PropertyCache is not being updated on the new canonicalized mol object, so consider using rdkit_mol.UpdatePropertyCache() if you want to continue using the mol object
+    - There may be some properties missing as the PropertyCache is not being updated on the new canonicalized mol object, so consider using rdmol.UpdatePropertyCache() if you want to continue using the mol object
     """
 
     # This is here to deal with any smiles strings or mol objects that do not get assigned hydrogens
-    new_rdkit_mol = Chem.AddHs(rdkit_mol)
+    new_rdmol = Chem.AddHs(rdmol)
 
     #### This statement is necessary to generate the mol.GetPropertyName "_smilesAtomOutputOrder" and"_smilesBondOutputOrder"######
-    Chem.MolToSmiles(new_rdkit_mol, canonical=True)
+    Chem.MolToSmiles(new_rdmol, canonical=True)
 
     # The smiles output order is actually a string of the form "[0,1,2,3,...,12,]", so it requires a start at 1 and end at -2!
     can_atom_reorder = list(
-        map(int, new_rdkit_mol.GetProp("_smilesAtomOutputOrder")[1:-2].split(","))
+        map(int, new_rdmol.GetProp("_smilesAtomOutputOrder")[1:-2].split(","))
     )
     canonical_bond_reorder_list = list(
-        map(int, new_rdkit_mol.GetProp("_smilesBondOutputOrder")[1:-2].split(","))
+        map(int, new_rdmol.GetProp("_smilesBondOutputOrder")[1:-2].split(","))
     )
-    can_smiles_w_h = Chem.MolToSmiles(new_rdkit_mol, canonical=True)
+    can_smiles_w_h = Chem.MolToSmiles(new_rdmol, canonical=True)
 
     # # # #Allows maintaining of hydrogens when Mol object is created
     can_mol_w_h = PropertyMol(Chem.MolFromSmiles(can_smiles_w_h, sanitize=False))
     # Certain odd molecules result in some odd calculated properties, so this part is remaining commented out for now
     # can_mol_w_h.UpdatePropertyCache()
-    all_props_original_rdkit_mol = list(rdkit_mol.GetPropNames())
+    all_props_original_rdmol = list(rdmol.GetPropNames())
 
     # Helps new rdkit object maintain original properties of rdkit mol put in
-    for prop in all_props_original_rdkit_mol:
+    for prop in all_props_original_rdmol:
         if not can_mol_w_h.HasProp(prop):
-            can_mol_w_h.SetProp(prop, rdkit_mol.GetProp(prop))
+            can_mol_w_h.SetProp(prop, rdmol.GetProp(prop))
 
     can_mol_w_h.SetProp("_Canonical_SMILES_w_H", f"{can_smiles_w_h}")
 
@@ -452,7 +461,7 @@ def can_mol_order(rdkit_mol):
 
 def reorder_molecule(
     molli_mol: Molecule,
-    can_rdkit_mol_w_h,
+    can_rdmol_w_h,
     can_atom_reorder: list,
     can_bond_reorder: list,
 ):
@@ -475,7 +484,7 @@ def reorder_molecule(
     molli_mol.coords = molli_mol.coords[can_atom_reorder]
 
     # This checks to see if the new rdkit atom order in the canonical smiles matches the new molli order of atoms
-    can_rdkit_atoms = can_rdkit_mol_w_h.GetAtoms()
+    can_rdkit_atoms = can_rdmol_w_h.GetAtoms()
     can_rdkit_atom_elem = np.array([x.GetSymbol() for x in can_rdkit_atoms])
 
     new_molli_elem = np.array([atom.element.symbol for atom in molli_mol.atoms])
@@ -485,7 +494,7 @@ def reorder_molecule(
         equal_check
     ), f"Array of rdkit atoms: {can_rdkit_atom_elem} is not equal to array of molli atoms: {new_molli_elem}"
 
-    return {molli_mol: can_rdkit_mol_w_h}
+    return {molli_mol: can_rdmol_w_h}
 
 
 class rdkit_atom_filter(Chem.Mol):
@@ -500,9 +509,9 @@ class rdkit_atom_filter(Chem.Mol):
     It is recommended that rdkit molecules are canonicalized before utilizing this function.
     """
 
-    def __init__(self, rdkit_mol):
-        self.rdkit_mol = rdkit_mol
-        self.atoms = rdkit_mol.GetAtoms()
+    def __init__(self, rdmol):
+        self.rdmol = rdmol
+        self.atoms = rdmol.GetAtoms()
         self.atoms_array = np.array([x.GetIdx() for x in self.atoms])
 
         if np.all(np.diff(self.atoms_array) >= 0):
@@ -517,7 +526,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         sp2_atoms = chemq.HybridizationEqualsQueryAtom(Chem.HybridizationType.SP2)
         sp2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(sp2_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(sp2_atoms)]
         )
         sp2_bool = np.in1d(self.atoms_array, sp2)
         return sp2_bool
@@ -529,7 +538,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         aromatic_atoms = chemq.IsAromaticQueryAtom()
         aromatic = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(aromatic_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(aromatic_atoms)]
         )
         aromatic_bool = np.in1d(self.atoms_array, aromatic)
         return aromatic_bool
@@ -541,7 +550,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_atoms = chemq.IsInRingQueryAtom()
         ring = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_atoms)]
         )
         ring_bool = np.in1d(self.atoms_array, ring)
         return ring_bool
@@ -553,7 +562,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         carbon_atoms = chemq.AtomNumEqualsQueryAtom(6)
         carbon = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(carbon_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(carbon_atoms)]
         )
         carbon_bool = np.in1d(self.atoms_array, carbon)
         return carbon_bool
@@ -565,7 +574,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         nitrogen_atoms = chemq.AtomNumEqualsQueryAtom(7)
         nitrogen = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(nitrogen_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(nitrogen_atoms)]
         )
         nitrogen_bool = np.in1d(self.atoms_array, nitrogen)
         return nitrogen_bool
@@ -577,7 +586,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         oxygen_atoms = chemq.AtomNumEqualsQueryAtom(8)
         oxygen = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(oxygen_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(oxygen_atoms)]
         )
         oxygen_bool = np.in1d(self.atoms_array, oxygen)
         return oxygen_bool
@@ -589,7 +598,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         num_light_atoms = chemq.AtomNumLessQueryAtom(number)
         num_light_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_light_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(num_light_atoms)]
         )
         num_light_atom_bool = np.in1d(self.atoms_array, num_light_atom)
         return num_light_atom_bool
@@ -601,7 +610,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         num_equals_atoms = chemq.AtomNumEqualsQueryAtom(number)
         num_equal_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_equals_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(num_equals_atoms)]
         )
         num_equal_atom_bool = np.in1d(self.atoms_array, num_equal_atom)
         return num_equal_atom_bool
@@ -613,7 +622,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         num_heavy_atoms = chemq.AtomNumGreaterQueryAtom(number)
         num_heavy_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_heavy_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(num_heavy_atoms)]
         )
         num_heavy_atom_bool = np.in1d(self.atoms_array, num_heavy_atom)
         return num_heavy_atom_bool
@@ -625,7 +634,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         isotope_atoms = chemq.IsotopeEqualsQueryAtom(number)
         isotope_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(isotope_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(isotope_atoms)]
         )
         isotope_atom_bool = np.in1d(self.atoms_array, isotope_atom)
         return isotope_atom_bool
@@ -639,7 +648,7 @@ class rdkit_atom_filter(Chem.Mol):
         charge_less_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_less_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(charge_less_atoms)
             ]
         )
         charge_less_atom_bool = np.in1d(self.atoms_array, charge_less_atom)
@@ -654,7 +663,7 @@ class rdkit_atom_filter(Chem.Mol):
         charge_equals_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_equals_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(charge_equals_atoms)
             ]
         )
         charge_equals_atom_bool = np.in1d(self.atoms_array, charge_equals_atom)
@@ -669,7 +678,7 @@ class rdkit_atom_filter(Chem.Mol):
         charge_greater_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_greater_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(charge_greater_atoms)
             ]
         )
         charge_greater_atom_bool = np.in1d(self.atoms_array, charge_greater_atom)
@@ -684,7 +693,7 @@ class rdkit_atom_filter(Chem.Mol):
         hcount_less_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_less_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(hcount_less_atoms)
             ]
         )
         hcount_less_atom_bool = np.in1d(self.atoms_array, hcount_less_atom)
@@ -699,7 +708,7 @@ class rdkit_atom_filter(Chem.Mol):
         hcount_equals_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_equals_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(hcount_equals_atoms)
             ]
         )
         hcount_equals_atom_bool = np.in1d(self.atoms_array, hcount_equals_atom)
@@ -714,7 +723,7 @@ class rdkit_atom_filter(Chem.Mol):
         hcount_greater_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_greater_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(hcount_greater_atoms)
             ]
         )
         hcount_greater_atom_bool = np.in1d(self.atoms_array, hcount_greater_atom)
@@ -727,7 +736,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_atoms = chemq.IsInRingQueryAtom()
         ring = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_atoms)]
         )
         ring_bool = np.in1d(self.atoms_array, ring)
         return ring_bool
@@ -739,7 +748,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_6 = chemq.MinRingSizeEqualsQueryAtom(6)
         size6 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_6)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_6)]
         )
         size6_bool = np.in1d(self.atoms_array, size6)
         return size6_bool
@@ -751,7 +760,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_5 = chemq.MinRingSizeEqualsQueryAtom(5)
         size5 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_5)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_5)]
         )
         size5_bool = np.in1d(self.atoms_array, size5)
         return size5_bool
@@ -763,7 +772,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_2 = chemq.InNRingsEqualsQueryAtom(2)
         ring2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_2)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_2)]
         )
         ring2_bool = np.in1d(self.atoms_array, ring2)
         return ring2_bool
@@ -775,7 +784,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_1 = chemq.InNRingsEqualsQueryAtom(1)
         ring1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_1)]
         )
         ring1_bool = np.in1d(self.atoms_array, ring1)
         return ring1_bool
@@ -787,7 +796,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_3 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(3)
         heta3 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_3)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_3)]
         )
         heta3_bool = np.in1d(self.atoms_array, heta3)
         return heta3_bool
@@ -799,7 +808,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_2 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(2)
         heta2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_2)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_2)]
         )
         heta2_bool = np.in1d(self.atoms_array, heta2)
         return heta2_bool
@@ -811,7 +820,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_1 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(1)
         heta1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_1)]
         )
         heta1_bool = np.in1d(self.atoms_array, heta1)
         return heta1_bool
@@ -823,7 +832,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_0 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(0)
         heta0 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_0)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_0)]
         )
         heta0_bool = np.in1d(self.atoms_array, heta0)
         return heta0_bool
@@ -835,7 +844,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_g1 = chemq.NumHeteroatomNeighborsGreaterQueryAtom(0)
         hetag1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_g1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_g1)]
         )
         hetag1_bool = np.in1d(self.atoms_array, hetag1)
         return hetag1_bool
@@ -847,7 +856,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_g0 = chemq.NumHeteroatomNeighborsGreaterQueryAtom(0)
         hetag0 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_g0)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_g0)]
         )
         hetag0_bool = np.in1d(self.atoms_array, hetag0)
         return hetag0_bool
@@ -859,7 +868,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         a_het_a_2 = chemq.NumAliphaticHeteroatomNeighborsEqualsQueryAtom(2)
         aheta2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(a_het_a_2)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(a_het_a_2)]
         )
         aheta2_bool = np.in1d(self.atoms_array, aheta2)
         return aheta2_bool
@@ -871,14 +880,14 @@ class rdkit_atom_filter(Chem.Mol):
         """
         a_het_a_1 = chemq.NumAliphaticHeteroatomNeighborsEqualsQueryAtom(1)
         aheta1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(a_het_a_1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(a_het_a_1)]
         )
         aheta1_bool = np.in1d(self.atoms_array, aheta1)
         return aheta1_bool
 
     def smarts_query(self, smarts: str):
         query = Chem.MolFromSmarts(smarts)
-        substructs = self.rdkit_mol.GetSubstructMatches(query)
+        substructs = self.rdmol.GetSubstructMatches(query)
 
         idx = np.zeros(len(self.atoms), dtype=bool)
         for s in substructs:
