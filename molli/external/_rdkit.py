@@ -33,13 +33,13 @@ import importlib.util
 def is_package_installed(pkg_name):
     return importlib.util.find_spec(pkg_name) is not None
 
-
 if not is_package_installed("rdkit"):
     raise ImportError("RDKit is not installed in this environment")
 
 if not is_package_installed("IPython"):
     raise ImportError("IPython is not installed in this environment")
 
+import molli as ml
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.PropertyMol import PropertyMol
@@ -54,235 +54,661 @@ from openbabel.pybel import readstring
 from rdkit.Chem import MolToMolBlock
 from molli.external.openbabel import from_obmol
 
+def _rd_problems(m:ml.Molecule, rdmol: PropertyMol, ext:str) -> PropertyMol:
+    '''Checks for problems in created RDKit mol object. Adds "KekulizeException" if this problem is detected.
+    This will error if any other error is detected other than "KekulizeException"
 
-def visualize_mols(
-    name: str,
-    rdkit_mol_list: list,
-    molsPerRow=5,
-    prop: str = "_Name",
-    svg=True,
-    png=False,
-):
-    """
-    This visualize any RDKit mols that can be kekulized
-    """
+    Parameters
+    ----------
+    m : ml.Molecule
+        Molli Molecule
+    rdmol : PropertyMol
+        RDKit molecule object
+    ext : str
+        Extension format used
 
-    if svg:
-        _img = Draw.MolsToGridImage(
-            rdkit_mol_list,
-            molsPerRow=molsPerRow,
-            subImgSize=(200, 200),
-            useSVG=True,
-            returnPNG=False,
-            legends=[i.GetProp(prop) for i in rdkit_mol_list],
-            maxMols=1000,
-        )
-        with open(f"{name}.svg", "w") as f:
-            f.write(_img.data)
-    if png:
-        _img = Draw.MolsToGridImage(
-            rdkit_mol_list,
-            molsPerRow=molsPerRow,
-            subImgSize=(200, 200),
-            useSVG=False,
-            returnPNG=True,
-            legends=[i.GetProp(prop) for i in rdkit_mol_list],
-            maxMols=1000,
-        )
-        with open(f"{name}.png", "wb") as f:
-            f.write(_img.data)
+    Returns
+    -------
+    PropertyMol
+        Updated RDKit Mol object if applicable
+    '''
+    try:
+        problems = [x.GetType() for x in Chem.DetectChemistryProblems(rdmol)]
+    except:
+        return (m.name, ValueError(f'A unique argument error that cannot be resolved is preventing instantiation of a valid RDKit Mol with {ext} parsing with {m}.'))
 
+    if len(problems) > 1:
+        return (m.name, RuntimeError(f'There are multiple problems in current RDKit mol for {m}: {problems}'))
+    elif len(problems) == 1:
+        if problems[0] != "KekulizeException":
+            return (m.name, RuntimeError(f'The error for {m} is preventing instantiation of valid RDKit Mol with {ext} parsing: {problems[0]}'))
+        else:
+            rdmol.SetProp(problems[0], "1")
 
-def from_rdkit_mol(rdkit_mol):
-    """This function imports an existing RDKit molecule object and converts it to the molli Molecule object"""
+    return rdmol
 
-    sdf = MolToMolBlock(rdkit_mol)
+def _rd_mol2(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+    '''Loads Molecule into RDKit with RDKit's MolFromMol2Block. Will process potential problems with kekulization.
+
+    Parameters
+    ----------
+    m : ml.Molecule
+        Molli Molecule
+    out : str
+        Mol2Block 
+    remove_hs : bool
+        Will remove hydrogens if specified
+    ext : str
+        Extension format used
+
+    Returns
+    -------
+    PropertyMol
+        New RDKit Mol Object
+    '''
+
+    rdmol = PropertyMol(
+        Chem.MolFromMol2Block(out, removeHs=remove_hs)
+    )
+    if rdmol is None:
+        rdmol = Chem.MolFromMol2Block(out, removeHs=remove_hs, sanitize=False)
+
+    rdmol = _rd_problems(m, rdmol, ext)
+
+    return rdmol
+
+def _rd_xyz(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+    '''Loads Molecule into RDKit with RDKit's MolFromXYZBlock. Will process potential problems with kekulization.
+
+    Parameters
+    ----------
+    m : ml.Molecule
+        Molli Molecule
+    out : str
+        XYZBlock 
+    remove_hs : bool
+        Will remove hydrogens if specified
+    ext : str
+        Extension format used
+
+    Returns
+    -------
+    PropertyMol
+        New RDKit Mol Object
+    '''
+    rdmol = PropertyMol(
+        Chem.MolFromXYZBlock(out)
+    )
+
+    if remove_hs:
+        #Unable to remove hydrogens upon instantiation of RDKit object
+        Chem.RemoveHs(rdmol)
+
+    rdmol = _rd_problems(m, rdmol, ext)
+    return rdmol
+
+def _rd_mol(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+    '''Loads Molecule into RDKit with RDKit's MolFromMolBlock. Will process potential problems with kekulization.
+
+    Parameters
+    ----------
+    m : ml.Molecule
+        Molli Molecule
+    out : str
+        MolBlock 
+    remove_hs : bool
+        Will remove hydrogens if specified
+    ext : str
+        Extension format used
+        
+    Returns
+    -------
+    PropertyMol
+        New RDKit Mol Object
+    '''
+
+    rdmol = PropertyMol(
+        Chem.MolFromMolBlock(out, removeHs=remove_hs)
+    )
+    if rdmol is None:
+        rdmol = Chem.MolFromMolBlock(out, removeHs=remove_hs, sanitize=False)
+
+    rdmol = _rd_problems(m, rdmol, ext)
+    return rdmol
+
+def _rd_pdb(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+    '''Loads Molecule into RDKit with RDKit's MolFromPDBBlock. Will process potential problems with kekulization.
+
+    Parameters
+    ----------
+    m : ml.Molecule
+        Molli Molecule
+    out : str
+        PDBBlock 
+    remove_hs : bool
+        Will remove hydrogens if specified
+    ext : str
+        Extension format used
+        
+    Returns
+    -------
+    PropertyMol
+        New RDKit Mol Object
+    '''
+
+    rdmol = PropertyMol(
+        Chem.MolFromPDBBlock(out, removeHs=remove_hs)
+    )
+    if rdmol is None:
+        rdmol = Chem.MolFromPDBBlock(out, removeHs=remove_hs, sanitize=False)
+
+    rdmol = _rd_problems(m, rdmol, ext)
+    return rdmol
+
+def _rd_smi(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+    '''Loads Molecule into RDKit with RDKit's MolFromSmiles. Will process potential problems with kekulization.
+    Also attempts to maintain coordinates from the original Molli object if hydrogens are maintained and atom
+    lists appear to be the same.
+
+    Parameters
+    ----------
+    m : ml.Molecule
+        Molli Molecule
+    out : str
+        SMILES string
+    remove_hs : bool
+        Will remove hydrogens if specified
+    ext : str
+        Extension format used
+
+    Returns
+    -------
+    PropertyMol
+        New RDKit Mol Object
+    '''
+
+    rdmol = PropertyMol(
+        Chem.MolFromSmiles(out, sanitize=remove_hs)
+    )
+
+    if rdmol is None:
+        rdmol = Chem.MolFromSmiles(out, sanitize=False)
+
+    rdmol = _rd_problems(m, rdmol, ext)
+
+    return rdmol     
+
+def to_rdmol(m:ml.Molecule, via='sdf', remove_hs=True, set_atts=False) -> PropertyMol | tuple:
+    '''This converts an existing Molecule Object to an RDKit Object. This will utilize Molli if the extension is xyz or mol2, 
+    otherwise it will default to attempting to parse with Openbabel. Currentl supported formats are xyz, mol2, pdb, sdf, mol, 
+    and smi. This will also attempt to maintain the coordinates from the original structure when utilizing SMILES. Note, reading in 
+    with SMILES through Openbabel will sometimes scramble the ordering unpredictably. If you'd like the highest likelihood of 
+    maintaining the correct order, make sure you read in with a different parser such as SDF/Mol2. Attributes for atoms and bonds 
+    will be maintained if hydrogens are not removed. Stereochemistry will only be as accurate as to that detected of 
+    RDKit/Openbabel and method used. If the RDKit mol fails to be instantiated, this will return a tuple containing the 
+    molecule name and the associated error.
+
+    Parameters
+    ----------
+    m : ml.Molecule
+        Moleucle object to be converted
+    via : str, optional
+        Extension format to use, by default 'sdf'
+    remove_hs : bool, optional
+        Removes hydrogens from the representation when creating RDKit mol, by default True
+    set_atts : bool, optional
+        Prototype that attempts to set attributes that exist within a Molli Molecule, inlcuding atoms, bonds, and full molecule, by default False
+
+    Returns
+    -------
+    PropertyMol
+        RDKit Mol capable of being serialized
+    '''
+
+    # if not remove_hs:
+    #     obflags= 'h'
+
+    if via in ['xyz', 'mol2']:
+        out = ml.dumps(m, fmt=via)
+    else:
+        out = ml.dumps(m, fmt=via, writer='obabel', obflags='h')
+    # print(out)
+    # print(obflags)
+    # print(m.name)
+    match via:
+        case 'mol2':
+            rdmol = _rd_mol2(m=m,out=out,remove_hs=remove_hs,ext=via)  
+
+        case 'xyz':
+            rdmol = _rd_xyz(m=m,out=out,remove_hs=remove_hs,ext=via)
+
+        case 'mol' | 'sdf':
+            rdmol = _rd_mol(m=m,out=out,remove_hs=remove_hs,ext=via)
+
+        case 'pdb':
+            rdmol = _rd_pdb(m=m,out=out,remove_hs=remove_hs,ext=via)
+
+        case 'smi':
+            rdmol = _rd_smi(m=m,out=out,remove_hs=remove_hs,ext=via)
+
+            #Indicates there was an error in parsing
+            if isinstance(rdmol, tuple):
+                return rdmol
+            elif isinstance(rdmol, PropertyMol):
+                if set_atts:
+                    #Full Molecule
+                    for attrib in m.attrib:
+                        rdmol.SetProp(attrib, str(m.attrib[attrib]))
+
+                if len(rdmol.GetAtoms()) == len(m.atoms):
+                    Chem.SanitizeMol(rdmol)
+                    rd_elem = np.array(
+                        [x.GetSymbol() for x in rdmol.GetAtoms()]
+                    )
+                    ml_elem = np.array(
+                        [atom.element.symbol for atom in m.atoms]
+                    )
+
+                    #Tests if the symbols are maintained
+                    if np.array_equal(rd_elem, ml_elem):
+
+                        from rdkit.Chem import rdDistGeom
+                        from rdkit.Geometry import Point3D
+
+                        rdDistGeom.EmbedMolecule(rdmol)
+                        conf = rdmol.GetConformer()
+                        for i in range(conf.GetNumAtoms()):
+                            x,y,z = m.get_atom_coord(i).astype(float)
+                            ml_3D = Point3D(x,y,z)
+                            conf.SetAtomPosition(i, ml_3D)
+
+                        if set_atts:
+                        #Sets Molli Atom, and Bond Attributes to RDKit Molecule
+                            #Atoms
+                            for i,a in enumerate(rdmol.GetAtoms()):
+                                ml_atom = m.get_atom(i)
+                                for attrib in ml_atom.attrib:
+                                    a.SetProp(attrib, str(ml_atom.attrib[attrib])) 
+                            #Bonds
+                            for i,b in enumerate(rdmol.GetBonds()):
+                                ml_bond = m.get_bond(i)
+                                for attrib in ml_bond.attrib:
+                                    b.SetProp(attrib, str(ml_bond.attrib[attrib]))
+                    else:
+                        print(f'Atom Order not maintained upon OpenBabel conversion with SMILES, Coordinates, Atom, and Bond Attributes not added')
+                        return rdmol
+                else:
+                    print(f'Number of atoms not the same after OpenBabel conversion with SMILES, Coordinates, Atom, and Bond Attributes not added')
+                    return rdmol
+            else:
+                return (m.name, ValueError(f'Incorrect object type created from RDKitMol during SMILES Parsing: {type(rdmol)} for.'))   
+        # case 'fasta'| 'fa'| 'fsa':
+        #     rdmol = PropertyMol(
+        #         Chem.MolFromFASTA(out)
+        #     )
+        # case 'mrv':
+        #     rdmol = PropertyMol(
+        #         Chem.MolFromMrvBlock(out)
+        #     )
+        # case 'png':
+        #     rdmol = PropertyMol(
+        #         Chem.MolFromPNGString(out)
+        #     )
+        #     print('Currently adding Hs not supported when reading from png.')
+        # case 'svg':
+        #     rdmol = PropertyMol(
+        #         Chem.MolFromRDKitSVG(out, removeHs=removeHs)
+        #     )
+        case _:
+            return NotImplementedError(f'{via} not a currently implemented extension in RDKit/Openbabel Conversion')
+    
+    if rdmol is None:
+        return (m.name, RuntimeError(f'Cannot Create an RDKit mol from {m}'))
+    
+    #Indicates problem with parsing (format of tuple = (name, Exception))
+    elif isinstance(rdmol, tuple):
+        return rdmol
+    
+    elif isinstance(rdmol, PropertyMol):
+        rdmol.SetProp("_Name", m.name)
+
+        if set_atts:
+            #Full Molecule
+            for attrib in m.attrib:
+                rdmol.SetProp(attrib, str(m.attrib[attrib]))
+
+            #Sets Molli Molecule, Atom, and Bond Attributes to RDKit Molecule
+            if not remove_hs:
+                #Atoms
+                for i,a in enumerate(rdmol.GetAtoms()):
+                    ml_atom = m.get_atom(i)
+                    for attrib in ml_atom.attrib:
+                        a.SetProp(attrib, str(ml_atom.attrib[attrib])) 
+                #Bonds
+                for i,b in enumerate(rdmol.GetBonds()):
+                    ml_bond = m.get_bond(i)
+                    for attrib in ml_bond.attrib:
+                        b.SetProp(attrib, str(ml_bond.attrib[attrib]))
+            else:
+                print(f'Unable to map original Molli Atom and Bond attributes to RDKit object Atoms/Bonds when hydrogens are removed. RDKit object will still be returned for {m}')
+        return rdmol   
+    else:
+        return (m.name, ValueError(f'Incorrect object type created from RDKitMol: {type(rdmol)} for.'))
+
+def from_rdmol(rdmol: PropertyMol | Chem.Mol) -> ml.Molecule:
+    '''This function converts an RDKit Mol into a Molli Molecule utilizing Openbabel and MolToMolBlock within RDKit
+
+    Parameters
+    ----------
+    rdmol : PropertyMol | Chem.Mol
+        RDKit Molecule Object
+
+    Returns
+    -------
+    ml.Molecule
+        Molli Molecule Object
+    '''
+
+    sdf = MolToMolBlock(rdmol)
     pbmol = readstring("sdf", sdf)
     mol = from_obmol(pbmol.OBMol)
 
     return mol
 
+def rd_visualize(
+    file_path: str,
+    rd_list: list,
+    subImgSize=(250, 250),
+    legendFontSize=30,
+    molsPerRow=5,
+    legend_prop: str = "_Name",
+    highlight_atom_prop:str = None,
+    highlight_bond_prop:str = None,
+) -> None:
+    '''This visualizes a list of RDkit Molecule objects as an SVG. Atoms and Bonds can be highlighted if properties are assigned to the indiivdual Atoms and Bonds
 
-def create_rdkit_mol(
-    molli_mol: Molecule, removeHs=False
-) -> Dict[Molecule, PropertyMol]:
-    """
-    Uses mol2 generated from openbabel's implementation of mol2 generation.
-    """
-    from .openbabel import to_mol2_w_ob
+    Parameters
+    ----------
+    file_path : str
+        Path for SVG to be written to
+    rd_list : list
+        List of RDKit Molecule Objects
+    subImgSize : tuple, optional
+        Controls the size of Individual Molecule Images, by default (250, 250)
+    legendFontSize : int, optional
+        Font Size of the Legend, by default 30
+    molsPerRow : int, optional
+        Number of Molecules visualized per row, by default 5
+    legend_prop : str, optional
+        Property of RDKit Molecule used to label molecules on the grid, by default "_Name"
+    highlight_atom_prop : str, optional
+        Property of RDKit Atoms used to identify which atoms should be highlighted, by default None
+    highlight_bond_prop : str, optional
+        Property of RDKit Bonds used to identify which bonds should be highlighted, by default None
 
-    try:
-        rdkit_mol = PropertyMol(
-            Chem.MolFromMol2Block(to_mol2_w_ob(molli_mol), removeHs=removeHs)
+    Returns
+    -------
+    None
+
+    '''
+    if len(rd_list) == 0:
+        raise ValueError('List of RDKit Molecules is empty!')
+    else:
+        nRows = len(rd_list) // molsPerRow
+        if len(rd_list) % molsPerRow:
+            nRows += 1
+        fullSize = (molsPerRow * subImgSize[0], nRows * subImgSize[1])
+
+        d2d = rdMolDraw2D.MolDraw2DSVG(
+            fullSize[0], fullSize[1], subImgSize[0], subImgSize[1]
         )
-        rdkit_mol.SetProp("_Name", f"{molli_mol.name}")
-    except:
-        rdkit_mol = PropertyMol(
-            Chem.MolFromMol2Block(
-                to_mol2_w_ob(molli_mol), removeHs=removeHs, sanitize=False
-            )
+        d2d.drawOptions().legendFontSize = legendFontSize
+        highlight_atoms_vals = list()
+        highlight_bonds_vals = list()
+
+        # This finds the atoms that contain the property if applicable
+        # if highlight_atom_prop and highlight_bond_prop:
+        for rdmol in rd_list:
+            if highlight_atom_prop:
+                assert isinstance(highlight_atom_prop, str), f'Atom Property not a string, it is a {type(highlight_atom_prop)}: {highlight_atom_prop}'
+                sub_atoms = [int(a.GetIdx()) for a in rdmol.GetAtoms() if a.HasProp(highlight_atom_prop)]
+                highlight_atoms_vals.append(sub_atoms)
+            if highlight_bond_prop:
+                assert isinstance(highlight_bond_prop, str), f'Bond Property not a string, it is a {type(highlight_bond_prop)}: {highlight_bond_prop}'
+                sub_bonds = [int(b.GetIdx()) for b in rdmol.GetBonds() if b.HasProp(highlight_bond_prop)]
+                highlight_bonds_vals.append(sub_bonds)
+
+        if not highlight_atom_prop and not highlight_bond_prop:
+            highlight_atoms_vals = None
+            highlight_bonds_vals = None
+
+        legends = [i.GetProp(legend_prop) if i.HasProp(legend_prop) else '' for i in rd_list]
+        d2d.DrawMolecules(
+            rd_list,
+            highlightAtoms=highlight_atoms_vals,
+            highlightBonds=highlight_bonds_vals,
+            legends=legends,
         )
-        rdkit_mol.SetProp("_Name", f"{molli_mol.name}")
-        rdkit_mol.SetProp("_Kekulize_Issue", "1")
+        d2d.FinishDrawing()
 
-    return {molli_mol: rdkit_mol}
+        with open(file_path, "w") as f:
+            f.write(d2d.GetDrawingText())
 
+def ml_rd_visualize(
+    file_path: str,
+    obj: ml.Molecule | ml.MoleculeLibrary | list,
+    via:str='sdf',
+    remove_hs=True,
+    set_atts=True,
+    subImgSize=(250, 250),
+    legendFontSize=30,
+    molsPerRow=5,
+    legend_prop: str = "_Name",
+    highlight_atom_prop:str = None,
+    highlight_bond_prop:str = None,
+) -> None:
+    '''This visualizes a list, Molecule, or MoleculeLibrary via RDKit's SVG viewer and Molli's implementation. 
+    Atoms and Bonds can be highlighted if properties are assigned to the indiivdual Atoms and Bonds of the RDKit object.
 
-def visualize_molli_mol(
-    name: str, molli_mol_list: list, removeHs=True, molsPerRow=5, svg=True, png=False
-):
-    """
-    This does a basic 2D visualization of the molli_mols
-    """
+    Parameters
+    ----------
+    file_path : str
+        Path for SVG to be written to
+    obj : ml.Molecule | ml.MoleculeLibrary | list
+        Input to convert to RDKit Object
+    via : str, optional
+        Extension format to use, by default 'sdf'
+    remove_hs : bool, optional
+        Removes hydrogens from the representation when creating RDKit mol, by default True
+    set_atts : bool, optional
+        Prototype that attempts to set attributes that exist within a Molli Molecule, inlcuding atoms, bonds, and full molecule, by default False
+    subImgSize : tuple, optional
+        Controls the size of Individual Molecule Images, by default (250, 250)
+    legendFontSize : int, optional
+        Font Size of the Legend, by default 30
+    molsPerRow : int, optional
+        Number of Molecules visualized per row, by default 5
+    legend_prop : str, optional
+        Property of RDKit Molecule used to label molecules on the grid, by default "_Name"
+    highlight_atom_prop : str, optional
+        Property of RDKit Atoms used to identify which atoms should be highlighted, by default None
+    highlight_bond_prop : str, optional
+        Property of RDKit Bonds used to identify which bonds should be highlighted, by default None
+    '''
+    cls = type(obj)
 
-    final_visual = list()
-    no_visual = list()
-    for mlmol in molli_mol_list:
-        _entry = create_rdkit_mol(mlmol, removeHs=removeHs)
-        if _entry[mlmol].HasProp("_Kekulize_Issue"):
-            no_visual.append(_entry[mlmol].GetProp("_Name"))
-            continue
-        else:
-            final_visual.append(_entry[mlmol])
+    ml_list = []
+    # print(list)
+    match cls:
+        case ml.Molecule:
+            ml_list.append(obj)
 
-    if len(final_visual) == 0:
-        print("No molecules successfully kekulized for visualization")
-        return None
+        case ml.MoleculeLibrary:
+            with obj.reading():
+                for k in obj:
+                    ml_list.append(obj[k])
+        case list:
+            ml_list.extend(obj)
 
-    if len(no_visual) != 0:
-        print(f"\nUnable to visualize the following molecules:\n{no_visual}")
+    rd_list = []
 
-    if svg:
-        _img = Draw.MolsToGridImage(
-            final_visual,
-            molsPerRow=molsPerRow,
-            subImgSize=(200, 200),
-            useSVG=True,
-            returnPNG=False,
-            legends=[i.GetProp("_Name") for i in final_visual],
-            maxMols=1000,
-        )
-        with open(f"{name}.svg", "w") as f:
-            f.write(_img.data)
-    if png:
-        _img = Draw.MolsToGridImage(
-            final_visual,
-            molsPerRow=molsPerRow,
-            subImgSize=(200, 200),
-            useSVG=False,
-            returnPNG=True,
-            legends=[i.GetProp("_Name") for i in final_visual],
-            maxMols=1000,
-        )
-        with open(f"{name}.png", "wb") as f:
-            f.write(_img.data)
+    for m in ml_list:
+        rdmol = to_rdmol(
+        m=m,
+        via=via,
+        remove_hs=remove_hs,
+        set_atts=set_atts,
+    )
+        rd_list.append(rdmol)
 
+    except_rdlist = []
+    no_except_rd_list = [x if not isinstance(x,tuple) else except_rdlist.append(x) for x in rd_list]
 
-def canonicalize_rdkit_mol(rdkit_mol, sanitize=False) -> PropertyMol:
-    """
-    Returns canonicalized RDKit mol generated from a canonicalized RDKit SMILES string.
+    if len(except_rdlist) != 0:
+        print(f'There were {len(except_rdlist)} that caused exceptions upon processing:\n{except_rdlist}')
 
-    Can indicate whether hydrogens should be removed from mol object or not.
+    rd_visualize(
+        file_path=file_path,
+        rd_list=no_except_rd_list,
+        subImgSize=subImgSize,
+        legendFontSize=legendFontSize,
+        molsPerRow=molsPerRow,
+        legend_prop=legend_prop,
+        highlight_atom_prop=highlight_atom_prop,
+        highlight_bond_prop=highlight_bond_prop
+    )
 
-    Sanitizing will also remove hydrogens
+def canonicalize_rdmol(rdmol:PropertyMol, remove_hs=False) -> PropertyMol:
+    '''Returns canonicalized RDKit mol generated from a canonicalized RDKit SMILES string. The current implementation will only add the "_Name" property
 
-    The Current implementation will only add the "_Name" property
-    """
+    Parameters
+    ----------
+    rdmol : PropertyMol
+        RDKit Mol to canonicalize
+    remove_hs : bool, optional
+        Removes Hydrogens upon canonicalization, by default False
 
-    can_smiles = Chem.MolToSmiles(rdkit_mol, canonical=True)
-    can_rdkit_mol = Chem.MolFromSmiles(can_smiles, sanitize=sanitize)
+    Returns
+    -------
+    PropertyMol
+        Returned RDKit Molecule
+    '''
 
-    if rdkit_mol.HasProp("_Name"):
-        can_rdkit_mol.SetProp("_Name", rdkit_mol.GetProp("_Name"))
+    can_smiles = Chem.MolToSmiles(rdmol, canonical=True)
+    can_rdmol = Chem.MolFromSmiles(can_smiles, sanitize=remove_hs)
 
-    return can_rdkit_mol
+    Chem.SanitizeMol(can_rdmol)
 
+    if rdmol.HasProp("_Name"):
+        can_rdmol.SetProp("_Name", rdmol.GetProp("_Name"))
 
-def can_mol_order(rdkit_mol):
-    """
-    This a function tries to match the indexes of the canonicalized smiles string/molecular graph to a Molli Molecule object.
-    Any inputs to this function will AUTOMATICALLY ADD HYDROGENS (make them explicit) to the RDKit mol object. This function returns 3 objects:
+    return can_rdmol
 
-    1. Canonical RDKit Mol Object with Hydrogens and all maintained properties from the original rdkit mol
-    2. A List for reordering the Atom Indices after canonicalization
-    3. A list for reordering the Bond Indices after canonicalization
+def can_mol_order(rdmol:PropertyMol) -> tuple[PropertyMol, list[int], list[int]]:
+    '''This a function tries to match the indexes of the canonicalized smiles string/molecular graph to a Molli Molecule object.
+    Any inputs to this function will AUTOMATICALLY ADD HYDROGENS (make them explicit) to the RDKit mol object.
 
     Important Notes:
     - It will only have "_Kekulize_Issue" if the initial object had this property set (i.e. if it ran into an issue in the in initial instantiation)
     - The canonical rdkit mol object will have the "Canonical SMILES with hydrogens" available as the property: "_Canonical_SMILES_w_H"
-    - There may be some properties missing as the PropertyCache is not being updated on the new canonicalized mol object, so consider using rdkit_mol.UpdatePropertyCache() if you want to continue using the mol object
-    """
+    - There may be some properties missing as the PropertyCache is not being updated on the new canonicalized mol object, so consider using rdmol.UpdatePropertyCache() if you want to continue using the mol object
+    
+    Parameters
+    ----------
+    rdmol : PropertyMol
+        RDKit Mol to change canonicalize
+
+    Returns
+    -------
+    tuple[PropertyMol, list[int], list[int]]
+        `1. Canonical RDKit Mol Object with Hydrogens\n`
+        `2. A List for reordering the Atom Indices after canonicalization\n`
+        `3. A list for reordering the Bond Indices after canonicalization\n`
+    '''
 
     # This is here to deal with any smiles strings or mol objects that do not get assigned hydrogens
-    new_rdkit_mol = Chem.AddHs(rdkit_mol)
+    new_rdmol = Chem.AddHs(rdmol)
 
     #### This statement is necessary to generate the mol.GetPropertyName "_smilesAtomOutputOrder" and"_smilesBondOutputOrder"######
-    Chem.MolToSmiles(new_rdkit_mol, canonical=True)
+    Chem.MolToSmiles(new_rdmol, canonical=True)
 
     # The smiles output order is actually a string of the form "[0,1,2,3,...,12,]", so it requires a start at 1 and end at -2!
     can_atom_reorder = list(
-        map(int, new_rdkit_mol.GetProp("_smilesAtomOutputOrder")[1:-2].split(","))
+        map(int, new_rdmol.GetProp("_smilesAtomOutputOrder")[1:-2].split(","))
     )
     canonical_bond_reorder_list = list(
-        map(int, new_rdkit_mol.GetProp("_smilesBondOutputOrder")[1:-2].split(","))
+        map(int, new_rdmol.GetProp("_smilesBondOutputOrder")[1:-2].split(","))
     )
-    can_smiles_w_h = Chem.MolToSmiles(new_rdkit_mol, canonical=True)
+    can_smiles_w_h = Chem.MolToSmiles(new_rdmol, canonical=True)
 
     # # # #Allows maintaining of hydrogens when Mol object is created
     can_mol_w_h = PropertyMol(Chem.MolFromSmiles(can_smiles_w_h, sanitize=False))
     # Certain odd molecules result in some odd calculated properties, so this part is remaining commented out for now
     # can_mol_w_h.UpdatePropertyCache()
-    all_props_original_rdkit_mol = list(rdkit_mol.GetPropNames())
+    all_props_original_rdmol = list(rdmol.GetPropNames())
 
     # Helps new rdkit object maintain original properties of rdkit mol put in
-    for prop in all_props_original_rdkit_mol:
+    for prop in all_props_original_rdmol:
         if not can_mol_w_h.HasProp(prop):
-            can_mol_w_h.SetProp(prop, rdkit_mol.GetProp(prop))
+            can_mol_w_h.SetProp(prop, rdmol.GetProp(prop))
 
     can_mol_w_h.SetProp("_Canonical_SMILES_w_H", f"{can_smiles_w_h}")
 
     return can_mol_w_h, can_atom_reorder, canonical_bond_reorder_list
 
-
 def reorder_molecule(
-    molli_mol: Molecule,
-    can_rdkit_mol_w_h,
+    ml_mol: ml.Molecule,
+    can_rdmol_w_h: PropertyMol,
     can_atom_reorder: list,
     can_bond_reorder: list,
-):
-    """
-    This is a function that utilizes the outputs of new_mol_order to reorder an existing molecule.
-    Currently done in place on the original molli_mol object.
-    """
+) -> dict[ml.Molecule, PropertyMol]:
+    '''This is a function that utilizes the outputs of new_mol_order to reorder an existing molecule.
+    Currently done in place on the original ml_mol object.
+
+    Parameters
+    ----------
+    ml_mol : Molecule
+        Molli Molecule Object to be reordered
+    can_rdmol_w_h : _type_
+        Canonical RDKit Object to be matched with
+    can_atom_reorder : list
+        List of integers associated with the atom reordering
+    can_bond_reorder : list
+        List of integers associated with the bond reordering
+
+    Returns
+    -------
+    dict[ml.Molecule, PropertyMol]
+        Dictionary linking Molli Molecule Object to RDKit Object 
+    '''
 
     # This reorders the atoms of the molecule object
-    molli_atoms_arr = np.array(molli_mol.atoms)
+    molli_atoms_arr = np.array(ml_mol.atoms)
     fixed_atom_order_list = molli_atoms_arr[can_atom_reorder].tolist()
-    molli_mol._atoms = fixed_atom_order_list
+    ml_mol._atoms = fixed_atom_order_list
 
     # This reorders the bonds of the molecule object
-    molli_obj_bonds_arr = np.array(molli_mol.bonds)
+    molli_obj_bonds_arr = np.array(ml_mol.bonds)
     fixed_bond_order_list = molli_obj_bonds_arr[can_bond_reorder].tolist()
-    molli_mol._bonds = fixed_bond_order_list
+    ml_mol._bonds = fixed_bond_order_list
 
     # This fixes the geometry of the molecule object
-    molli_mol.coords = molli_mol.coords[can_atom_reorder]
+    ml_mol.coords = ml_mol.coords[can_atom_reorder]
 
     # This checks to see if the new rdkit atom order in the canonical smiles matches the new molli order of atoms
-    can_rdkit_atoms = can_rdkit_mol_w_h.GetAtoms()
+    can_rdkit_atoms = can_rdmol_w_h.GetAtoms()
     can_rdkit_atom_elem = np.array([x.GetSymbol() for x in can_rdkit_atoms])
 
-    new_molli_elem = np.array([atom.element.symbol for atom in molli_mol.atoms])
+    new_molli_elem = np.array([atom.element.symbol for atom in ml_mol.atoms])
     equal_check = np.array_equal(can_rdkit_atom_elem, new_molli_elem)
 
     assert (
         equal_check
     ), f"Array of rdkit atoms: {can_rdkit_atom_elem} is not equal to array of molli atoms: {new_molli_elem}"
 
-    return {molli_mol: can_rdkit_mol_w_h}
+    return {ml_mol: can_rdmol_w_h}
 
-
-class rdkit_atom_filter(Chem.Mol):
+class atom_filter(PropertyMol):
     """
     These functions are written as numpy arrays to isolate types of atoms very easily with the goal of the structure being:
 
@@ -294,9 +720,9 @@ class rdkit_atom_filter(Chem.Mol):
     It is recommended that rdkit molecules are canonicalized before utilizing this function.
     """
 
-    def __init__(self, rdkit_mol):
-        self.rdkit_mol = rdkit_mol
-        self.atoms = rdkit_mol.GetAtoms()
+    def __init__(self, rdmol):
+        self.rdmol = rdmol
+        self.atoms = rdmol.GetAtoms()
         self.atoms_array = np.array([x.GetIdx() for x in self.atoms])
 
         if np.all(np.diff(self.atoms_array) >= 0):
@@ -311,7 +737,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         sp2_atoms = chemq.HybridizationEqualsQueryAtom(Chem.HybridizationType.SP2)
         sp2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(sp2_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(sp2_atoms)]
         )
         sp2_bool = np.in1d(self.atoms_array, sp2)
         return sp2_bool
@@ -323,7 +749,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         aromatic_atoms = chemq.IsAromaticQueryAtom()
         aromatic = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(aromatic_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(aromatic_atoms)]
         )
         aromatic_bool = np.in1d(self.atoms_array, aromatic)
         return aromatic_bool
@@ -335,7 +761,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_atoms = chemq.IsInRingQueryAtom()
         ring = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_atoms)]
         )
         ring_bool = np.in1d(self.atoms_array, ring)
         return ring_bool
@@ -347,7 +773,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         carbon_atoms = chemq.AtomNumEqualsQueryAtom(6)
         carbon = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(carbon_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(carbon_atoms)]
         )
         carbon_bool = np.in1d(self.atoms_array, carbon)
         return carbon_bool
@@ -359,7 +785,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         nitrogen_atoms = chemq.AtomNumEqualsQueryAtom(7)
         nitrogen = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(nitrogen_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(nitrogen_atoms)]
         )
         nitrogen_bool = np.in1d(self.atoms_array, nitrogen)
         return nitrogen_bool
@@ -371,7 +797,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         oxygen_atoms = chemq.AtomNumEqualsQueryAtom(8)
         oxygen = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(oxygen_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(oxygen_atoms)]
         )
         oxygen_bool = np.in1d(self.atoms_array, oxygen)
         return oxygen_bool
@@ -383,7 +809,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         num_light_atoms = chemq.AtomNumLessQueryAtom(number)
         num_light_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_light_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(num_light_atoms)]
         )
         num_light_atom_bool = np.in1d(self.atoms_array, num_light_atom)
         return num_light_atom_bool
@@ -395,7 +821,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         num_equals_atoms = chemq.AtomNumEqualsQueryAtom(number)
         num_equal_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_equals_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(num_equals_atoms)]
         )
         num_equal_atom_bool = np.in1d(self.atoms_array, num_equal_atom)
         return num_equal_atom_bool
@@ -407,7 +833,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         num_heavy_atoms = chemq.AtomNumGreaterQueryAtom(number)
         num_heavy_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(num_heavy_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(num_heavy_atoms)]
         )
         num_heavy_atom_bool = np.in1d(self.atoms_array, num_heavy_atom)
         return num_heavy_atom_bool
@@ -419,7 +845,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         isotope_atoms = chemq.IsotopeEqualsQueryAtom(number)
         isotope_atom = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(isotope_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(isotope_atoms)]
         )
         isotope_atom_bool = np.in1d(self.atoms_array, isotope_atom)
         return isotope_atom_bool
@@ -433,7 +859,7 @@ class rdkit_atom_filter(Chem.Mol):
         charge_less_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_less_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(charge_less_atoms)
             ]
         )
         charge_less_atom_bool = np.in1d(self.atoms_array, charge_less_atom)
@@ -448,7 +874,7 @@ class rdkit_atom_filter(Chem.Mol):
         charge_equals_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_equals_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(charge_equals_atoms)
             ]
         )
         charge_equals_atom_bool = np.in1d(self.atoms_array, charge_equals_atom)
@@ -463,7 +889,7 @@ class rdkit_atom_filter(Chem.Mol):
         charge_greater_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(charge_greater_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(charge_greater_atoms)
             ]
         )
         charge_greater_atom_bool = np.in1d(self.atoms_array, charge_greater_atom)
@@ -478,7 +904,7 @@ class rdkit_atom_filter(Chem.Mol):
         hcount_less_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_less_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(hcount_less_atoms)
             ]
         )
         hcount_less_atom_bool = np.in1d(self.atoms_array, hcount_less_atom)
@@ -493,7 +919,7 @@ class rdkit_atom_filter(Chem.Mol):
         hcount_equals_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_equals_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(hcount_equals_atoms)
             ]
         )
         hcount_equals_atom_bool = np.in1d(self.atoms_array, hcount_equals_atom)
@@ -508,7 +934,7 @@ class rdkit_atom_filter(Chem.Mol):
         hcount_greater_atom = np.array(
             [
                 x.GetIdx()
-                for x in self.rdkit_mol.GetAtomsMatchingQuery(hcount_greater_atoms)
+                for x in self.rdmol.GetAtomsMatchingQuery(hcount_greater_atoms)
             ]
         )
         hcount_greater_atom_bool = np.in1d(self.atoms_array, hcount_greater_atom)
@@ -521,7 +947,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_atoms = chemq.IsInRingQueryAtom()
         ring = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_atoms)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_atoms)]
         )
         ring_bool = np.in1d(self.atoms_array, ring)
         return ring_bool
@@ -533,7 +959,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_6 = chemq.MinRingSizeEqualsQueryAtom(6)
         size6 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_6)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_6)]
         )
         size6_bool = np.in1d(self.atoms_array, size6)
         return size6_bool
@@ -545,7 +971,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_5 = chemq.MinRingSizeEqualsQueryAtom(5)
         size5 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_5)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_5)]
         )
         size5_bool = np.in1d(self.atoms_array, size5)
         return size5_bool
@@ -557,7 +983,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_2 = chemq.InNRingsEqualsQueryAtom(2)
         ring2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_2)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_2)]
         )
         ring2_bool = np.in1d(self.atoms_array, ring2)
         return ring2_bool
@@ -569,7 +995,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         ring_1 = chemq.InNRingsEqualsQueryAtom(1)
         ring1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(ring_1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(ring_1)]
         )
         ring1_bool = np.in1d(self.atoms_array, ring1)
         return ring1_bool
@@ -581,7 +1007,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_3 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(3)
         heta3 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_3)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_3)]
         )
         heta3_bool = np.in1d(self.atoms_array, heta3)
         return heta3_bool
@@ -593,7 +1019,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_2 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(2)
         heta2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_2)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_2)]
         )
         heta2_bool = np.in1d(self.atoms_array, heta2)
         return heta2_bool
@@ -605,7 +1031,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_1 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(1)
         heta1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_1)]
         )
         heta1_bool = np.in1d(self.atoms_array, heta1)
         return heta1_bool
@@ -617,7 +1043,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_0 = chemq.NumHeteroatomNeighborsEqualsQueryAtom(0)
         heta0 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_0)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_0)]
         )
         heta0_bool = np.in1d(self.atoms_array, heta0)
         return heta0_bool
@@ -629,7 +1055,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_g1 = chemq.NumHeteroatomNeighborsGreaterQueryAtom(0)
         hetag1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_g1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_g1)]
         )
         hetag1_bool = np.in1d(self.atoms_array, hetag1)
         return hetag1_bool
@@ -641,7 +1067,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         het_a_g0 = chemq.NumHeteroatomNeighborsGreaterQueryAtom(0)
         hetag0 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(het_a_g0)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(het_a_g0)]
         )
         hetag0_bool = np.in1d(self.atoms_array, hetag0)
         return hetag0_bool
@@ -653,7 +1079,7 @@ class rdkit_atom_filter(Chem.Mol):
         """
         a_het_a_2 = chemq.NumAliphaticHeteroatomNeighborsEqualsQueryAtom(2)
         aheta2 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(a_het_a_2)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(a_het_a_2)]
         )
         aheta2_bool = np.in1d(self.atoms_array, aheta2)
         return aheta2_bool
@@ -665,14 +1091,14 @@ class rdkit_atom_filter(Chem.Mol):
         """
         a_het_a_1 = chemq.NumAliphaticHeteroatomNeighborsEqualsQueryAtom(1)
         aheta1 = np.array(
-            [x.GetIdx() for x in self.rdkit_mol.GetAtomsMatchingQuery(a_het_a_1)]
+            [x.GetIdx() for x in self.rdmol.GetAtomsMatchingQuery(a_het_a_1)]
         )
         aheta1_bool = np.in1d(self.atoms_array, aheta1)
         return aheta1_bool
 
     def smarts_query(self, smarts: str):
         query = Chem.MolFromSmarts(smarts)
-        substructs = self.rdkit_mol.GetSubstructMatches(query)
+        substructs = self.rdmol.GetSubstructMatches(query)
 
         idx = np.zeros(len(self.atoms), dtype=bool)
         for s in substructs:
