@@ -29,7 +29,7 @@ import unittest as ut
 import numpy as np
 import molli as ml
 import importlib.util
-from molli.external._rdkit import RDKitException, RDKitKekulizationException
+from molli.external.rdkit import RDKitException, RDKitKekulizationException
 
 def is_package_installed(pkg_name):
     return importlib.util.find_spec(pkg_name) is not None
@@ -43,7 +43,7 @@ class RDKitTC(ut.TestCase):
     @ut.skipUnless(is_package_installed("openbabel"), "Openbabel is not installed")
     def test_to_rdmol_zincdb(self):
         from rdkit.Chem.PropertyMol import PropertyMol
-        from molli.external import _rdkit as mrd
+        from molli.external import rdkit as mrd
 
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
@@ -61,7 +61,7 @@ class RDKitTC(ut.TestCase):
     @ut.skipUnless(is_package_installed("openbabel"), "Openbabel is not installed")
     def test_to_rdmol(self):
         from rdkit.Chem.PropertyMol import PropertyMol
-        from molli.external import _rdkit as mrd
+        from molli.external import rdkit as mrd
 
         mlmol = ml.Molecule.load_mol2(ml.files.dendrobine_mol2, name="dendrobine")
 
@@ -137,7 +137,7 @@ class RDKitTC(ut.TestCase):
     @ut.skipUnless(is_package_installed("openbabel"), "Openbabel is not installed")
     def test_ml_mol_reorder(self):
         from rdkit.Chem.PropertyMol import PropertyMol
-        from molli.external import _rdkit as mrd
+        from molli.external import rdkit as mrd
 
         with ml.files.zincdb_fda_mol2.open() as f:
             structs = ml.Structure.yield_from_mol2(f)
@@ -174,7 +174,7 @@ class RDKitTC(ut.TestCase):
     @ut.skipUnless(is_package_installed("IPython"), "IPython is not installed")
     @ut.skipUnless(is_package_installed("openbabel"), "Openbabel is not installed")
     def test_atom_filter(self):
-        from molli.external import _rdkit as mrd
+        from molli.external import rdkit as mrd
 
         m1 = ml.Molecule.load_mol2(ml.files.dendrobine_mol2, name="dendrobine")
 

@@ -19,7 +19,7 @@
 
 
 """
-# `molli.external._rdkit`
+# `molli.external.rdkit`
 This module defines necessary functions (albeit not a complete set) to interface with RDKit.
 """
 
