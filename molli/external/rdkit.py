@@ -53,13 +53,7 @@ from rdkit.Chem.Draw import IPythonConsole
 from openbabel.pybel import readstring
 from rdkit.Chem import MolToMolBlock
 from molli.external.openbabel import from_obmol
-
-class RDKitException(Exception):
-    "Raised when RDKit fails during Molecule Creation"
-    pass
-
-class RDKitKekulizationException(Exception):
-    "Raised when RDKit fails to kekulize during Molecule Creation"
+from molli.external import RDKitException, RDKitKekulizationException
 
 def _rd_problems(m: ml.Molecule, rdmol: PropertyMol, ext:str, raise_kekulize=True) -> PropertyMol:
     '''Checks for problems in created RDKit mol object. Adds "KekulizeException" if this problem is detected.
@@ -95,7 +89,7 @@ def _rd_problems(m: ml.Molecule, rdmol: PropertyMol, ext:str, raise_kekulize=Tru
         
         else:
             if raise_kekulize:
-                raise RDKitException(f'{m.name} is failing to kekulize with {ext} parsing')
+                raise RDKitKekulizationException(f'{m.name} is failing to kekulize with {ext} parsing')
             else:
                 rdmol.SetProp(problems[0], "1")
 

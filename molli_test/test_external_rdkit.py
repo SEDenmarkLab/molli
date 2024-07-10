@@ -29,7 +29,7 @@ import unittest as ut
 import numpy as np
 import molli as ml
 import importlib.util
-from molli.external.rdkit import RDKitException, RDKitKekulizationException
+from molli.external import RDKitException, RDKitKekulizationException
 
 def is_package_installed(pkg_name):
     return importlib.util.find_spec(pkg_name) is not None
