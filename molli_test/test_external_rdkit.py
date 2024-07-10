@@ -29,7 +29,7 @@ import unittest as ut
 import numpy as np
 import molli as ml
 import importlib.util
-
+from molli.external._rdkit import RDKitException, RDKitKekulizationException
 
 def is_package_installed(pkg_name):
     return importlib.util.find_spec(pkg_name) is not None
@@ -49,9 +49,12 @@ class RDKitTC(ut.TestCase):
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 ml_mol = ml.Molecule(s, name=s.name)
-                rdmol = mrd.to_rdmol(ml_mol,via='sdf', remove_hs=True)
-                #Not every Molecule is expected to work, it should either return a PropertyMol or tuple of (name,Exception)
-                self.assertIsInstance(rdmol, (PropertyMol,tuple))
+                #Not every Molecule is expected to work, it should either return an RDKit Exception
+                try:
+                    rdmol = mrd.to_rdmol(ml_mol,via='sdf', remove_hs=True)
+                    self.assertIsInstance(rdmol, PropertyMol)
+                except Exception as e:
+                    self.assertIsInstance(e, (RDKitException, RDKitKekulizationException))
 
     @ut.skipUnless(is_package_installed("rdkit"), "RDKit is not installed")
     @ut.skipUnless(is_package_installed("IPython"), "IPython is not installed")
@@ -119,9 +122,9 @@ class RDKitTC(ut.TestCase):
         rdmol = mrd.to_rdmol(mlmol,via='smi', remove_hs=False, set_atts=True)
         self.assertIsInstance(rdmol, PropertyMol)
         self.assertTrue(rdmol.HasProp('_MolTest'))
-        #This one does not maintain the order, so it should be False
+        #This molecule maintains the order, so it should be True
         for a in rdmol.GetAtoms():
-            self.assertFalse(a.HasProp('_AtomTest'))
+            self.assertTrue(a.HasProp('_AtomTest'))
         #SMILES Test Remove Hydrogens
         rdmol = mrd.to_rdmol(mlmol,via='smi', remove_hs=True, set_atts=True)
         self.assertIsInstance(rdmol, PropertyMol)
@@ -140,25 +143,32 @@ class RDKitTC(ut.TestCase):
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 ml_mol = ml.Molecule(s, name=s.name)
-                rdmol = mrd.to_rdmol(ml_mol,via='sdf', remove_hs=False)
-                if isinstance(rdmol, PropertyMol):
-                    rd_can_mol, atom_reorder, bond_reorder = mrd.can_mol_order(
-                        rdmol
-                    )
-                    molli_can_rdkit_dict = mrd.reorder_molecule(
-                        ml_mol,
-                        can_rdmol_w_h=rd_can_mol,
-                        can_atom_reorder=atom_reorder,
-                        can_bond_reorder=bond_reorder,
-                    )
-                    for ml_mol, rdkit_mol in molli_can_rdkit_dict.items():
-                        can_rdkit_atom_elem = np.array(
-                            [x.GetSymbol() for x in rdkit_mol.GetAtoms()]
+                #Not every molecule is readable within the ZincDB, this is just testing for molecules that are
+                try:
+                    rdmol = mrd.to_rdmol(ml_mol,via='sdf', remove_hs=False)
+                except:
+                    continue
+                else:
+                    if isinstance(rdmol, PropertyMol):
+                        rd_can_mol, atom_reorder, bond_reorder = mrd.can_mol_order(
+                            rdmol
                         )
-                        new_molli_elem = np.array(
-                            [atom.element.symbol for atom in ml_mol.atoms]
+                        molli_can_rdkit_dict = mrd.reorder_molecule(
+                            ml_mol,
+                            can_rdmol_w_h=rd_can_mol,
+                            can_atom_reorder=atom_reorder,
+                            can_bond_reorder=bond_reorder,
                         )
-                        np.testing.assert_array_equal(can_rdkit_atom_elem, new_molli_elem)
+                        for ml_mol, rdkit_mol in molli_can_rdkit_dict.items():
+                            can_rdkit_atom_elem = np.array(
+                                [x.GetSymbol() for x in rdkit_mol.GetAtoms()]
+                            )
+                            new_molli_elem = np.array(
+                                [atom.element.symbol for atom in ml_mol.atoms]
+                            )
+                            np.testing.assert_array_equal(can_rdkit_atom_elem, new_molli_elem)
+                
+
 
     @ut.skipUnless(is_package_installed("rdkit"), "RDKit is not installed")
     @ut.skipUnless(is_package_installed("IPython"), "IPython is not installed")

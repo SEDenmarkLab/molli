@@ -54,7 +54,14 @@ from openbabel.pybel import readstring
 from rdkit.Chem import MolToMolBlock
 from molli.external.openbabel import from_obmol
 
-def _rd_problems(m:ml.Molecule, rdmol: PropertyMol, ext:str) -> PropertyMol:
+class RDKitException(Exception):
+    "Raised when RDKit fails during Molecule Creation"
+    pass
+
+class RDKitKekulizationException(Exception):
+    "Raised when RDKit fails to kekulize during Molecule Creation"
+
+def _rd_problems(m: ml.Molecule, rdmol: PropertyMol, ext:str, raise_kekulize=True) -> PropertyMol:
     '''Checks for problems in created RDKit mol object. Adds "KekulizeException" if this problem is detected.
     This will error if any other error is detected other than "KekulizeException"
 
@@ -66,6 +73,8 @@ def _rd_problems(m:ml.Molecule, rdmol: PropertyMol, ext:str) -> PropertyMol:
         RDKit molecule object
     ext : str
         Extension format used
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize
 
     Returns
     -------
@@ -75,19 +84,24 @@ def _rd_problems(m:ml.Molecule, rdmol: PropertyMol, ext:str) -> PropertyMol:
     try:
         problems = [x.GetType() for x in Chem.DetectChemistryProblems(rdmol)]
     except:
-        return (m.name, ValueError(f'A unique argument error that cannot be resolved is preventing instantiation of a valid RDKit Mol with {ext} parsing with {m}.'))
+        raise RDKitException(f'{m.name} had a unique argument error that cannot be resolved preventing instantiation of a valid RDKit Mol with {ext} parsing')
 
     if len(problems) > 1:
-        return (m.name, RuntimeError(f'There are multiple problems in current RDKit mol for {m}: {problems}'))
+        raise RDKitException(f'There are multiple problems in current RDKit Mol for {m.name}: {problems}')
+
     elif len(problems) == 1:
         if problems[0] != "KekulizeException":
-            return (m.name, RuntimeError(f'The error for {m} is preventing instantiation of valid RDKit Mol with {ext} parsing: {problems[0]}'))
+            raise RDKitException(f'{m.name} cannot create a valid RDKit Mol with {ext} parsing due to the following error: {problems[0]}')
+        
         else:
-            rdmol.SetProp(problems[0], "1")
+            if raise_kekulize:
+                raise RDKitException(f'{m.name} is failing to kekulize with {ext} parsing')
+            else:
+                rdmol.SetProp(problems[0], "1")
 
     return rdmol
 
-def _rd_mol2(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+def _rd_mol2(m:ml.Molecule, out:str, remove_hs:bool, ext:str, raise_kekulize=True) -> PropertyMol:
     '''Loads Molecule into RDKit with RDKit's MolFromMol2Block. Will process potential problems with kekulization.
 
     Parameters
@@ -100,6 +114,8 @@ def _rd_mol2(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
         Will remove hydrogens if specified
     ext : str
         Extension format used
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize
 
     Returns
     -------
@@ -113,11 +129,11 @@ def _rd_mol2(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
     if rdmol is None:
         rdmol = Chem.MolFromMol2Block(out, removeHs=remove_hs, sanitize=False)
 
-    rdmol = _rd_problems(m, rdmol, ext)
+    rdmol = _rd_problems(m, rdmol, ext, raise_kekulize)
 
     return rdmol
 
-def _rd_xyz(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+def _rd_xyz(m:ml.Molecule, out:str, remove_hs:bool, ext:str, raise_kekulize=True) -> PropertyMol:
     '''Loads Molecule into RDKit with RDKit's MolFromXYZBlock. Will process potential problems with kekulization.
 
     Parameters
@@ -130,24 +146,25 @@ def _rd_xyz(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
         Will remove hydrogens if specified
     ext : str
         Extension format used
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize
 
     Returns
     -------
     PropertyMol
         New RDKit Mol Object
     '''
+
     rdmol = PropertyMol(
         Chem.MolFromXYZBlock(out)
     )
-
     if remove_hs:
-        #Unable to remove hydrogens upon instantiation of RDKit object
         Chem.RemoveHs(rdmol)
 
-    rdmol = _rd_problems(m, rdmol, ext)
+    rdmol = _rd_problems(m, rdmol, ext, raise_kekulize)
     return rdmol
 
-def _rd_mol(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+def _rd_mol(m:ml.Molecule, out:str, remove_hs:bool, ext:str, raise_kekulize=True) -> PropertyMol:
     '''Loads Molecule into RDKit with RDKit's MolFromMolBlock. Will process potential problems with kekulization.
 
     Parameters
@@ -160,7 +177,9 @@ def _rd_mol(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
         Will remove hydrogens if specified
     ext : str
         Extension format used
-        
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize
+
     Returns
     -------
     PropertyMol
@@ -173,10 +192,10 @@ def _rd_mol(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
     if rdmol is None:
         rdmol = Chem.MolFromMolBlock(out, removeHs=remove_hs, sanitize=False)
 
-    rdmol = _rd_problems(m, rdmol, ext)
+    rdmol = _rd_problems(m, rdmol, ext, raise_kekulize)
     return rdmol
 
-def _rd_pdb(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+def _rd_pdb(m:ml.Molecule, out:str, remove_hs:bool, ext:str, raise_kekulize=True) -> PropertyMol:
     '''Loads Molecule into RDKit with RDKit's MolFromPDBBlock. Will process potential problems with kekulization.
 
     Parameters
@@ -189,7 +208,9 @@ def _rd_pdb(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
         Will remove hydrogens if specified
     ext : str
         Extension format used
-        
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize 
+
     Returns
     -------
     PropertyMol
@@ -202,10 +223,10 @@ def _rd_pdb(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
     if rdmol is None:
         rdmol = Chem.MolFromPDBBlock(out, removeHs=remove_hs, sanitize=False)
 
-    rdmol = _rd_problems(m, rdmol, ext)
+    rdmol = _rd_problems(m, rdmol, ext, raise_kekulize)
     return rdmol
 
-def _rd_smi(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
+def _rd_smi(m:ml.Molecule, out:str, remove_hs:bool, ext:str, raise_kekulize=True) -> PropertyMol:
     '''Loads Molecule into RDKit with RDKit's MolFromSmiles. Will process potential problems with kekulization.
     Also attempts to maintain coordinates from the original Molli object if hydrogens are maintained and atom
     lists appear to be the same.
@@ -220,6 +241,8 @@ def _rd_smi(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
         Will remove hydrogens if specified
     ext : str
         Extension format used
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize 
 
     Returns
     -------
@@ -234,19 +257,42 @@ def _rd_smi(m:ml.Molecule, out:str, remove_hs:bool, ext:str) -> PropertyMol:
     if rdmol is None:
         rdmol = Chem.MolFromSmiles(out, sanitize=False)
 
-    rdmol = _rd_problems(m, rdmol, ext)
+    rdmol = _rd_problems(m, rdmol, ext, raise_kekulize)
 
-    return rdmol     
+    if isinstance(rdmol, PropertyMol):
+        if len(rdmol.GetAtoms()) == len(m.atoms):
+            Chem.SanitizeMol(rdmol)
+            rd_elem = np.array(
+                [x.GetSymbol() for x in rdmol.GetAtoms()]
+            )
+            ml_elem = np.array(
+                [atom.element.symbol for atom in m.atoms]
+            )
+            #Tests if the symbols are maintained
+            if np.array_equal(rd_elem, ml_elem):
 
-def to_rdmol(m:ml.Molecule, via='sdf', remove_hs=True, set_atts=False) -> PropertyMol | tuple:
+                from rdkit.Chem import rdDistGeom
+                from rdkit.Geometry import Point3D
+
+                rdDistGeom.EmbedMolecule(rdmol)
+                conf = rdmol.GetConformer()
+                for i in range(conf.GetNumAtoms()):
+                    x,y,z = m.get_atom_coord(i).astype(float)
+                    ml_3D = Point3D(x,y,z)
+                    conf.SetAtomPosition(i, ml_3D)
+            else:
+                print(f'Atom Order not maintained upon OpenBabel conversion with SMILES, Coordinates not added to {m.name}')
+        else:
+            print(f'Number of atoms not the same after OpenBabel conversion with SMILES, Coordinates not added to {m.name}')
+    else:
+        raise RDKitException(f'Incorrect object type created from RDKit Mol for {m.name} during SMILES Parsing: {type(rdmol)}')
+
+    return rdmol
+
+def to_rdmol(m: ml.Molecule, via='sdf', remove_hs=True, set_atts=False, raise_kekulize=True) -> PropertyMol:
     '''This converts an existing Molecule Object to an RDKit Object. This will utilize Molli if the extension is xyz or mol2, 
-    otherwise it will default to attempting to parse with Openbabel. Currentl supported formats are xyz, mol2, pdb, sdf, mol, 
-    and smi. This will also attempt to maintain the coordinates from the original structure when utilizing SMILES. Note, reading in 
-    with SMILES through Openbabel will sometimes scramble the ordering unpredictably. If you'd like the highest likelihood of 
-    maintaining the correct order, make sure you read in with a different parser such as SDF/Mol2. Attributes for atoms and bonds 
-    will be maintained if hydrogens are not removed. Stereochemistry will only be as accurate as to that detected of 
-    RDKit/Openbabel and method used. If the RDKit mol fails to be instantiated, this will return a tuple containing the 
-    molecule name and the associated error.
+    otherwise it will default to attempting to parse with Openbabel. Currently supported formats are xyz, mol2, pdb, sdf, mol, 
+    and smi. This will also attempt to maintain the coordinates from the original structure when utilizing SMILES.
 
     Parameters
     ----------
@@ -258,6 +304,8 @@ def to_rdmol(m:ml.Molecule, via='sdf', remove_hs=True, set_atts=False) -> Proper
         Removes hydrogens from the representation when creating RDKit mol, by default True
     set_atts : bool, optional
         Prototype that attempts to set attributes that exist within a Molli Molecule, inlcuding atoms, bonds, and full molecule, by default False
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize 
 
     Returns
     -------
@@ -265,83 +313,27 @@ def to_rdmol(m:ml.Molecule, via='sdf', remove_hs=True, set_atts=False) -> Proper
         RDKit Mol capable of being serialized
     '''
 
-    # if not remove_hs:
-    #     obflags= 'h'
-
     if via in ['xyz', 'mol2']:
         out = ml.dumps(m, fmt=via)
     else:
         out = ml.dumps(m, fmt=via, writer='obabel', obflags='h')
-    # print(out)
-    # print(obflags)
-    # print(m.name)
+
     match via:
         case 'mol2':
-            rdmol = _rd_mol2(m=m,out=out,remove_hs=remove_hs,ext=via)  
+            rdmol = _rd_mol2(m=m,out=out,remove_hs=remove_hs,ext=via, raise_kekulize=raise_kekulize)  
 
         case 'xyz':
-            rdmol = _rd_xyz(m=m,out=out,remove_hs=remove_hs,ext=via)
+            rdmol = _rd_xyz(m=m,out=out,remove_hs=remove_hs,ext=via, raise_kekulize=raise_kekulize)
 
         case 'mol' | 'sdf':
-            rdmol = _rd_mol(m=m,out=out,remove_hs=remove_hs,ext=via)
+            rdmol = _rd_mol(m=m,out=out,remove_hs=remove_hs,ext=via, raise_kekulize=raise_kekulize)
 
         case 'pdb':
-            rdmol = _rd_pdb(m=m,out=out,remove_hs=remove_hs,ext=via)
+            rdmol = _rd_pdb(m=m,out=out,remove_hs=remove_hs,ext=via, raise_kekulize=raise_kekulize)
 
         case 'smi':
-            rdmol = _rd_smi(m=m,out=out,remove_hs=remove_hs,ext=via)
+            rdmol = _rd_smi(m=m,out=out,remove_hs=remove_hs,ext=via, raise_kekulize=raise_kekulize)
 
-            #Indicates there was an error in parsing
-            if isinstance(rdmol, tuple):
-                return rdmol
-            elif isinstance(rdmol, PropertyMol):
-                if set_atts:
-                    #Full Molecule
-                    for attrib in m.attrib:
-                        rdmol.SetProp(attrib, str(m.attrib[attrib]))
-
-                if len(rdmol.GetAtoms()) == len(m.atoms):
-                    Chem.SanitizeMol(rdmol)
-                    rd_elem = np.array(
-                        [x.GetSymbol() for x in rdmol.GetAtoms()]
-                    )
-                    ml_elem = np.array(
-                        [atom.element.symbol for atom in m.atoms]
-                    )
-
-                    #Tests if the symbols are maintained
-                    if np.array_equal(rd_elem, ml_elem):
-
-                        from rdkit.Chem import rdDistGeom
-                        from rdkit.Geometry import Point3D
-
-                        rdDistGeom.EmbedMolecule(rdmol)
-                        conf = rdmol.GetConformer()
-                        for i in range(conf.GetNumAtoms()):
-                            x,y,z = m.get_atom_coord(i).astype(float)
-                            ml_3D = Point3D(x,y,z)
-                            conf.SetAtomPosition(i, ml_3D)
-
-                        if set_atts:
-                        #Sets Molli Atom, and Bond Attributes to RDKit Molecule
-                            #Atoms
-                            for i,a in enumerate(rdmol.GetAtoms()):
-                                ml_atom = m.get_atom(i)
-                                for attrib in ml_atom.attrib:
-                                    a.SetProp(attrib, str(ml_atom.attrib[attrib])) 
-                            #Bonds
-                            for i,b in enumerate(rdmol.GetBonds()):
-                                ml_bond = m.get_bond(i)
-                                for attrib in ml_bond.attrib:
-                                    b.SetProp(attrib, str(ml_bond.attrib[attrib]))
-                    else:
-                        print(f'Atom Order not maintained upon OpenBabel conversion with SMILES, Coordinates, Atom, and Bond Attributes not added')
-                        return rdmol
-                else:
-                    print(f'Number of atoms not the same after OpenBabel conversion with SMILES, Coordinates, Atom, and Bond Attributes not added')
-                    return rdmol
-            else:
-                return (m.name, ValueError(f'Incorrect object type created from RDKitMol during SMILES Parsing: {type(rdmol)} for.'))   
         # case 'fasta'| 'fa'| 'fsa':
         #     rdmol = PropertyMol(
         #         Chem.MolFromFASTA(out)
@@ -363,11 +355,7 @@ def to_rdmol(m:ml.Molecule, via='sdf', remove_hs=True, set_atts=False) -> Proper
             return NotImplementedError(f'{via} not a currently implemented extension in RDKit/Openbabel Conversion')
     
     if rdmol is None:
-        return (m.name, RuntimeError(f'Cannot Create an RDKit mol from {m}'))
-    
-    #Indicates problem with parsing (format of tuple = (name, Exception))
-    elif isinstance(rdmol, tuple):
-        return rdmol
+        raise RDKitException(f'Cannot Create an RDKit mol from {m.name} using {via}')
     
     elif isinstance(rdmol, PropertyMol):
         rdmol.SetProp("_Name", m.name)
@@ -393,8 +381,8 @@ def to_rdmol(m:ml.Molecule, via='sdf', remove_hs=True, set_atts=False) -> Proper
                 print(f'Unable to map original Molli Atom and Bond attributes to RDKit object Atoms/Bonds when hydrogens are removed. RDKit object will still be returned for {m}')
         return rdmol   
     else:
-        return (m.name, ValueError(f'Incorrect object type created from RDKitMol: {type(rdmol)} for.'))
-
+        raise RDKitException(f'Incorrect object type created from RDKit Mol for {m.name} during SMILES Parsing: {type(rdmol)}')
+    
 def from_rdmol(rdmol: PropertyMol | Chem.Mol) -> ml.Molecule:
     '''This function converts an RDKit Mol into a Molli Molecule utilizing Openbabel and MolToMolBlock within RDKit
 
@@ -500,6 +488,7 @@ def ml_rd_visualize(
     via:str='sdf',
     remove_hs=True,
     set_atts=True,
+    raise_kekulize=True,
     subImgSize=(250, 250),
     legendFontSize=30,
     molsPerRow=5,
@@ -522,6 +511,8 @@ def ml_rd_visualize(
         Removes hydrogens from the representation when creating RDKit mol, by default True
     set_atts : bool, optional
         Prototype that attempts to set attributes that exist within a Molli Molecule, inlcuding atoms, bonds, and full molecule, by default False
+    raise_kekulize : bool
+        Can be used to prevent instantiation if Molecule fails to kekulize 
     subImgSize : tuple, optional
         Controls the size of Individual Molecule Images, by default (250, 250)
     legendFontSize : int, optional
@@ -551,25 +542,28 @@ def ml_rd_visualize(
             ml_list.extend(obj)
 
     rd_list = []
+    except_rdlist = []
 
     for m in ml_list:
-        rdmol = to_rdmol(
-        m=m,
-        via=via,
-        remove_hs=remove_hs,
-        set_atts=set_atts,
-    )
-        rd_list.append(rdmol)
-
-    except_rdlist = []
-    no_except_rd_list = [x if not isinstance(x,tuple) else except_rdlist.append(x) for x in rd_list]
+        assert isinstance(m, ml.Molecule), f'{m} is not a valid instance of a Molecule!'
+        try:
+            rdmol = to_rdmol(
+            m=m,
+            via=via,
+            remove_hs=remove_hs,
+            set_atts=set_atts,
+            raise_kekulize=raise_kekulize
+            )
+            rd_list.append(rdmol)
+        except Exception as e:
+            except_rdlist.append((m.name, e))
 
     if len(except_rdlist) != 0:
         print(f'There were {len(except_rdlist)} that caused exceptions upon processing:\n{except_rdlist}')
 
     rd_visualize(
         file_path=file_path,
-        rd_list=no_except_rd_list,
+        rd_list=rd_list,
         subImgSize=subImgSize,
         legendFontSize=legendFontSize,
         molsPerRow=molsPerRow,
