@@ -49,7 +49,7 @@ class RDKitTC(ut.TestCase):
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 ml_mol = ml.Molecule(s, name=s.name)
-                #Not every Molecule is expected to work, it should either return an RDKit Exception
+                #Not every Molecule is expected to work, it should either return an RDKit Exception or PropertyMol
                 try:
                     rdmol = mrd.to_rdmol(ml_mol,via='sdf', remove_hs=True)
                     self.assertIsInstance(rdmol, PropertyMol)
@@ -143,7 +143,7 @@ class RDKitTC(ut.TestCase):
             structs = ml.Structure.yield_from_mol2(f)
             for s in structs:
                 ml_mol = ml.Molecule(s, name=s.name)
-                #Not every molecule is readable within the ZincDB, this is just testing for molecules that are
+                #Not every molecule is readable within the ZincDB, this is just testing molecules
                 try:
                     rdmol = mrd.to_rdmol(ml_mol,via='sdf', remove_hs=False)
                 except:
