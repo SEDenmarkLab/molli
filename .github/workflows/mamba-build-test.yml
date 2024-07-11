@@ -25,7 +25,8 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Delete Incorrect Link from Path
-        run: rm /usr/bin/link
+        if: matrix.os == 'windows-latest'
+        uses: rm /usr/bin/link.exe
 
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
