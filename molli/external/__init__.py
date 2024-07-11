@@ -6,5 +6,5 @@ class RDKitException(Exception):
     "Raised when RDKit fails during Molecule Creation"
     pass
 
-class RDKitKekulizationException(Exception):
+class RDKitKekulizationException(RDKitException):
     "Raised when RDKit fails to kekulize during Molecule Creation"
