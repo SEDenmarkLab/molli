@@ -24,38 +24,23 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Adjust PATH for Windows
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          echo "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.40.33807\bin\Hostx64\x64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      - name: Set compiler (Windows only)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          echo "CC=cl.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "CXX=cl.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
+        env:
+          ACTIONS_STEP_DEBUG: true
         with:
-          init-shell: bash
+          init-shell: >-
+            bash
           create-args: >-
             python=3.11
             conda
-
+          environment-name: molli
       - name: Install conda build and upload dependencies
-        shell: bash -l {0}
         run: |
           conda install boa
-          conda install -c conda-forge m2w64-toolchain libpython
-
       - name: Build package
         env:
           ACTIONS_STEP_DEBUG: true
-        shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash -l {0}' }}
         run: |
-          mkdir conda-dist
-          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload
+          mkdir conda-dist;
+          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload;
