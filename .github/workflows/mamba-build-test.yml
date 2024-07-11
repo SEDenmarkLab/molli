@@ -1,17 +1,7 @@
-name: Mamba Build test
-
-on:
-  pull_request:
-  
-
 jobs:
   mamba_build:
     name: ${{ matrix.os }} -> mamba build
     runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        shell: bash -l {0}
 
     strategy:
       matrix:
@@ -22,13 +12,13 @@ jobs:
 
       - name: Set up MSVC (Windows only)
         if: matrix.os == 'windows-latest'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Configure MSVC environment (Windows only)
         if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
 
-     - name: Adjust PATH for Windows
+      - name: Adjust PATH for Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
@@ -44,23 +34,22 @@ jobs:
 
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
-        env:
-          ACTIONS_STEP_DEBUG: true
         with:
-          init-shell: >-
-            bash
+          init-shell: bash
           create-args: >-
             python=3.11
             conda
-          environment-name: molli
 
       - name: Install conda build and upload dependencies
+        shell: bash -l {0}
         run: |
           conda install boa
+          conda install -c conda-forge m2w64-toolchain libpython
 
       - name: Build package
         env:
           ACTIONS_STEP_DEBUG: true
+        shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash -l {0}' }}
         run: |
-          mkdir conda-dist;
-          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload;
+          mkdir conda-dist
+          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload
