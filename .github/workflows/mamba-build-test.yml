@@ -43,6 +43,7 @@ jobs:
       - name: Install conda build and upload dependencies
         run: |
           conda install boa
+          conda install conda-verify
 
       - name: Build package
         env:
