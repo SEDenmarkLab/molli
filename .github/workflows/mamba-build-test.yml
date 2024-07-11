@@ -42,12 +42,12 @@ jobs:
 
       - name: Install conda build and upload dependencies
         run: |
-          conda install boa
-          conda install conda-verify
+          conda install boa;
+          conda install conda-verify;
 
       - name: Build package
         env:
           ACTIONS_STEP_DEBUG: true
         run: |
-          mkdir conda-dist
-          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload
+          mkdir conda-dist;
+          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload;
