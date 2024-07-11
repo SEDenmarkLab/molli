@@ -20,6 +20,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up MSVC (Windows only)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Delete Incorrect Link from Path
+        if: matrix.os == 'windows-latest'
+        run: rm /usr/bin/link.exe
+        
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
         env:
