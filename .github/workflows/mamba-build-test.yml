@@ -20,6 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up MSVC (Windows only)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
         env:
@@ -42,12 +46,3 @@ jobs:
         run: |
           mkdir conda-dist;
           conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload;
-      - name: Build C++ extension
-        run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            cl /c /EHsc my_extension.cpp
-          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-            clang++ -c my_extension.cpp
-          else
-            g++ -c my_extension.cpp
-          fi
