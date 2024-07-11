@@ -1,6 +1,7 @@
 name: Mamba Build test
 
 on:
+  workflow_dispatch:
   pull_request:
 
 jobs:
