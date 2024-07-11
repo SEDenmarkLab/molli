@@ -26,7 +26,7 @@ jobs:
 
       - name: Delete Incorrect Link from Path
         if: matrix.os == 'windows-latest'
-        uses: rm /usr/bin/link.exe
+        run: rm /usr/bin/link.exe
 
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
