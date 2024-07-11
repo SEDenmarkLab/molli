@@ -25,7 +25,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Delete Incorrect Link from Path
-        run: rm /usr/bin/link.exe
+        run: rm /usr/bin/link
 
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
