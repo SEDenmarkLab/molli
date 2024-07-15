@@ -173,13 +173,10 @@ def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
 
     inp = Path(parsed.input)
-    it = parsed.input_type
-
-    if not it:
-        it = inp.suffix
+    input_type = parsed.input_type
 
     out = Path(parsed.output)
-    ot = parsed.output_type
+    output_type = parsed.output_type
 
     # if parsed.output is Ellipsis:
     #     out = inp.with_suffix(".mli")
@@ -200,7 +197,7 @@ def molli_main(args, **kwargs):
     #     with ml.aux.ForeColor("yellow"):
     #         print(f"Enabled skipping malformed files.")
 
-    if parsed.input_type is None:
+    if not input_type:
         # deduce the input type here
         if parsed.input.is_dir():
             input_type = "dir"
@@ -208,9 +205,9 @@ def molli_main(args, **kwargs):
             input_type = parsed.input.suffix[1:]
         print(f"Recognized input type as {input_type!r}")
 
-    if parsed.output_type is None:
+    if not output_type:
         # deduce the input type here
-        if parsed.input.is_dir():
+        if parsed.output.is_dir():
             output_type = "dir"
         else:
             output_type = parsed.output.suffix[1:]
