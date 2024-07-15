@@ -82,11 +82,12 @@ task esp
 
 """
 
+
 class NWChemDriver(DriverBase):
     default_executable = "nwchem"
 
     # the nwchem .esp file contains BOTH optimized coordinates and esp charges
-    @Job(return_files=("esp.esp",)).prep
+    @Job(return_files=("esp.esp", "esp.grid")).prep
     def optimize_atomic_esp_charges_m(
         self,
         M: Molecule,
@@ -94,7 +95,7 @@ class NWChemDriver(DriverBase):
         functional: str = "b3lyp",
         maxiter: int = 100,
         optimize: bool = True,  # optimize geometry before ESP calc?
-        noautoz: bool =False,
+        noautoz: bool = False,
         charge: int = None,
         range: float = 0.2,  # nwchem esp params
         probe: float = 0.1,  # nwchem esp params
@@ -142,22 +143,22 @@ class NWChemDriver(DriverBase):
 
         xyz_block = M.dumps_xyz(write_header=False)
 
-        noautoz = 'noautoz' if noautoz else ''
-        optimize = 'optimize' if optimize else ''
+        noautoz = "noautoz" if noautoz else ""
+        optimize = "optimize" if optimize else ""
 
         _inp = NWCHEM_INPUT_TEMPLATE_1.format(
-            name = M.name,
+            name=M.name,
             memory=self.memory,
             noautoz=noautoz,
             xyz=xyz_block,
             charge=charge or M.charge,
             maxiter=maxiter,
-            basis_input='\n'.join(basis_input),
+            basis_input="\n".join(basis_input),
             functional=functional,
             optimize=optimize,
             range=range,
             probe=probe,
-            spacing=spacing
+            spacing=spacing,
         )
 
         inp = JobInput(
@@ -182,11 +183,18 @@ class NWChemDriver(DriverBase):
         out: JobOutput,
         M: Molecule,
         espminmax: bool = True,
-        optimize: bool = True,# if we want to update our geometry to the optimized coordinates used for esp calculation
+        optimize: bool = True,  # if we want to update our geometry to the optimized coordinates used for esp calculation
         **kwargs,
     ):
 
-        if res := out.files[f"esp.esp"]:
+        if optimize:
+            rtn = Molecule(
+                M, coords=Molecule.loads_xyz(xyz_block).coords
+            )  # create a new molecule with the updated coordinates
+        else:
+            rtn = Molecule(M)  # just copy, don't update coords
+
+        if res := out.files.get(f"esp.esp", None):
             xyz_esp = res.decode()
 
             # split up the lines
@@ -207,19 +215,12 @@ class NWChemDriver(DriverBase):
             assert len(xyz_block_lines) == M.n_atoms + 2  # first two lines aren't atoms
             assert len(esp_charges) == M.n_atoms
 
-            if optimize:
-                rtn = Molecule(
-                    M, coords=Molecule.loads_xyz(xyz_block).coords
-                )  # create a new molecule with the updated coordinates
-            else:
-                rtn = Molecule(M)  # just copy, don't update coords
-
             # assign esp charges as atomic properties
             for i, atom in enumerate(rtn.atoms):
                 atom.attrib["nwchem_esp_charge"] = esp_charges[i]
 
         # ESPMin/Max Calculation
-        if res := out.files[f"esp.grid"]:
+        if res := out.files.get("esp.grid", None):
             grid = res.decode()
 
             gc = np.loadtxt(grid.splitlines(), skiprows=1, usecols=(3)) * 2625.5  # kJ
@@ -229,4 +230,4 @@ class NWChemDriver(DriverBase):
             rtn.attrib["nwchem_espmin"] = np.min(gc)
             rtn.attrib["nwchem_espmax"] = np.max(gc)
 
-        return rtn
+            return rtn
