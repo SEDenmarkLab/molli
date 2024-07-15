@@ -187,13 +187,6 @@ class NWChemDriver(DriverBase):
         **kwargs,
     ):
 
-        if optimize:
-            rtn = Molecule(
-                M, coords=Molecule.loads_xyz(xyz_block).coords
-            )  # create a new molecule with the updated coordinates
-        else:
-            rtn = Molecule(M)  # just copy, don't update coords
-
         if res := out.files.get(f"esp.esp", None):
             xyz_esp = res.decode()
 
@@ -206,6 +199,13 @@ class NWChemDriver(DriverBase):
                 if len(line) > 0
             ]  # ignore empty lines
             xyz_block = "\n".join(xyz_block_lines)
+
+            if optimize:
+                rtn = Molecule(
+                    M, coords=Molecule.loads_xyz(xyz_block).coords
+                )  # create a new molecule with the updated coordinates
+            else:
+                rtn = Molecule(M)  # just copy, don't update coords
 
             # get esp charges
             esp_charges = [line.split(" ")[-1].strip() for line in xyz_esp_lines[2:-1]]
