@@ -1035,6 +1035,7 @@ class Substructure(Structure):
         self._parent = parent
         self._atoms = [parent.get_atom(a) for a in atoms]
         self._bonds = []
+        self.attrib = parent.attrib.copy()
 
         for b in parent.bonds:
             if b.a1 in self.atoms and b.a2 in self.atoms:
