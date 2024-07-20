@@ -407,6 +407,8 @@ class CDXMLFile:
                         _cdxml_3dify_(result, i2, i1, sign=-1)
                     case "Bold":
                         _cdxml_3dify_(result, i1, i2, sign=+2)
+                    case "Hash":
+                        _cdxml_3dify_(result, i1, i2, sign=-2)
                     case _:
                         pass
 
