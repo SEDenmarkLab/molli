@@ -146,12 +146,12 @@ class Bond:
 
     btype: BondType = attrs.field(
         default=BondType.Single,
-        repr=lambda x: x.name,
+        repr=lambda x: x.name if hasattr(x, 'name') else x,
     )
 
     stereo: BondStereo = attrs.field(
         default=BondStereo.Unknown,
-        repr=lambda x: x.name,
+        repr=lambda x: x.name if hasattr(x, 'name') else x,
     )
 
     f_order: float = attrs.field(
