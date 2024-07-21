@@ -30,7 +30,7 @@ from numpy.typing import ArrayLike
 import molli as ml
 import numpy as np
 import molli_xt
-from typing import Callable, Any
+from typing import Callable, Any, Literal
 import deprecated
 
 __all__ = [
@@ -182,14 +182,22 @@ def aso(
     ens: ml.ConformerEnsemble,
     grid: np.ndarray,
     weighted: bool = False,
+    *,
+    dtype: Literal["float32", "float64"] = "float32",
 ) -> np.ndarray:
     """
     Main workhorse function for ASO calculation that takes advantage of C++ backend code whenever possible.
     With large grids can be relatively memory intensive, so breaking up the grid into smaller pieces is recommended
     (see "chunky" calculation strategy)
     """
-    alldist = molli_xt.cdist32f_eu2(ens._coords, grid)
-    vdwr2s = np.array([a.vdw_radius for a in ens.atoms]) ** 2
+    assert dtype in {"float32", "float64"}
+
+    if dtype == "float32":
+        alldist = molli_xt.cdist32f_eu2(ens._coords, grid)
+    else:
+        alldist = molli_xt.cdist32d_eu2(ens._coords, grid)
+
+    vdwr2s = np.array([a.vdw_radius for a in ens.atoms], dtype=dtype) ** 2
     diff = alldist <= vdwr2s[:, None]
 
     return np.average(
