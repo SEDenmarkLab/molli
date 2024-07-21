@@ -25,6 +25,7 @@ ext_modules = [
     Pybind11Extension(
         "molli_xt",
         sources=glob("molli_xt/*.cpp"),
+        extra_compile_args=["-O3"],
     ),
 ]
 
