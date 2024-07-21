@@ -1509,8 +1509,8 @@ class Promolecule:
             >>> promol.del_atom(0)
             Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
         """
-
-        self._atoms.remove(_a)
+        a = self.get_atom(_a)
+        self._atoms.remove(a)
 
     def append_atom(self, a: Atom) -> None:
         """Appends an atom to the Promolecule instance
