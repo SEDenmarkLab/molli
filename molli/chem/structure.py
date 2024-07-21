@@ -142,12 +142,18 @@ class Structure(CartesianGeometry, Connectivity):
                 res.coords[i] = a.xyz
                 res.atoms[i].set_mol2_type(a.mol2_type)
                 res.atoms[i].label = a.label
+                # This is to take care of tripos atom charge block
+                if chrg := a.attrib.pop("charge", None):
+                    res.atoms[i].formal_charge = int(chrg)
+
+                res.atoms[i].attrib = a.attrib
 
             for i, b in enumerate(block.bonds):
                 res.append_bond(
                     bond := Bond(
                         res.atoms[b.a1 - 1],
                         res.atoms[b.a2 - 1],
+                        attrib=b.attrib,
                     )
                 )
                 bond.set_mol2_type(b.mol2_type)
