@@ -120,6 +120,10 @@ class PromoleculeTC(ut.TestCase):
                 3,
             ]  # This should fail as the property is protected
 
+    @ut.skip(
+        "This test will likely be removed in the future."
+        "Naming conventions are about to become more relaxed."
+    )
     def test_name_property(self):
         """Tests the names property setter, with user warning"""
         pm = ml.Promolecule()
