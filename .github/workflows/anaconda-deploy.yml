@@ -1,11 +1,9 @@
-name: publish_conda
+name: Upload Anaconda Package
 
 on:
   release:
     types:
       - published
-      - edited
-      # - created
   
 
 jobs:
