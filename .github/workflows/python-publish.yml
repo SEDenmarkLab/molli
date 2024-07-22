@@ -12,8 +12,8 @@ on:
   release:
     types:
     - published
-    - edited
-    - created
+    # - edited
+    # - created
 
 permissions:
   contents: read
