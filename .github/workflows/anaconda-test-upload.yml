@@ -1,10 +1,9 @@
-name: Upload Anaconda Package
+name: Anaconda Test Upload
 
 on:
-  release:
-    types:
-      - published
-  
+  push:
+    branches:
+      - main
 
 jobs:
   conda_build:
@@ -59,4 +58,4 @@ jobs:
         env:
           ACTIONS_STEP_DEBUG: true
         run: |
-          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --force conda-dist/*/molli-*.tar.bz2; 
+          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --label test --user esalx --force conda-dist/*/molli-*.tar.bz2;
