@@ -142,12 +142,18 @@ class Structure(CartesianGeometry, Connectivity):
                 res.coords[i] = a.xyz
                 res.atoms[i].set_mol2_type(a.mol2_type)
                 res.atoms[i].label = a.label
+                # This is to take care of tripos atom charge block
+                if chrg := a.attrib.pop("charge", None):
+                    res.atoms[i].formal_charge = int(chrg)
+
+                res.atoms[i].attrib = a.attrib
 
             for i, b in enumerate(block.bonds):
                 res.append_bond(
                     bond := Bond(
                         res.atoms[b.a1 - 1],
                         res.atoms[b.a2 - 1],
+                        attrib=b.attrib,
                     )
                 )
                 bond.set_mol2_type(b.mol2_type)
@@ -162,7 +168,7 @@ class Structure(CartesianGeometry, Connectivity):
 
             yield res
 
-    def dump_mol2(self, _stream: StringIO = None) -> None:
+    def dump_mol2(self, stream: StringIO) -> None:
         """Dumps the mol2 block into the output stream
 
         Parameters
@@ -189,9 +195,6 @@ class Structure(CartesianGeometry, Connectivity):
             dendrobine
             ...
         """
-        if _stream is None:
-            stream = StringIO()
-
         if hasattr(self, "name"):
             name = self.name
         else:
@@ -218,9 +221,6 @@ class Structure(CartesianGeometry, Connectivity):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
             btype = b.get_mol2_type()
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {btype:>10}\n")
-
-        if _stream is None:
-            return stream.getvalue()
 
     @classmethod
     def load_mol2(
@@ -454,7 +454,9 @@ class Structure(CartesianGeometry, Connectivity):
         """
         This returns a mol2 file as a string
         """
-        return self.dump_mol2()
+        with StringIO() as stream:
+            self.dumps_mol2(stream)
+            return stream.getvalue()
 
     @classmethod
     def from_dict(self): ...

@@ -93,6 +93,13 @@ class MoleculeTC(ut.TestCase):
 
         self.assertEqual(np.linalg.norm(m1.coords - m2.coords), 0)
 
+    def test_load_mol2_charges(self):
+        mol = ml.load(ml.files.isornitrate_mol2, parser="molli")
+
+        self.assertEqual(mol.atoms[13].formal_charge, 1)
+        self.assertEqual(mol.atoms[17].formal_charge, -1)
+        self.assertEqual(mol.charge, 0)
+
     def test_dump_mol2(self):
         for file in [
             ml.files.pentane_confs_mol2,

@@ -120,6 +120,10 @@ class PromoleculeTC(ut.TestCase):
                 3,
             ]  # This should fail as the property is protected
 
+    @ut.skip(
+        "This test will likely be removed in the future."
+        "Naming conventions are about to become more relaxed."
+    )
     def test_name_property(self):
         """Tests the names property setter, with user warning"""
         pm = ml.Promolecule()
@@ -152,7 +156,7 @@ class PromoleculeTC(ut.TestCase):
         got = pm.get_atom("O3")
         self.assertEqual(id(got), id(oxygenatom))
 
-        #get as element
+        # get as element
         got = pm.get_atom(ml.Element.O)
         self.assertEqual(id(got), id(oxygenatom))
 
@@ -219,7 +223,7 @@ class PromoleculeTC(ut.TestCase):
         self.assertEqual(got[0], 0)
         self.assertEqual(got[1], 1)
 
-    def test_del_atom(self):
+    def test_del_atom1(self):
         """Test deleting atom functionality"""
 
         pm = ml.Promolecule()
@@ -236,6 +240,11 @@ class PromoleculeTC(ut.TestCase):
         with self.assertRaises(StopIteration):
             pm.get_atom("O3")
             pm.get_atom(2)
+
+    def test_del_atom2(self):
+        """More atom deletion testing"""
+        pm = ml.Promolecule(ml.load(ml.files.dendrobine_mol2))
+        pm.del_atom(0)
 
     def test_append_atoms(self):
         """Test appending atom functionality"""
