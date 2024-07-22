@@ -44,16 +44,7 @@ jobs:
             python=3.11
             conda
 
-
           environment-name: molli
-
-        #   #environment-file: environment.yml
-        #   #cache-environment: true
-        #   #generate-run-shell: true
-        #   # condarc: |
-        #   #   channel_priority: flexible
-        #   #   channels:
-        #   #     - conda-forge
       
       - name: Install conda build and upload dependencies
         run: |
@@ -62,14 +53,12 @@ jobs:
       - name: Build conda package
         env:
           ACTIONS_STEP_DEBUG: true
-          LABEL: test
         run: |
           mkdir conda-dist;
-          conda build --output-folder conda-dist --label ${{ env.LABEL }} conda-recipe;
+          conda build --output-folder conda-dist conda-recipe;
       
       - name: Upload conda package
         env:
           ACTIONS_STEP_DEBUG: true
-          LABEL: test
         run: |
-          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --label ${{ env.LABEL }} --force conda-dist/*/molli-*.tar.bz2; 
+          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --force conda-dist/*/molli-*.tar.bz2; 
