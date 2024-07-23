@@ -28,7 +28,7 @@ jobs:
         uses: proudust/gh-describe@v2
           
       - name: Get current git tag
-        run: echo "${{ steps.ghd.outputs.tag }}"
+        run: echo "${{ steps.ghd.outputs.describe }}"
 
   # build_sdist:
   #   name: Build source distribution
