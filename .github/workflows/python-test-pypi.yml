@@ -23,13 +23,13 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
-        # Skip pypy builds (something goes wrong when trying to build)
-        CIBW_SKIP: 'pp3*'
+        # only build for python=3.11
+        CIBW_BUILD: cp311-*
         # Use pretend version for testing purposes
         SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: "0.0.999"
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -80,3 +80,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          # skip-existing: true
