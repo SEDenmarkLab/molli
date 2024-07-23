@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - main
+      - workflow-fix
 
 permissions:
   contents: read
@@ -24,6 +25,8 @@ jobs:
     env:
         # Skip pypy builds (something goes wrong when trying to build)
         CIBW_SKIP: 'pp3*'
+        # Use pretend version for testing purposes
+        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: "0.0.999"
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -42,6 +45,9 @@ jobs:
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
+    env:
+        # Use pretend version for testing purposes
+        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: "0.0.999"
     steps:
       - uses: actions/checkout@v4
 
