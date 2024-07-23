@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  git_describe:
     name: Test some things
     runs-on: ubuntu-latest
     
@@ -28,67 +28,67 @@ jobs:
         uses: proudust/gh-describe@v2
           
       - name: Get current git tag
-        run: echo "${{ steps.ghd.outputs.describe }}"
+        run: echo "Will create a test upload for ${{ steps.ghd.outputs.describe }}"
 
-  # build_sdist:
-  #   name: Build source distribution
-  #   runs-on: ubuntu-latest
-  #   env:
-  #       # Use pretend version for testing purposes
-  #       SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: "0.0.999"
-  #   steps:
-  #     - uses: actions/checkout@v4
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    env:
+        # Use pretend version for testing purposes
+        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: ${{ jobs.git_describe.steps.ghd.outputs.describe }}
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Build sdist
-  #       run: pipx run build --sdist
+      - name: Build sdist
+        run: pipx run build --sdist
 
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: cibw-sdist
-  #         path: dist/*.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
 
-  # build_wheels:
-  #   name: Build wheels on ${{ matrix.os }}
-  #   runs-on: ${{ matrix.os }}
-  #   env:
-  #       # only build for python=3.11
-  #       CIBW_BUILD: cp311-*
-  #       # Use pretend version for testing purposes
-  #       SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: "0.0.999"
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, windows-latest]
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+        # only build for python=3.11
+        CIBW_BUILD: cp311-*
+        # Use pretend version for testing purposes
+        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: ${{ jobs.git_describe.steps.ghd.outputs.describe }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Build wheels
-  #       uses: pypa/cibuildwheel@v2.17.0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.17.0
 
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
-  #         path: ./wheelhouse/*.whl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
 
-  # upload_pypi:
-  #   needs: [build_wheels, build_sdist]
-  #   runs-on: ubuntu-latest
-  #   environment: testpypi
-  #   permissions:
-  #     id-token: write
-  #   # if: github.event_name == 'release' && github.event.action == 'published'
-  #   # or, alternatively, upload to PyPI on every tag starting with 'v' (remove on: release above to use this)
-  #   # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         # unpacks all CIBW artifacts into dist/
-  #         pattern: cibw-*
-  #         path: dist
-  #         merge-multiple: true
+  upload_pypi:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    # if: github.event_name == 'release' && github.event.action == 'published'
+    # or, alternatively, upload to PyPI on every tag starting with 'v' (remove on: release above to use this)
+    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          # unpacks all CIBW artifacts into dist/
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
 
-  #     - name: Upload test packages to the TestPyPI repository
-  #       uses: pypa/gh-action-pypi-publish@release/v1
-  #       with:
-  #         repository-url: https://test.pypi.org/legacy/
-  #         # skip-existing: true
+      - name: Upload test packages to the TestPyPI repository
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # skip-existing: true
