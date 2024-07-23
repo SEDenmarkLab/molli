@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Upload Test Python Packages
 
 on:
   push:
@@ -70,7 +70,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        # with:
-        #   user: __token__
-        #   password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Upload test packages to the TestPyPI repository
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
