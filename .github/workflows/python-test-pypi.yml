@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Get current git tag
         shell: bash
         run: echo $(git describe --tags)
