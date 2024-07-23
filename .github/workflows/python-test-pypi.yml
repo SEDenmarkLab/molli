@@ -19,6 +19,8 @@ permissions:
 
 jobs:
   test:
+    name: Test some things
+    runs-on: ubuntu-latest
     steps:
       - name: Get current git tag
         run: echo git describe --tags
