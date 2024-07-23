@@ -42,6 +42,8 @@ jobs:
         SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MOLLI: ${{ needs.git_describe.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Build sdist
         run: pipx run build --sdist
@@ -59,15 +61,15 @@ jobs:
         # only build for python=3.11 and 64-bit systems
         CIBW_BUILD: cp311-*
         CIBW_SKIP: "*-win32 *-manylinux_i686"
-        # Use pretend version for testing purposes
-        CIBW_ENVIRONMENT: "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MOLLI=${{ needs.git_describe.version }};"
-        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MOLLI: ${{ needs.git_describe.version }}
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
