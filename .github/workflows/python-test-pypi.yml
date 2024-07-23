@@ -28,7 +28,7 @@ jobs:
         uses: proudust/gh-describe@v2
           
       - name: Get current git tag
-        run: echo "Will create a test upload for ${{ needs.ghd.outputs.describe }}"
+        run: echo "Will create a test upload for ${{ steps.ghd.outputs.describe }}"
     
     outputs:
       version: ${{ steps.ghd.outputs.describe }}"
@@ -59,7 +59,7 @@ jobs:
         # only build for python=3.11
         CIBW_BUILD: cp311-*
         # Use pretend version for testing purposes
-        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: ${{ jobs.git_describe.version }}
+        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_molli: ${{ needs.git_describe.version }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
