@@ -129,11 +129,20 @@ def atomic_indicator_field(
     atomic_radii: np.ndarray,
     nearest_atom_idx: np.ndarray = None,
     weighted: bool = False,
+    *,
+    dtype: str = "float32",
 ) -> np.ndarray:
     """
     Main workhorse function for indicator field calculation that takes advantage of C++ backend code whenever possible.
     """
-    alldist2 = molli_xt.cdist32_eu2(ens._coords, grid)
+    if dtype == "float32":
+        # This is a specific case where we will use dedicated float32 definition
+        alldist2 = molli_xt.cdist32f_eu2(ens._coords, grid)
+    else:
+        # In this case, an overloaded definition will be used
+        alldist2 = molli_xt.cdist32_eu2(ens._coords, grid)
+
+    atomic_radii = np.asarray(atomic_radii, dtype=dtype)
 
     if nearest_atom_idx is None:
         nearest_atom_idx = nearest_atom_index(grid, ens, max_dist=np.max(atomic_radii))
@@ -147,7 +156,7 @@ def atomic_indicator_field(
 
     filtered_atom_index[where] = nearest_atom_idx[where]
 
-    field_all = np.zeros_like(filtered_atom_index, dtype=np.float64)
+    field_all = np.zeros_like(filtered_atom_index, dtype=dtype)
 
     for i in range(ens.n_conformers):
         field_all[i, where[i]] = np.take(
@@ -162,6 +171,8 @@ def aeif(
     grid: np.ndarray,
     nearest_atom_idx: np.ndarray = None,
     weighted: bool = False,
+    *,
+    dtype: str = "float32",
 ):
     """`
     Average electronic indicator field
@@ -175,6 +186,7 @@ def aeif(
         vdw_radii,
         nearest_atom_idx=nearest_atom_idx,
         weighted=weighted,
+        dtype=dtype,
     )
 
 
@@ -182,15 +194,24 @@ def aso(
     ens: ml.ConformerEnsemble,
     grid: np.ndarray,
     weighted: bool = False,
+    *,
+    dtype: str = "float32",
 ) -> np.ndarray:
     """
     Main workhorse function for ASO calculation that takes advantage of C++ backend code whenever possible.
     With large grids can be relatively memory intensive, so breaking up the grid into smaller pieces is recommended
     (see "chunky" calculation strategy)
     """
-    alldist = molli_xt.cdist32f_eu2(ens._coords, grid)
-    vdwr2s = np.array([a.vdw_radius for a in ens.atoms]) ** 2
-    diff = alldist <= vdwr2s[:, None]
+    if dtype == "float32":
+        # This is a specific case where we will use dedicated float32 definition
+        alldist2 = molli_xt.cdist32f_eu2(ens._coords, grid)
+    else:
+        # In this case, an overloaded definition will be used
+        alldist2 = molli_xt.cdist32_eu2(ens._coords, grid)
+
+    vdwr2s = np.array([a.vdw_radius for a in ens.atoms], dtype=dtype) ** 2
+
+    diff = alldist2 <= vdwr2s[:, None]
 
     return np.average(
         np.any(diff, axis=1),
