@@ -159,7 +159,7 @@ def _aso_worker(
     for k, ens in ensembles.items():
         aso = np.zeros(grid.shape[0], dtype=dtype)
         where = pruned[k]
-        aso_pruned = ml.descriptor.aso(ens, grid[where], weighted=weighted)
+        aso_pruned = ml.descriptor.aso(ens, grid[where], weighted=weighted, dtype=dtype)
         aso[where] = aso_pruned
         asos[k] = aso
 
@@ -195,7 +195,11 @@ def _aeif_worker(
         aeif = np.zeros(grid.shape[0], dtype=dtype)
         where = pruned[k]
         aeif_pruned = ml.descriptor.aeif(
-            ens, grid[where], nearest_atom_idx=nearest[k], weighted=weighted
+            ens,
+            grid[where],
+            nearest_atom_idx=nearest[k],
+            weighted=weighted,
+            dtype=dtype,
         )
         aeif[where] = aeif_pruned
         aeifs[k] = aeif
