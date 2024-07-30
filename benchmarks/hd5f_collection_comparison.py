@@ -18,12 +18,17 @@ def write_hdf5():
             group.create_dataset(
                 name="coords",
                 data=ensemble.coords,
+                dtype="float32",
             )
 
-            group.create_dataset(name="atomic_charges", data=ensemble.atomic_charges)
-            group.create_dataset(name="weights", data=ensemble.weights)
             group.create_dataset(
-                name="atoms", data=[int(a.element) for a in ensemble.atoms]
+                name="atomic_charges", data=ensemble.atomic_charges, dtype="float32"
+            )
+            group.create_dataset(name="weights", data=ensemble.weights, dtype="float32")
+            group.create_dataset(
+                name="atoms",
+                data=[int(a.element) for a in ensemble.atoms],
+                dtype="int16",
             )
             atom_idxs = {a: i for i, a in enumerate(ensemble.atoms)}
             group.create_dataset(
@@ -32,6 +37,7 @@ def write_hdf5():
                     [atom_idxs[bond.a1], atom_idxs[bond.a2], int(bond.btype)]
                     for bond in ensemble.bonds
                 ],
+                dtype="int16",
             )
 
 
@@ -52,8 +58,8 @@ def read_hdf5():
 
 # Measure writing speed
 write_times = timeit.repeat(write_hdf5, repeat=5, number=1)
-print(f"Writing time: {min(write_times):.6f} seconds")
+print(f"Writing time: min {min(write_times):.6f} seconds of {write_times}")
 
 # Measure reading speed
 read_times = timeit.repeat(read_hdf5, repeat=5, number=1)
-print(f"Reading time: {min(read_times):.6f} seconds")
+print(f"Reading time: min {min(read_times):.6f} seconds of {read_times}")
