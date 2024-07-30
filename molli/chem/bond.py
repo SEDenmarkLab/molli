@@ -477,6 +477,10 @@ class Bond:
 
             case BondType.NotConnected:
                 return MOL2_BOND_TYPE_MAP.inverse[BondType.NotConnected]
+            
+            #Mol2 Format Doesn't Recognize Multi-Attachment Bonds Natively
+            case BondType.Ligand:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Unknown]
 
 
 class Connectivity(Promolecule):
