@@ -1117,9 +1117,6 @@ AtomLike = Atom | int | str | Element
 AtomLike can be an atom, its index, string, or element
 """
 
-RE_MOL_NAME = re.compile(r"[_a-zA-Z0-9]+")
-RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
-
 
 class Promolecule:
     """This is a parent class that only employs methods that work on a *list of
@@ -1273,13 +1270,8 @@ class Promolecule:
     def name(self, value: str):
         if value is None or value is Ellipsis:
             self._name = "unknown"
-
-        elif RE_MOL_NAME.fullmatch(value):
-            self._name = value
         else:
-            sub = RE_MOL_ILLEGAL.sub("_", value)
-            self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {value} --> {sub}")
+            self._name = value
 
     @property
     def atoms(self) -> List[Atom]:
@@ -1509,8 +1501,8 @@ class Promolecule:
             >>> promol.del_atom(0)
             Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
         """
-
-        self._atoms.remove(_a)
+        a = self.get_atom(_a)
+        self._atoms.remove(a)
 
     def append_atom(self, a: Atom) -> None:
         """Appends an atom to the Promolecule instance

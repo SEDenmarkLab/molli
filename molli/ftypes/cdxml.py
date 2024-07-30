@@ -248,6 +248,9 @@ class CDXMLFile:
         # Formal spin
         #   note: molli atomic attribute of spin is the
         spin2 = node.get("Radical")
+
+        # Potentially populate with other things from the cdxml file?
+        attrib = {}
         match spin2:
             case "Doublet":
                 spin2 = 1
@@ -289,6 +292,10 @@ class CDXMLFile:
                 # Or at least make it consistent.
                 # lbl = node.get("Element") or "C"
 
+        # Number of hydrogens
+        if numhs := node.get("NumHydrogens", 0):
+            attrib |= {"__implicit_hydrogens": int(numhs)}
+
         return Atom(
             elt,
             isotope=isot,
@@ -296,6 +303,7 @@ class CDXMLFile:
             atype=atyp,
             formal_charge=charge,
             formal_spin=spin2,
+            attrib=attrib,
         )
 
     def _parse_bond(self, bd: et.Element, atom_idx: dict[str, Atom]) -> Bond:
@@ -360,7 +368,7 @@ class CDXMLFile:
                     attached = multiattachments[E]
 
                 if center is not None:
-                    f_order = 1 / len(attached) 
+                    f_order = 1 / len(attached)
                     centers.append(center)
                     for t in attached:
                         result.connect(
@@ -407,6 +415,8 @@ class CDXMLFile:
                         _cdxml_3dify_(result, i2, i1, sign=-1)
                     case "Bold":
                         _cdxml_3dify_(result, i1, i2, sign=+2)
+                    case "Hash":
+                        _cdxml_3dify_(result, i1, i2, sign=-2)
                     case _:
                         pass
 

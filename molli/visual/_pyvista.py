@@ -13,6 +13,7 @@ def draw_ballnstick(
     s: ml.Structure,
     plt=None,
     quality: int = 16,
+    opacity: float = None,
 ):
     _tobeshown = False
     if plt is None:
@@ -46,6 +47,7 @@ def draw_ballnstick(
             smooth_shading=True,
             diffuse=0.60,
             ambient=0.40,
+            opacity=opacity,
             # silhouette=True,
         )
 
@@ -61,6 +63,7 @@ def draw_ballnstick(
             color="silver",
             diffuse=0.60,
             ambient=0.40,
+            opacity=opacity,
             # silhouette=True,
         )
 

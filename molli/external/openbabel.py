@@ -394,8 +394,6 @@ def optimize_coordination(
     if not obff.Setup(obm, constraints):
         raise RuntimeError
 
-    print(obff.SetConstraints(constraints))
-    print(obff.ConjugateGradients(max_steps, tol))
     obff.GetCoordinates(obm)
 
     optimized = coord_from_obmol(obm)

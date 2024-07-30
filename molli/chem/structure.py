@@ -142,12 +142,18 @@ class Structure(CartesianGeometry, Connectivity):
                 res.coords[i] = a.xyz
                 res.atoms[i].set_mol2_type(a.mol2_type)
                 res.atoms[i].label = a.label
+                # This is to take care of tripos atom charge block
+                if chrg := a.attrib.pop("charge", None):
+                    res.atoms[i].formal_charge = int(chrg)
+
+                res.atoms[i].attrib = a.attrib
 
             for i, b in enumerate(block.bonds):
                 res.append_bond(
                     bond := Bond(
                         res.atoms[b.a1 - 1],
                         res.atoms[b.a2 - 1],
+                        attrib=b.attrib,
                     )
                 )
                 bond.set_mol2_type(b.mol2_type)
@@ -162,7 +168,7 @@ class Structure(CartesianGeometry, Connectivity):
 
             yield res
 
-    def dump_mol2(self, _stream: StringIO = None) -> None:
+    def dump_mol2(self, stream: StringIO) -> None:
         """Dumps the mol2 block into the output stream
 
         Parameters
@@ -189,9 +195,6 @@ class Structure(CartesianGeometry, Connectivity):
             dendrobine
             ...
         """
-        if _stream is None:
-            stream = StringIO()
-
         if hasattr(self, "name"):
             name = self.name
         else:
@@ -218,9 +221,6 @@ class Structure(CartesianGeometry, Connectivity):
             a1, a2 = self.atoms.index(b.a1), self.atoms.index(b.a2)
             btype = b.get_mol2_type()
             stream.write(f"{i+1:>6} {a1+1:>6} {a2+1:>6} {btype:>10}\n")
-
-        if _stream is None:
-            return stream.getvalue()
 
     @classmethod
     def load_mol2(
@@ -454,7 +454,9 @@ class Structure(CartesianGeometry, Connectivity):
         """
         This returns a mol2 file as a string
         """
-        return self.dump_mol2()
+        with StringIO() as stream:
+            self.dumps_mol2(stream)
+            return stream.getvalue()
 
     @classmethod
     def from_dict(self): ...
@@ -950,26 +952,14 @@ class Structure(CartesianGeometry, Connectivity):
             atoms = [a for a in self.atoms if a.element.group in range(13, 17)]
 
         for a in atoms:
-            hs_to_add = 0
-
-            if a.formal_charge == 0 and a.formal_spin == 0:
-                hs_to_add = a.implicit_valence - ceil(self.bonded_valence(a))
+            if (hs_to_add := a.attrib.pop("__implicit_hydrogens", None)) is not None:
+                # This only happens if there was a pre-defined attribute containing the number of implicit hydrogens.
+                # Usually happens because of CDXML parsing algorithm
+                pass
             else:
-                # # Fun starts here
-                paired_els = max(
-                    a.valence_electrons - a.implicit_valence,
-                    0,
-                )
-
-                hs_to_add = (
-                    a.valence_electrons
-                    - a.formal_charge
-                    - a.formal_spin
-                    - ceil(self.bonded_valence(a))
-                    - paired_els
-                )
-
-            diff = hs_to_add
+                electrons = a.valence_electrons - a.formal_charge - abs(a.formal_spin)
+                bonded = ceil(self.bonded_valence(a))
+                hs_to_add = max(4 - abs(4 - electrons) - bonded, 0)
 
             if hs_to_add > 0:
 
@@ -992,13 +982,13 @@ class Structure(CartesianGeometry, Connectivity):
                 vec /= np.linalg.norm(vec)
                 L = a.cov_radius_1 + Element.H.cov_radius_1
 
-                if diff == 1:
+                if hs_to_add == 1:
                     newh = Atom("H")
                     newbond = Bond(a, newh)
                     self.add_atom(newh, a_coord - vec * L)
                     self.append_bond(newbond)
 
-                elif diff == 2:
+                elif hs_to_add == 2:
                     if len(neighbors) == 2:
                         r1, r2 = self.coord_subset(neighbors) - a_coord
                         z = np.cross(
@@ -1016,7 +1006,7 @@ class Structure(CartesianGeometry, Connectivity):
                     self.append_bond(Bond(a, h1))
                     self.append_bond(Bond(a, h2))
 
-                elif diff == 3:
+                elif hs_to_add == 3:
                     R = rotation_matrix_from_vectors(TETRAHEDRON[0], vec)
                     tet_rot = TETRAHEDRON @ R * L + a_coord
 

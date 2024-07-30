@@ -202,7 +202,7 @@ def _aeif_worker(
 
     with lock.write_lock():
         with h5py.File(_output, mode="a") as of:
-            for k, aso in aeifs.items():
+            for k, aeif in aeifs.items():
                 of[k] = aeif
 
 
