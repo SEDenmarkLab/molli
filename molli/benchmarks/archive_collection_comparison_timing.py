@@ -36,18 +36,6 @@ def _zip_col(path, overwrite=False):
     )
 
 
-def _7zip_col(path, overwrite=False):
-    return ml.storage.Collection(
-        path,
-        backend=ml.storage.SevenZipCollectionBackend,
-        value_decoder=lambda x: ml.ConformerEnsemble.loads_mol2(x.decode()),
-        value_encoder=lambda x: ml.ConformerEnsemble.dumps_mol2(x).encode(),
-        ext=".mol2",
-        readonly=False,
-        overwrite=overwrite,
-    )
-
-
 def _tar_col(path, overwrite=False):
     return ml.storage.Collection(
         path,
