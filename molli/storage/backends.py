@@ -311,7 +311,7 @@ class ZipCollectionBackend(CollectionBackendBase):
 
     def _read(self, key: str) -> bytes:
         with self._zipfile.open(key) as f:
-            return f.read()
+            return f.read().decode('Utf-8')
 
     def _truncate(self, key: bytes) -> bytes:
         self._zipfile.remove(key)
