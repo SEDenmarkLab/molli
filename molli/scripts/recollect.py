@@ -99,11 +99,14 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "-l",
     "--library",
-    choices=["molli", "obabel"],
+    choices=["molli", "obabel", "openbabel"],
     action="store",
     type=str.lower,
     default="molli",
-    help="This indicates the type of library, will default to molli for xyz and mol2, all other files will default to openbabel",
+    help="""This indicates the type of library to utilize, defaults to molli, but openbabel can be specified if non xyz/mol2 formats are used.
+    In the event a file format without connectivity is utilized, such as xyz, the molli parser will not create/perceive connectivity, while the 
+    openbabel parser will connect/perceive bond orders.
+    """,
 )
 
 arg_parser.add_argument(
@@ -248,33 +251,38 @@ def molli_main(args, **kwargs):
     legacy = False
     molecule = False
     
-    match input_type, parsed.input_ext:
-        case "mlib", _:
+    match input_type:
+        case "mlib":
             source = ml.MoleculeLibrary(parsed.input, readonly=True)
 
-        case "clib", _:
+        case "clib":
             source = ml.ConformerLibrary(parsed.input, readonly=True)
 
-        case "zip", _:
+        case "zip":
             if not is_zipfile(inp):
                 raise ValueError(f'{inp} is not a valid zipfile!')
             else:
                 with ZipFile(inp, mode='r') as zf:
                     if '__molli__' in zf.NameToInfo:
                         legacy = True
-                    # else:
-                    #     source = ml.storage.Collection[dict](
-                    #         parsed.input,
-                    #         ml.storage.ZipCollectionBackend,
-                    #         ext=f'.{parsed.input_ext}',
-                    #         value_decoder=partial(ml.load, fmt=parsed.input_ext, parser=parsed.library),
-                    #         readonly=True,
-                    #         overwrite=False
-                    #         )
+                        zf.close()
+                    else:
+                        zf.close()
+                        suffixes = {Path(x).suffix for x in zf.namelist()}
+                        assert len(suffixes) == 1, f'There are not uniform file types in this ZipFile: {suffixes}'
+
+                        source = ml.storage.Collection[dict](
+                            parsed.input,
+                            ml.storage.ZipCollectionBackend,
+                            ext=f'.{parsed.input_ext}',
+                            value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype='molecule'),
+                            readonly=True,
+                            overwrite=False
+                            )
                         
 
-    match output_type, parsed.output_ext:
-        case "mlib", _:
+    match output_type:
+        case "mlib":
             destination = ml.MoleculeLibrary(
                 parsed.output,
                 readonly=False,
@@ -283,7 +291,7 @@ def molli_main(args, **kwargs):
             if input_type == "clib":
                 converter = lambda x: ml.Molecule(x[0])
 
-        case "clib", _:
+        case "clib":
             destination = ml.ConformerLibrary(
                 parsed.output,
                 readonly=False,
