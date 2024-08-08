@@ -279,7 +279,15 @@ def molli_main(args, **kwargs):
                             readonly=True,
                             overwrite=False
                             )
-                        
+        case "dir":
+            source = ml.storage.Collection[dict](
+                inp,
+                ml.storage.DirCollectionBackend,
+                ext=f".{parsed.input_ext}",
+                value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype='molecule'),
+                readonly=True,
+                overwrite=False
+            )
 
     match output_type:
         case "mlib":
@@ -299,6 +307,17 @@ def molli_main(args, **kwargs):
             )
             if input_type == "mlib":
                 converter = ml.ConformerEnsemble
+
+        case "dir":
+            destination = ml.storage.Collection[dict](
+                parsed.output,
+                ml.storage.DirCollectionBackend,
+                ext=f".{parsed.output_ext}", 
+                value_encoder=partial(ml.dumps, fmt=parsed.output_ext, writer=parsed.library),
+                readonly=False,
+                overwrite=True
+            )
+
     if not legacy:
         recollect(source, destination, dest_type=converter, progress=True, skip=parsed.skip)
     else:
