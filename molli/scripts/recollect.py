@@ -33,7 +33,12 @@ import numpy as np
 from ..storage import Collection
 from molli.external import openbabel as mob
 from functools import partial
+import warnings
 import sys
+
+class LegacyMolliWarning(UserWarning):
+    "Issued when Legacy Collections may behave unexpectedly during Molecule or ConformerEnsemble recollection"
+    pass
 
 arg_parser = ArgumentParser(
     "molli recollect",
@@ -66,6 +71,16 @@ arg_parser.add_argument(
     type=str,
     default=None,
     help="This option is required if reading from a <zip> or directory to indicate the File Type being searched for (<mol2>, <xyz>, etc.)",
+)
+
+arg_parser.add_argument(
+    "-iconv",
+    "--input_conv",
+    choices=["molecule", "ensemble"],
+    action="store",
+    type=str,
+    default="molecule",
+    help="This option is required if reading from a <zip> or directory to indicate if the files being read should be read in as a Molecule or ConformerEnsemble"
 )
 
 arg_parser.add_argument(
@@ -247,9 +262,8 @@ def molli_main(args, **kwargs):
             output_type = parsed.output.suffix[1:]
         print(f"Recognized output type as {output_type!r}")
 
-    converter = None
+    output_conv = None
     legacy = False
-    molecule = False
     
     match input_type:
         case "mlib":
@@ -275,7 +289,7 @@ def molli_main(args, **kwargs):
                             parsed.input,
                             ml.storage.ZipCollectionBackend,
                             ext=f'.{parsed.input_ext}',
-                            value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype='molecule'),
+                            value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype=parsed.input_conv),
                             readonly=True,
                             overwrite=False
                             )
@@ -284,7 +298,7 @@ def molli_main(args, **kwargs):
                 inp,
                 ml.storage.DirCollectionBackend,
                 ext=f".{parsed.input_ext}",
-                value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype='molecule'),
+                value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype=parsed.input_conv),
                 readonly=True,
                 overwrite=False
             )
@@ -296,8 +310,11 @@ def molli_main(args, **kwargs):
                 readonly=False,
                 overwrite=parsed.overwrite,
             )
-            if input_type == "clib":
-                converter = lambda x: ml.Molecule(x[0])
+            if (input_type == "clib") | (
+                (input_type == 'zip') & (parsed.input_conv == 'ensemble')) | (
+                (input_type == 'dir') & (parsed.input_conv == 'ensemble')):
+
+                output_conv = lambda x: ml.Molecule(x[0])
 
         case "clib":
             destination = ml.ConformerLibrary(
@@ -305,8 +322,10 @@ def molli_main(args, **kwargs):
                 readonly=False,
                 overwrite=parsed.overwrite,
             )
-            if input_type == "mlib":
-                converter = ml.ConformerEnsemble
+            if (input_type == "mlib") | (
+                (input_type == 'zip') & (parsed.input_conv == 'molecule')) | (
+                (input_type == 'dir') & (parsed.input_conv == 'molecule')):
+                output_conv = ml.ConformerEnsemble
 
         case "dir":
             destination = ml.storage.Collection[dict](
@@ -319,11 +338,20 @@ def molli_main(args, **kwargs):
             )
 
     if not legacy:
-        recollect(source, destination, dest_type=converter, progress=True, skip=parsed.skip)
+        recollect(source, destination, dest_type=output_conv, progress=True, skip=parsed.skip)
     else:
+        
 
-        if output_type == 'mlib':
+        if (parsed.input_conv == 'molecule') and (output_conv == ml.ConformerEnsemble):
+            
+            warnings.warn("In the legacy implementation, the input converter specifies molecule, but the output converter writes to a ConformerEnsemble, The conformer ensemble will be written with the single base geometry from the xml file (NOT THE FIRST CONFORMER)\n", LegacyMolliWarning)
+        elif (parsed.input_conv == 'ensemble') and (output_conv == ml.Molecule):
+            warnings.warn("In the legacy implementation, the input converter specifies ensemble, but the output converter writes to a molecule, The Molecule will be written with the first conformer geometry from the xml file (NOT THE BASE GEOMETRY)\n""", LegacyMolliWarning)
+
+        if parsed.input_conv == 'molecule':
             molecule = True
+        else:
+            molecule = False
 
         with ZipFile(inp, mode='r') as source:
-            recollect_legacy(source, destination, charge, mult, molecule=molecule, dest_type=converter, progress=True, skip=parsed.skip)
+            recollect_legacy(source, destination, charge, mult, molecule=molecule, dest_type=output_conv, progress=True, skip=parsed.skip)
