@@ -106,7 +106,7 @@ arg_parser.add_argument(
     "-oext",
     "--output_ext",
     action="store",
-    default="mol2",
+    default=None,
     type=str,
     help="This option is required if reading from a <zip> or directory to indicate the File Type being searched for (<mol2>, <xyz>, etc.)",
 )
