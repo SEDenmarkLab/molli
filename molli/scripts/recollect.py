@@ -168,6 +168,37 @@ def recollect(
             else:
                 destination[k] = res
 
+def recollect_legacy(
+        source: ZipFile, 
+        destination, 
+        charge, 
+        mult, 
+        mlib,
+        dest_type: type = None,
+        progress: bool = False,
+        skip: bool = True,):
+
+    if dest_type is None:
+        dest_type = lambda x: x
+
+    fn = destination._path.name
+    with destination.writing():
+        for xml in (
+            pbar := tqdm(source.namelist(), disable=not progress, desc=f'Writing into {fn}')
+        ):
+            if xml != '__molli__':
+                try:
+                    src = ml.chem.ensemble_from_molli_old_xml(source.open(xml), mol_lib=mlib)
+                    src.charge = charge
+                    src.mult = mult
+                    res = dest_type(src)
+                except Exception as xc:
+                    if skip:
+                        pbar.write(f"Error in {xml}: {xc}")
+                    else:
+                        raise
+                else:
+                    destination[src.name] = res
 
 def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -214,13 +245,33 @@ def molli_main(args, **kwargs):
         print(f"Recognized output type as {output_type!r}")
 
     converter = None
-
+    legacy = False
+    mol_lib = False
+    
     match input_type, parsed.input_ext:
         case "mlib", _:
             source = ml.MoleculeLibrary(parsed.input, readonly=True)
 
         case "clib", _:
             source = ml.ConformerLibrary(parsed.input, readonly=True)
+
+        case "zip", _:
+            if not is_zipfile(inp):
+                raise ValueError(f'{inp} is not a valid zipfile!')
+            else:
+                with ZipFile(inp, mode='r') as zf:
+                    if '__molli__' in zf.NameToInfo:
+                        legacy = True
+                    # else:
+                    #     source = ml.storage.Collection[dict](
+                    #         parsed.input,
+                    #         ml.storage.ZipCollectionBackend,
+                    #         ext=f'.{parsed.input_ext}',
+                    #         value_decoder=partial(ml.load, fmt=parsed.input_ext, parser=parsed.library),
+                    #         readonly=True,
+                    #         overwrite=False
+                    #         )
+                        
 
     match output_type, parsed.output_ext:
         case "mlib", _:
@@ -240,5 +291,12 @@ def molli_main(args, **kwargs):
             )
             if input_type == "mlib":
                 converter = ml.ConformerEnsemble
+    if not legacy:
+        recollect(source, destination, dest_type=converter, progress=True, skip=parsed.skip)
+    else:
 
-    recollect(source, destination, dest_type=converter, progress=True, skip=parsed.skip)
+        if output_type == 'mlib':
+            mol_lib = True
+
+        with ZipFile(inp, mode='r') as source:
+            recollect_legacy(source, destination, charge, mult, mlib=mol_lib, dest_type=converter, progress=True, skip=parsed.skip)
