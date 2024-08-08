@@ -233,12 +233,12 @@ class DirCollectionBackend(CollectionBackendBase):
         return self._path / f"{key}{self.ext}"
 
     def _write(self, key: str, value: bytes):
-        with open(self.get_path(key), "wb") as f:
+        with open(self.get_path(key), "w") as f:
             return f.write(value)
 
     def _read(self, key: bytes) -> bytes:
         with open(self.get_path(key), "rb") as f:
-            return f.read()
+            return f.read().decode('Utf-8')
 
     def _truncate(self):
         for fn in map(self.get_path, self.keys()):
