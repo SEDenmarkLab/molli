@@ -173,7 +173,7 @@ def recollect_legacy(
         destination, 
         charge, 
         mult, 
-        mlib,
+        molecule,
         dest_type: type = None,
         progress: bool = False,
         skip: bool = True,):
@@ -188,7 +188,7 @@ def recollect_legacy(
         ):
             if xml != '__molli__':
                 try:
-                    src = ml.chem.ensemble_from_molli_old_xml(source.open(xml), mol_lib=mlib)
+                    src = ml.chem.ensemble_from_molli_old_xml(source.open(xml), molecule=molecule)
                     src.charge = charge
                     src.mult = mult
                     res = dest_type(src)
@@ -246,7 +246,7 @@ def molli_main(args, **kwargs):
 
     converter = None
     legacy = False
-    mol_lib = False
+    molecule = False
     
     match input_type, parsed.input_ext:
         case "mlib", _:
@@ -296,7 +296,7 @@ def molli_main(args, **kwargs):
     else:
 
         if output_type == 'mlib':
-            mol_lib = True
+            molecule = True
 
         with ZipFile(inp, mode='r') as source:
-            recollect_legacy(source, destination, charge, mult, mlib=mol_lib, dest_type=converter, progress=True, skip=parsed.skip)
+            recollect_legacy(source, destination, charge, mult, molecule=molecule, dest_type=converter, progress=True, skip=parsed.skip)
