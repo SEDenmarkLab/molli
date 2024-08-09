@@ -6,14 +6,12 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Upload Test Python Packages
 
 on:
-  release:
-    types:
-    - published
-    # - edited
-    # - created
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -58,7 +56,7 @@ jobs:
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: testpypi
     permissions:
       id-token: write
     # if: github.event_name == 'release' && github.event.action == 'published'
@@ -72,7 +70,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload test packages to the TestPyPI repository
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/

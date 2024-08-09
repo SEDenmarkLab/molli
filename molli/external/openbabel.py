@@ -60,6 +60,7 @@ def to_obmol(
     *,
     coord_displace: float | bool = False,
     dummy: Element | str = Element.Cl,
+    bond_filter=None,
 ) -> ob.OBMol:
     """
     This function takes a molli Molecule object and generates an openbabel molecule.
@@ -84,7 +85,7 @@ def to_obmol(
         oba.SetVector(x, y, z)
         oba.SetFormalCharge(0)
 
-    for j, b in enumerate(mol.bonds):
+    for j, b in enumerate(filter(bond_filter, mol.bonds)):
         a1_idx = mol.get_atom_index(b.a1)
         a2_idx = mol.get_atom_index(b.a2)
         obb: ob.OBBond = obm.AddBond(a1_idx + 1, a2_idx + 1, int(b.order))
@@ -92,7 +93,7 @@ def to_obmol(
     obm.SetTotalCharge(getattr(mol, "charge", 0))
     obm.SetTotalSpinMultiplicity(getattr(mol, "mult", 1))
     obm.EndModify()
-    obm.PerceiveBondOrders()
+    # obm.PerceiveBondOrders()
 
     obm.SetTitle(getattr(mol, "name", "unnamed"))
 
@@ -348,6 +349,51 @@ def obabel_optimize(
 
     obff.Setup(obm)
     obff.SteepestDescent(max_steps, tol)
+    obff.GetCoordinates(obm)
+
+    optimized = coord_from_obmol(obm)
+
+    if inplace:
+        mol.coords = optimized
+    else:
+        return Molecule(mol, coords=optimized)
+
+
+def optimize_coordination(
+    mol: Molecule,
+    *,
+    ff: str = "UFF",
+    max_steps: int = 1000,
+    coord_displace: float | bool = False,
+    tol: float = 1e-4,
+    dummy: Element | str = Element.Cl,
+    inplace: bool = False,
+) -> Molecule:
+    """
+    This function does everything that normal optimize does, but it adds additional constraints to simulate
+    """
+
+    obm = to_obmol(
+        mol,
+        dummy=dummy,
+        coord_displace=coord_displace,
+        bond_filter=lambda b: b.btype != BondType.Ligand,
+    )
+    obff = ob.OBForceField.FindForceField(ff)
+    for a in filter(lambda x: x.atype == AtomType.CoordinationCenter, mol.atoms):
+        obff.SetIgnoreAtom(a.idx + 1)
+
+    constraints = ob.OBFFConstraints()
+    for b in filter(lambda x: x.btype == BondType.Ligand, mol.bonds):
+        constraints.AddDistanceConstraint(
+            b.a1.idx + 1,
+            b.a2.idx + 1,
+            (b.a1.cov_radius_1 + b.a2.cov_radius_1) * 1.07,
+        )
+
+    if not obff.Setup(obm, constraints):
+        raise RuntimeError
+
     obff.GetCoordinates(obm)
 
     optimized = coord_from_obmol(obm)

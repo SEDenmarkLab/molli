@@ -1,3 +1,6 @@
+[![Upload Python Package](https://github.com/SEDenmarkLab/molli/actions/workflows/python-publish.yml/badge.svg)](https://github.com/SEDenmarkLab/molli/actions/workflows/python-publish.yml)
+[![Upload Anaconda Package](https://github.com/SEDenmarkLab/molli/actions/workflows/anaconda-deploy.yml/badge.svg)](https://github.com/SEDenmarkLab/molli/actions/workflows/anaconda-deploy.yml)
+
 ![Anaconda version](https://anaconda.org/esalx/molli/badges/version.svg)
 ![Anaconda license](https://anaconda.org/esalx/molli/badges/license.svg)
 ![Anaconda last updated](https://anaconda.org/esalx/molli/badges/latest_release_relative_date.svg)
