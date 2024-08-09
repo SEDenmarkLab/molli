@@ -47,6 +47,7 @@ def read_hdf5():
             group = f[entry_key]
             ens = ml.ConformerEnsemble(
                 [int(i) for i in group["atoms"][:]],
+                n_conformers=group["coords"].shape[0],
                 name=entry_key,
                 coords=group["coords"][:],
                 weights=group["weights"][:],
