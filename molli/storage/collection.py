@@ -53,7 +53,7 @@ class Collection(MutableMapping[str, T]):
     ) -> None:
         self._path = Path(path)
 
-        if not self._path.is_file() and readonly:
+        if not self._path.exists() and readonly:
             raise FileNotFoundError(f"{path!r} is not a valid molli collection.")
 
         self._backend = backend(

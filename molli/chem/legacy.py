@@ -51,7 +51,7 @@ def read_geom(k, g, ens):
 
 
 def ensemble_from_molli_old_xml(
-    f: StringIO | BytesIO, mol_lib=False
+    f: StringIO | BytesIO, molecule
 ) -> ConformerEnsemble | Molecule:
     """Parses an old version of the collection.
     This function is primarily intended for backwards compatibility
@@ -62,13 +62,13 @@ def ensemble_from_molli_old_xml(
     ----------
     f : StringIO | BytesIO
         xml file stream
-    mol_lib : bool, optional
-        Returns `ConformerEnsemble` if True, by default False
+    molecule : bool, optional
+        Indicates if it should be parsed as a Molecule or Conformer Ensemble
 
     Returns
     -------
     ConformerEnsemble | Molecule
-        Returns Conformer Ensemble or Molecule
+        Returns ConformerEnsemble or Molecule
 
     Notes
     -----
@@ -85,38 +85,34 @@ def ensemble_from_molli_old_xml(
     xgeom = mol.findall("./geometry/g")
     xconfs = mol.findall("./conformers/g")
 
-    atoms = []
-    bonds = []
-    conformers = []
-
     n_atoms = len(xatoms)
 
     if len(xconfs) == 0:
         n_conformers = len(xgeom)
     else:
         n_conformers = len(xconfs)
-
-    if mol_lib:
-        ens = Molecule(n_atoms=n_atoms, name=name)
+    
+    if molecule:
+        res = Molecule(n_atoms=n_atoms, name=name)
     else:
-        ens = ConformerEnsemble(n_conformers=n_conformers, n_atoms=n_atoms, name=name)
+        res = ConformerEnsemble(n_conformers=n_conformers, n_atoms=n_atoms, name=name)
 
     for i, a in enumerate(xatoms):
         aid, s, l, at = a.attrib["id"], a.attrib["s"], a.attrib["l"], a.attrib["t"]
-        ens.atoms[i].element = Element[s]
-        ens.atoms[i].label = l
-        ens.atoms[i].set_mol2_type(at)
+        res.atoms[i].element = Element[s]
+        res.atoms[i].label = l
+        res.atoms[i].set_mol2_type(at)
 
     for j, b in enumerate(xbonds):
         ia1, ia2 = map(int, b.attrib["c"].split())
-        ens.append_bond(_b := Bond(ens.atoms[ia1 - 1], ens.atoms[ia2 - 1]))
+        res.append_bond(_b := Bond(res.atoms[ia1 - 1], res.atoms[ia2 - 1]))
         _b.set_mol2_type(b.attrib["t"])
 
     if len(xconfs) == 0:
         for k, g in enumerate(xgeom):
-            ens = read_geom(k, g, ens)
+            res = read_geom(k, g, res)
     else:
         for k, g in enumerate(xconfs):
-            ens = read_geom(k, g, ens)
+            res = read_geom(k, g, res)
 
-    return ens
+    return res
