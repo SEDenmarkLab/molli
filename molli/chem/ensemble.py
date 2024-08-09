@@ -377,7 +377,7 @@ class ConformerEnsemble(Connectivity):
         stream = StringIO(input)
         return cls.load_xyz(stream)
 
-    def dump_mol2(self, stream: StringIO = None) -> None:
+    def dump_mol2(self, stream: StringIO) -> None:
         """Dumps the multi-mol2 block into the output stream
 
         Parameters
@@ -395,8 +395,6 @@ class ConformerEnsemble(Connectivity):
             pentane
             ...
         """
-        if stream is None:
-            stream = StringIO()
 
         for conf in self:
             conf.dump_mol2(stream)
@@ -419,9 +417,9 @@ class ConformerEnsemble(Connectivity):
             ...
         """
 
-        stream = StringIO()
-        self.dump_mol2(stream)
-        return stream.getvalue()
+        with StringIO() as stream:
+            self.dump_mol2(stream)
+            return stream.getvalue()
 
     def dump_xyz(self, stream: StringIO):
         """Dumps the .xyz file into the stream

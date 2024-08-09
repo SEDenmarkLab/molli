@@ -227,7 +227,10 @@ def load(
 
                 case "cdxml":
                     cdxf = ml.CDXMLFile(path)
-                    return otype(cdxf._parse_fragment(cdxf.xfrags[0], name=name))
+                    if key is None:
+                        return otype(cdxf._parse_fragment(cdxf.xfrags[0], name=name))
+                    else:
+                        return otype(cdxf[key])
 
         case "openbabel" | "obabel":
             if fmt not in supported_fmts_obabel:

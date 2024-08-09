@@ -42,6 +42,7 @@ fxyl_mol2 = ROOT / "fxyl.mol2"
 dmf_mol2 = ROOT / "dmf.mol2"
 bpa_backbone_mol2 = ROOT / "bpa_core.mol2"
 box_backbone_mol2 = ROOT / "box_alignment_core.mol2"
+isornitrate_mol2 = ROOT / "isornitrate.mol2"
 
 benzene_mol2 = ROOT / "benzene.mol2"
 dmf_mol2 = ROOT / "dmf.mol2"
@@ -63,6 +64,7 @@ pentane_confs_molv3 = ROOT / "pentane_confs.mol"
 substituents_cdxml = ROOT / "substituents.cdxml"
 parser_demo_cdxml = ROOT / "parser_demo.cdxml"
 parser_demo2_cdxml = ROOT / "parser_demo2.cdxml"
+charges_mult_cdxml = ROOT / "charges_mult.cdxml"
 
 oldstyle_xml = ROOT / "oldstyle.xml"
 

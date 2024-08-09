@@ -76,6 +76,7 @@ class BondType(IntEnum):
     Aromatic = 20
     Amide = 21
 
+    Ligand = 98
     FractionalOrder = 99
 
     H_Donor = 100
@@ -246,7 +247,7 @@ class Bond:
             case BondType.H_Acceptor:
                 return 0.0
 
-            case BondType.Dummy | BondType.NotConnected:
+            case BondType.Dummy | BondType.Ligand | BondType.NotConnected:
                 return 0.0
 
             case _:
@@ -812,7 +813,6 @@ class Connectivity(Promolecule):
             b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=self)
             for b in other.bonds
         ]
-
 
     def del_bond(self, b: Bond) -> None:
         """Deletes a bond from the Connectivity instance
