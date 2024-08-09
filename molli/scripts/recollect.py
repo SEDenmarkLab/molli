@@ -158,7 +158,13 @@ arg_parser.add_argument(
     help="This option enables overwriting the destination collection.",
 )
 
+def re_ml_loads(_bytes_str:bytes, fmt:str, parser:str, otype:str):
+    _decoded_str = _bytes_str.decode()
+    return ml.loads(_decoded_str, fmt=fmt, parser=parser, otype=otype)
 
+def re_ml_dumps(_mol:ml.Molecule | ml.ConformerEnsemble, fmt:str, writer:str):
+    return ml.dumps(_mol, fmt=fmt, writer=writer).encode()
+    
 def recollect(
     source: Collection,
     destination: Collection,
@@ -289,7 +295,7 @@ def molli_main(args, **kwargs):
                             parsed.input,
                             ml.storage.ZipCollectionBackend,
                             ext=f'.{parsed.input_ext}',
-                            value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype=parsed.input_conv),
+                            value_decoder=partial(re_ml_loads, fmt=parsed.input_ext, parser=parsed.library, otype=parsed.input_conv),
                             readonly=True,
                             overwrite=False
                             )
@@ -298,7 +304,7 @@ def molli_main(args, **kwargs):
                 inp,
                 ml.storage.DirCollectionBackend,
                 ext=f".{parsed.input_ext}",
-                value_decoder=partial(ml.loads, fmt=parsed.input_ext, parser=parsed.library, otype=parsed.input_conv),
+                value_decoder=partial(re_ml_loads, fmt=parsed.input_ext, parser=parsed.library, otype=parsed.input_conv),
                 readonly=True,
                 overwrite=False
             )
@@ -332,7 +338,7 @@ def molli_main(args, **kwargs):
                 parsed.output,
                 ml.storage.DirCollectionBackend,
                 ext=f".{parsed.output_ext}", 
-                value_encoder=partial(ml.dumps, fmt=parsed.output_ext, writer=parsed.library),
+                value_encoder=partial(re_ml_dumps, fmt=parsed.output_ext, writer=parsed.library),
                 readonly=False,
                 overwrite=True
             )

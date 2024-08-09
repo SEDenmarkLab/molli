@@ -233,12 +233,12 @@ class DirCollectionBackend(CollectionBackendBase):
         return self._path / f"{key}{self.ext}"
 
     def _write(self, key: str, value: bytes):
-        with open(self.get_path(key), "w") as f:
+        with open(self.get_path(key), "wb") as f:
             return f.write(value)
 
     def _read(self, key: bytes) -> bytes:
         with open(self.get_path(key), "rb") as f:
-            return f.read().decode('Utf-8')
+            return f.read()
 
     def _truncate(self):
         for fn in map(self.get_path, self.keys()):
@@ -307,11 +307,11 @@ class ZipCollectionBackend(CollectionBackendBase):
         }
 
     def _write(self, key: str, value: bytes):
-        self._zipfile.writestr(f"{self.get_path(key)}{self.ext}", value)
+        self._zipfile.write(f"{self.get_path(key)}{self.ext}", value)
 
     def _read(self, key: str) -> bytes:
         with self._zipfile.open(key) as f:
-            return f.read().decode('Utf-8')
+            return f.read()
 
     def _truncate(self, key: bytes) -> bytes:
         self._zipfile.remove(key)
