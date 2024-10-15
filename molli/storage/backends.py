@@ -309,7 +309,7 @@ class ZipCollectionBackend(CollectionBackendBase):
         }
 
     def _write(self, key: str, value: bytes):
-        self._zipfile.writestr(f"{self.get_path(key)}{self.ext}", value)
+        self._zipfile.write(f"{self.get_path(key)}{self.ext}", value)
 
     def _read(self, key: str) -> bytes:
         with self._zipfile.open(key) as f:
