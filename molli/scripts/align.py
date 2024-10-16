@@ -180,8 +180,6 @@ def molli_main(args, **kwargs):
                 vec,
             )
             align_stats[element_name] = rmsd_val
-            element.attrib["name"] = element.name
-            element.attrib["coords"] = element.coords
             destination[element_name] = element
 
     query_mol.translate(vec)
