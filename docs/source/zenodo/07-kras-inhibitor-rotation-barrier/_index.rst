@@ -6,7 +6,6 @@ The objective of this task is to use the `molli` workflow to transition from `.C
 
 .. toctree::
    :maxdepth: 1
-   :caption: KRAS Barrier Calculation
 
    007-kras.ipynb
 
