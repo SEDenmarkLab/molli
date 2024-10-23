@@ -22,6 +22,10 @@ Developed by:
 
 [S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign](https://denmarkgroup.illinois.edu/)
 
+For all work using `molli`, please cite the primary publication: Shved, A. S.; Ocampo, B. E.; Burlova, E. S.; Olen, C. L.; Rinehart, N. I.; Denmark. S. E.; *J. Chem. Inf. Mod.* **2024**, [**DOI**: 10.1021/acs.jcim.4c00424](10.1021/acs.jcim.4c00424)
+
+Supplementary Materials and Libraries can be found on the Zenodo Repository: [**DOI**: 10.5281/zenodo.10719790](10.5281/zenodo.10719790)
+
 Copyright 2022-2023 The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
@@ -99,11 +103,3 @@ module load xtb/6.4.1
 module load crest/2.11.1
 molli test -vv # Now this tests XTB and CREST driver
 ```
-
-
-# Hello, World!
-
-This section describes your first steps in molli package. 
-
-
-
