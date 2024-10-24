@@ -1,0 +1,8 @@
+name: myproject
+channels:
+  - rdkit
+  - conda-forge
+dependencies:
+  - python=3.11
+  - rdkit
+  - openbabe
