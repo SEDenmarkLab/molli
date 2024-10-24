@@ -15,7 +15,6 @@ Table of Contents
 
    01-molli-preamble.md
    02-basics.md
-   03-visualization.md
 
 .. toctree::
    :maxdepth: 3
