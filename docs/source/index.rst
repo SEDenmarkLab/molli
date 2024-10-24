@@ -15,7 +15,6 @@ Table of Contents
 
    01-molli-preamble.md
    02-basics.md
-   03-visualization.md
 
 .. toctree::
    :maxdepth: 3
@@ -40,17 +39,31 @@ Table of Contents
    :caption: Molli Cookbook
 
    cookbook/001-helloworld.ipynb
-   cookbook/002-molecule.ipynb
-   cookbook/003-del-bond.ipynb
-   cookbook/004-libraries.ipynb
-   cookbook/005-grid.ipynb
-   cookbook/006-chemdraw.ipynb
-   cookbook/007-openbabel.ipynb
-   cookbook/008-rdkit.ipynb
-   cookbook/009-visualize-pyvista.ipynb
-   cookbook/010-matplotlib.ipynb
+   cookbook/002-atom.ipynb
+   cookbook/003-bond.ipynb
+   cookbook/004-geometry.ipynb
+   cookbook/005-conformerensemble.ipynb
+   cookbook/006-libraries.ipynb
+   cookbook/007-visualization.ipynb
+   cookbook/008-chemdraw.ipynb
+   cookbook/009-openbabel.ipynb
+   cookbook/010-rdkit.ipynb
+   cookbook/011-gbca.ipynb
+   cookbook/012-jobmap.ipynb
+   cookbook/013-BOX_workflow.ipynb
    
+.. toctree::
+   :maxdepth: 2
+   :caption: Benchmarks and Workflows
 
+   zenodo/001-molnet.ipynb
+   zenodo/002-crude.ipynb
+   zenodo/003-buildlibrary.ipynb
+   zenodo/004-readwrite
+   zenodo/05-gbca-benchmark/_index
+   zenodo/06-gbca-calculation-vis/_index
+   zenodo/07-kras-inhibitor-rotation-barrier/_index
+   zenodo/08-workflow-nmr-prediction/_index
 
 .. toctree::
    :maxdepth: 2

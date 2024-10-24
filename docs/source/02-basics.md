@@ -62,12 +62,6 @@ One can therefore access the test molecule files conveniently:
 mol = ml.Molecule.load_mol2(ml.files.dendrobine_mol2)
 ```
 
-### Importing molecules from CDXML files
-
-The most convenient way of 
-
-### Molecule / conformer collections
-
 
 
 

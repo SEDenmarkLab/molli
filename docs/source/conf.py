@@ -9,7 +9,6 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 import molli.chem
-import molli
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -44,9 +43,6 @@ autodoc_type_aliases = {
     "ArrayLike": "ArrayLike",
 }
 python_use_unqualified_type_names = True
-
-# Separates the class and the constructor signature, leading to the html page looking cleaner
-autodoc_class_signature = "separated"
 
 # Removes the type hints from the documentation, this makes the documentation legible
 # autodoc_typehints = "none"

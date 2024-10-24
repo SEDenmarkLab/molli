@@ -366,11 +366,18 @@ def to_rdmol(m: ml.Molecule, via='sdf', remove_hs=True, set_atts=False, raise_ke
                     ml_atom = m.get_atom(i)
                     for attrib in ml_atom.attrib:
                         a.SetProp(attrib, str(ml_atom.attrib[attrib])) 
-                #Bonds
-                for i,b in enumerate(rdmol.GetBonds()):
-                    ml_bond = m.get_bond(i)
-                    for attrib in ml_bond.attrib:
-                        b.SetProp(attrib, str(ml_bond.attrib[attrib]))
+
+                #Bonds (does not maintain bond order upon reading in, so this exists now :) )
+                rdbond_list = {b: {b.GetBeginAtomIdx(),b.GetEndAtomIdx()} for b in rdmol.GetBonds()}
+                for i,ml_bond in enumerate(m.bonds):
+                    if ml_bond.attrib:
+                        ml_atoms = {m.get_atom_index(ml_bond.a1), m.get_atom_index(ml_bond.a2)}
+                        att_bond = None
+                        for rd_bond, atoms in rdbond_list.items():
+                            if atoms == ml_atoms:
+                                att_bond = rd_bond
+                                break
+                        att_bond.SetProp(attrib, str(ml_bond.attrib[attrib]))
             else:
                 print(f'Unable to map original Molli Atom and Bond attributes to RDKit object Atoms/Bonds when hydrogens are removed. RDKit object will still be returned for {m}')
         return rdmol   
