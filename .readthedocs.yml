@@ -1,22 +1,21 @@
-# version: 2
-
-# build:
-#   os: "ubuntu-22.04"
-#   tools:
-#     python: "mambaforge-22.9"
-
 version: 2
 
 build:
-  os: ubuntu-22.04
-  tools: 
-    python: "3.11"
+  os: "ubuntu-22.04"
+  tools:
+    python: "mambaforge-22.9"
+
+# version: 2
+
+# build:
+#   os: ubuntu-22.04
+#   tools: 
+#     python: "3.11"
 
     # You can also specify other tool versions:
     # nodejs: "19"
     # rust: "1.64"
     # golang: "1.19"
-
 
 conda:
   environment: environment.yml
@@ -32,8 +31,8 @@ formats:
 
 # Optionally declare the Python requirements required to build your docs
 
-python:
-   install:
-    - method: pip
-      path: .
-    - requirements: docs/requirements.txt
+# python:
+#    install:
+#     - method: pip
+#       path: .
+#     - requirements: docs/requirements.txt
