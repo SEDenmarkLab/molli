@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - openbabel=3.1.1=py311h8b422cb_9
+  - pip:
+    - rdkit==2024.3.5
