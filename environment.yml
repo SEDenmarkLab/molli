@@ -12,3 +12,4 @@ dependencies:
     - sphinx-rtd-theme
     - nbsphinx
     - furo
+    - molli
