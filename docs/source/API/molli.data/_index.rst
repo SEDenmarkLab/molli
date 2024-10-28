@@ -13,10 +13,11 @@ molli.data
    group
    vdw_radius
 
-..note::
+.. note::
    Missing the following files due to being empty:
-   c6_grimme 
-   covalent_radius_2
-   covalent_radius_3
-   en_pauling
-   isotope.exact_mass.yml
+   
+   - c6_grimme 
+   - covalent_radius_2
+   - covalent_radius_3
+   - en_pauling
+   - isotope.exact_mass.yml
