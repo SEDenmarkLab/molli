@@ -12,7 +12,7 @@
 
 https://github.com/SEDenmarkLab/molli
 
-Developed by:
+### Developed by:
 
 - Alexander S. Shved
 - Blake E. Ocampo   
@@ -23,6 +23,8 @@ Developed by:
 [S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign](https://denmarkgroup.illinois.edu/)
 
 For all work using `molli`, please cite the primary publication: Shved, A. S.; Ocampo, B. E.; Burlova, E. S.; Olen, C. L.; Rinehart, N. I.; Denmark. S. E.; *J. Chem. Inf. Mod.* **2024**, [**DOI**: 10.1021/acs.jcim.4c00424](https://pubs.acs.org/doi/10.1021/acs.jcim.4c00424)
+
+Docuementation and Example Workflows can be found [here](https://molli.readthedocs.io/en/latest/01-molli-preamble.html).  
 
 Supplementary Materials and Libraries can be found on the Zenodo Repository: [**DOI**: 10.5281/zenodo.10719790](https://zenodo.org/records/10719791)
 
@@ -39,7 +41,7 @@ Molli is available as the source code distribution on GitHub. Additionally, conv
 
 **Note**: We routinely test the package on Linux and Windows OS. OSX support is tested upon the pull request submission using GitHub workflows. We can only offer limited support for that OS at this time.
 
-## Install using `pip`
+## Install using `pip` (Preferred Method)
 
 ### Installation from PyPI
 
@@ -78,7 +80,7 @@ Molli can be installed from a conda repository:
 **Note**: Conda setup is not fully configured yet, so you may expect that there will be slight changes to the syntax. For more information about the current installation instructions, please visit the [Anaconda repository](https://anaconda.org/esalx/molli)
 
 ```bash
-conda install molli
+conda install esalx::molli
 ```
 
 # Testing the installation

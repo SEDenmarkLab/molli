@@ -7,9 +7,3 @@ molli.external
 
    rdkit
    openbabel
-
-..note::
-   Missing the following files due to being empty:
-   nwchem
-   orca
-   xtb

@@ -26,6 +26,7 @@ Table of Contents
    API/molli.external/_index
    API/molli.ftypes/_index
    API/molli.math/_index
+   API/molli.pipeline/pipeline-notes.md
    
 
 .. toctree::
