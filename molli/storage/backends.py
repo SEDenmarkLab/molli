@@ -1,6 +1,8 @@
+import io
 from fasteners import InterProcessLock, InterProcessReaderWriterLock
 from glob import glob
 from zipfile import ZipFile, is_zipfile
+from tarfile import TarFile, TarInfo, is_tarfile
 from .ukvfile import UKVFile
 
 import abc
@@ -315,6 +317,85 @@ class ZipCollectionBackend(CollectionBackendBase):
 
     def _truncate(self, key: bytes) -> bytes:
         self._zipfile.remove(key)
+
+
+class TarCollectionBackend(CollectionBackendBase):
+    # pass
+    def __init__(
+        self,
+        path,
+        *,
+        overwrite: bool = False,
+        readonly: bool = True,
+        ext: str = ".mol2",
+        mode: Literal["r", "w", "a", "x"] = "r",
+        bufsize=0,
+    ) -> None:
+        self.ext = ext
+        super().__init__(path, mode=mode, bufsize=bufsize, readonly=readonly)
+
+        with self._lock.write_lock():
+            if not self._path.is_file():
+                with TarFile(
+                    self._path,
+                    mode="x",
+                ):
+                    pass
+            elif overwrite:
+                with TarFile(
+                    self._path,
+                    mode="w",
+                ):
+                    pass
+
+    def lock_acquire(self):
+        self._plock = InterProcessReaderWriterLock(rwlock(self._path))
+        self._plock.acquire()
+
+    def lock_release(self):
+        self._tarfile.close()
+        self._plock.release()
+
+    def begin_read(self):
+        if is_tarfile(str(self._path)):
+            self._tarfile = TarFile(self._path, mode="r")
+
+    def end_read(self):
+        self._tarfile.close()
+
+    def begin_write(self):
+        self._tarfile = TarFile(self._path, mode="a")
+
+    def end_write(self):
+        self._tarfile.close()
+
+    def get_path(self, key: str):
+        return f"{key}"
+
+    def update_keys(self):
+        self._keys = {
+            name for name in self._tarfile.getnames() if name.endswith(self.ext)
+        }
+
+    def _write(self, key: str, value: bytes):
+        tarinfo = TarInfo(name=f"{self.get_path(key)}{self.ext}")
+        tarinfo.size = len(value)
+        self._tarfile.addfile(tarinfo, io.BytesIO(value))
+
+    def _read(self, key: str) -> bytes:
+
+        try:
+            f = self._tarfile.extractfile(key)
+            return f.read()
+        except:
+            print(f"No such file or directory: {key}")
+
+    def _truncate(self, key: bytes) -> bytes:
+        with TarFile(
+            self._path,
+            mode="w",
+        ):
+            pass
 
 
 @deprecated(

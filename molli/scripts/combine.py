@@ -45,12 +45,12 @@ OS_NCORES = os.cpu_count() // 2
 
 arg_parser = ArgumentParser(
     "molli combine",
-    description="Read a molli library and perform some basic inspections",
+    description="Combines two lists of molecules together",
 )
 
 arg_parser.add_argument(
     "cores",
-    help="Library file to inspect",
+    help="Base library file to combine wth substituents",
 )
 
 arg_parser.add_argument(
@@ -58,7 +58,7 @@ arg_parser.add_argument(
     "--substituents",
     action="store",
     metavar="<substituents.mlib>",
-    help="Attach the same substituents to each attachment",
+    help="Substituents to add at each attachment of a core file",
     required=True,
 )
 
@@ -68,7 +68,7 @@ arg_parser.add_argument(
     action="store",
     choices=["same", "permutns", "combns", "combns_repl"],
     default="permutns",
-    help="Attach the same substituents to each attachment",
+    help="Method for combining substituents",
 )
 
 arg_parser.add_argument(
@@ -76,7 +76,7 @@ arg_parser.add_argument(
     "--attachment_points",
     action="append",
     default=None,
-    help="Syntax for attachment point selector.",
+    help="Label used to find attachment points",
 )
 
 arg_parser.add_argument(
@@ -115,7 +115,7 @@ arg_parser.add_argument(
     action="store",
     metavar="<combined.mlib>",
     required=True,
-    help="Attach the same substituents to each attachment",
+    help="File to be written to",
 )
 
 arg_parser.add_argument(
@@ -129,10 +129,7 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "--hadd",
     action="store_true",
-    help=(
-        "Add implicit hydrogen atoms wherever possible. By default this only affects elements in"
-        " groups 13-17."
-    ),
+    help=("Add implicit hydrogen atoms wherever possible."),
 )
 
 arg_parser.add_argument(

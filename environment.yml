@@ -1,0 +1,15 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - openbabel
+  - pip
+  - pip:
+    - rdkit
+    - ipykernel
+    - myst_parser
+    - sphinx-rtd-theme
+    - nbsphinx
+    - furo
+    - molli

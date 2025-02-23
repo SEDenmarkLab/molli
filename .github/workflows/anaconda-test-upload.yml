@@ -1,0 +1,61 @@
+name: Anaconda Test Upload
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  conda_build:
+    name: Conda ${{ matrix.os }} build and upload 
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Set up MSVC (Windows only)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Delete Incorrect Link from Path
+        if: matrix.os == 'windows-latest'
+        run: rm /usr/bin/link.exe
+
+      - uses: actions/checkout@v4
+
+      - name: Install micromamba
+        uses: mamba-org/setup-micromamba@v1
+        env:
+          ACTIONS_STEP_DEBUG: true
+        with:
+          init-shell: >-
+            bash
+            powershell
+
+          create-args: >-
+            python=3.11
+            conda
+
+          environment-name: molli
+      
+      - name: Install conda build and upload dependencies
+        run: |
+          conda install -y conda-build anaconda-client
+
+      - name: Build conda package
+        env:
+          ACTIONS_STEP_DEBUG: true
+        run: |
+          mkdir conda-dist;
+          conda build --output-folder conda-dist conda-recipe;
+      
+      - name: Upload conda package
+        env:
+          ACTIONS_STEP_DEBUG: true
+        run: |
+          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --label test --user esalx --force conda-dist/*/molli-*.tar.bz2;

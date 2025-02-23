@@ -7,4 +7,4 @@ molli.descriptor
 
    aso
    cov_cn
-   gbca
+   gridbased

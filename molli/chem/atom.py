@@ -450,6 +450,15 @@ IMPLICIT_VALENCE = {
 }
 """This is the expected number of bonds for main group elements"""
 
+VALENCE_ELECTRONS = {
+    13: 3,
+    14: 4,
+    15: 5,
+    16: 6,
+    17: 7,
+    18: 8,
+}
+
 
 class AtomType(IntEnum):
     """The AtomType class is an Enumeration class for assigning atom
@@ -936,6 +945,11 @@ class Atom:
         """
         return self.element.color_cpk
 
+    @property
+    def valence_electrons(self) -> int:
+        """Returns the number of valence electrons"""
+        return VALENCE_ELECTRONS[self.element.group]
+
     def set_mol2_type(self, m2t: str):
         if "." in m2t:
             mol2_elt, mol2_type = m2t.split(".", maxsplit=1)
@@ -1103,9 +1117,6 @@ AtomLike = Atom | int | str | Element
 AtomLike can be an atom, its index, string, or element
 """
 
-RE_MOL_NAME = re.compile(r"[_a-zA-Z0-9]+")
-RE_MOL_ILLEGAL = re.compile(r"[^_a-zA-Z0-9]")
-
 
 class Promolecule:
     """This is a parent class that only employs methods that work on a *list of
@@ -1260,13 +1271,8 @@ class Promolecule:
     def name(self, value: str):
         if value is None or value is Ellipsis:
             self._name = "unknown"
-
-        elif RE_MOL_NAME.fullmatch(value):
-            self._name = value
         else:
-            sub = RE_MOL_ILLEGAL.sub("_", value)
-            self._name = sub
-            warn(f"Replaced illegal characters in molecule name: {value} --> {sub}")
+            self._name = value
 
     @property
     def atoms(self) -> List[Atom]:
@@ -1496,8 +1502,8 @@ class Promolecule:
             >>> promol.del_atom(0)
             Atom(element=C, isotope=None, label='C', formal_charge=0, formal_spin=0)
         """
-
-        self._atoms.remove(_a)
+        a = self.get_atom(_a)
+        self._atoms.remove(a)
 
     def append_atom(self, a: Atom) -> None:
         """Appends an atom to the Promolecule instance

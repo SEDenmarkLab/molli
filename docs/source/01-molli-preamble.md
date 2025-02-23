@@ -20,9 +20,12 @@ Molli is a cross-platform toolbox written in modern Python (3.10+) that provides
 
 [S. E. Denmark Laboratory, University of Illinois, Urbana-Champaign](https://denmarkgroup.illinois.edu/)
 
+For all work using `molli`, please cite the primary publication: Shved, A. S.; Ocampo, B. E.; Burlova, E. S.; Olen, C. L.; Rinehart, N. I.; Denmark. S. E.; *J. Chem. Inf. Mod.* **2024**, [**DOI**: 10.1021/acs.jcim.4c00424](https://pubs.acs.org/doi/10.1021/acs.jcim.4c00424)
+
+Supplementary Materials and Libraries can be found on the Zenodo Repository: [**DOI**: 10.5281/zenodo.10719790](https://zenodo.org/records/10719791)
+
 Copyright 2022-2023 The Board of Trustees of the University of Illinois.
 All Rights Reserved.
-
 ## Installation
 
 `molli` is available as the source code distribution on GitHub. Additionally, convenient installation is provided in the form of a PyPi package and conda package.

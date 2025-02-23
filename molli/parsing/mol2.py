@@ -44,6 +44,7 @@ class MOL2Atom:
     _charge: str = None
     status_bit: str = None
     unknown: str = None
+    attrib: dict = field(default_factory=dict)
 
     @property
     def element(self):
@@ -74,6 +75,7 @@ class MOL2Bond:
     mol2_type: str
     status_bit: str = None
     unknown: str = None
+    attrib: dict = field(default_factory=dict)
 
     @property
     def idx(self):
@@ -115,7 +117,7 @@ class MOL2SyntaxError(SyntaxError):
 
 
 RE_COMMENT = re.compile(r"#.*")
-RE_TRIPOS = re.compile(r"@<TRIPOS>([A-Z]+)")
+RE_TRIPOS = re.compile(r"@<TRIPOS>([A-Z_]+)")
 
 MOL2_EMPTY_STR = "****"
 
@@ -205,7 +207,7 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
                         )
 
                     case "ATOM":
-                        parsed_atoms = []
+                        parsed_atoms: list[MOL2Atom] = []
                         for i in range(n_atoms):
                             atom_def = next(reader)
                             # (
@@ -260,6 +262,31 @@ def read_mol2(input: StringIO) -> Generator[MOL2Block, None, None]:
 
                     # case "SUBSTRUCTURE":
                     #     ...
+
+                    case "UNITY_ATOM_ATTR":
+                        # This is TRIPOS mol2 way of storing atomic attributes.
+                        while True:
+                            line = next(reader)
+                            if RE_TRIPOS.match(line):
+                                reader.put_back(line)
+                                break
+
+                            atom, n_attr = map(int, line.split())
+                            for _ in range(n_attr):
+                                attr, value = next(reader).split()
+                                parsed_atoms[atom - 1].attrib[attr] = value
+
+                    case "UNITY_BOND_ATTR":
+                        while True:
+                            line = next(reader)
+                            if RE_TRIPOS.match(line):
+                                reader.put_back(line)
+                                break
+
+                            bond, n_attr = map(int, line.split())
+                            for _ in range(n_attr):
+                                attr, value = next(reader).split()
+                                parsed_bonds[bond - 1].attrib[attr] = value
 
                     case _:
                         warn(

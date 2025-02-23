@@ -76,6 +76,7 @@ class BondType(IntEnum):
     Aromatic = 20
     Amide = 21
 
+    Ligand = 98
     FractionalOrder = 99
 
     H_Donor = 100
@@ -145,12 +146,12 @@ class Bond:
 
     btype: BondType = attrs.field(
         default=BondType.Single,
-        repr=lambda x: x.name,
+        repr=lambda x: x.name if hasattr(x, 'name') else x,
     )
 
     stereo: BondStereo = attrs.field(
         default=BondStereo.Unknown,
-        repr=lambda x: x.name,
+        repr=lambda x: x.name if hasattr(x, 'name') else x,
     )
 
     f_order: float = attrs.field(
@@ -246,7 +247,7 @@ class Bond:
             case BondType.H_Acceptor:
                 return 0.0
 
-            case BondType.Dummy | BondType.NotConnected:
+            case BondType.Dummy | BondType.Ligand | BondType.NotConnected:
                 return 0.0
 
             case _:
@@ -476,6 +477,13 @@ class Bond:
 
             case BondType.NotConnected:
                 return MOL2_BOND_TYPE_MAP.inverse[BondType.NotConnected]
+            
+            #Mol2 Format Doesn't Recognize Multi-Attachment Bonds Natively
+            case BondType.Ligand:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Unknown]
+            
+            case _:
+                return MOL2_BOND_TYPE_MAP.inverse[BondType.Unknown]
 
 
 class Connectivity(Promolecule):
@@ -812,7 +820,6 @@ class Connectivity(Promolecule):
             b.evolve(a1=atom_map[b.a1], a2=atom_map[b.a2], parent=self)
             for b in other.bonds
         ]
-
 
     def del_bond(self, b: Bond) -> None:
         """Deletes a bond from the Connectivity instance
