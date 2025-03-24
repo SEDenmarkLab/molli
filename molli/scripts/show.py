@@ -55,7 +55,7 @@ arg_parser.add_argument(
     action="store",
     default="pyvista",
     type=str.lower,
-    help="Run this command to get to gui. Special cases: `pyvista`, `3dmol.js`, `http-3dmol.js`. Others are interpreted as command path.",
+    help="Run this command to get to gui. Special cases: `pyvista`, `3dmol`, `flask`. Others are interpreted as command path.",
 )
 
 arg_parser.add_argument(
@@ -91,7 +91,7 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "--port",
     action="store",
-    default="8000",
+    default="15000",
     help="If the visualization protocol requires to fire up a server, this will be the port of choice.",
 )
 
@@ -132,13 +132,10 @@ def molli_main(args, **kwargs):
 
     if libtype == "mlib":
         lib = ml.MoleculeLibrary(path, readonly=True)
-        with lib.reading():
-            mol_or_ens = lib[parsed.key]
 
     elif libtype == "clib":
         lib = ml.ConformerLibrary(path, readonly=True)
-        with lib.reading():
-            mol_or_ens = lib[parsed.key]
+
     else:
         mol_or_ens = ml.load(path, parser=parsed.parser)
 
@@ -150,6 +147,9 @@ def molli_main(args, **kwargs):
 
             plt = Plotter(polygon_smoothing=True)
             plt.set_background(parsed.bgcolor)
+
+            with lib.reading():
+                mol_or_ens = lib[parsed.key]
 
             if isinstance(mol_or_ens, ml.Molecule):
                 _pyvista.draw_ballnstick(mol_or_ens, plt)
@@ -163,5 +163,10 @@ def molli_main(args, **kwargs):
 
             plt.show()
 
-        case "3dmol.js":
-            ...
+        case "flask":
+            from ._flask import app, config
+
+            libraries = {path.name: lib}
+            config.libraries = libraries
+
+            app.run(port=parsed.port)
