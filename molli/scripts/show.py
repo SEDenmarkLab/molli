@@ -169,4 +169,4 @@ def molli_main(args, **kwargs):
             libraries = {path.name: lib}
             config.libraries = libraries
 
-            app.run(port=parsed.port)
+            app.run(host="0.0.0.0", port=parsed.port)
