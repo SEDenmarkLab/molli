@@ -68,6 +68,14 @@ arg_parser.add_argument(
     help="Output the results as a space-separated file",
 )
 
+arg_parser.add_argument(
+    "--hist",
+    const=0,
+    type=int,
+    nargs="?",
+    help="Produces a matplotlib histogram output",
+)
+
 
 def molli_main(args, verbose=False, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -86,12 +94,24 @@ def molli_main(args, verbose=False, **kwargs):
             exit(1)
 
     # We are going to assume homogeneity of the collection
+    _expr = compile(parsed.expression, "_expr", "eval")
     with library.reading(), warnings.catch_warnings():
         keys = sorted(library.keys())
-        data = [eval(parsed.expression, None, {"m": library[k]}) for k in keys]
+        data = [
+            eval(_expr, None, {"m": library[k]})
+            for k in tqdm(keys, desc="Collecting data")
+        ]
         series = pd.Series(data=data, index=keys)
 
         print(series.describe())
 
     if parsed.output is not None:
         series.to_csv(parsed.output, header=[parsed.expression])
+
+    if parsed.hist is not None:
+        import matplotlib.pyplot as plt
+
+        bins = parsed.hist or None
+        plt.hist(series, bins=bins)
+        plt.xlabel(parsed.expression)
+        plt.show()

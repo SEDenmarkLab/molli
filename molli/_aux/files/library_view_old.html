@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>molli Library Rendering</title>
+    <link rel="stylesheet" href="/style1.css">
+</head>
+
+<body onload="get_keys();">
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <script src="https://3Dmol.org/build/3Dmol.ui-min.js"></script>
+    <script src="/molli_3dmol.js"></script>
+
+    <div id="window">
+        <div id="left_form">
+            <img src="/molli.svg" alt="molli">
+            <br>
+            <input type="text" id="wildcard" value="*" onchange="filter_keys()" autocomplete="off">
+            <br>
+            <select id="molid" multiple onchange="get_molecules()"></select>
+        </div>
+
+        <div id="v3dm" class='viewer_3Dmoljs'>
+        </div>
+    </div>
+
+    <br>
+</body>
+
+</html>

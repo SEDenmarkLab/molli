@@ -90,7 +90,16 @@ class ConformerEnsemble(Connectivity):
     ):
         # TODO: revise the constructor
 
-        if isinstance(other, list) and all(isinstance(o, Structure) for o in other):
+        if n_conformers == 0:
+            try:
+                n_conformers = len(coords)
+            except:
+                if isinstance(other, ConformerEnsemble):
+                    n_conformers = other.n_conformers
+
+        if isinstance(other, (list, tuple)) and all(
+            isinstance(o, Structure) for o in other
+        ):
             super().__init__(
                 other[0],
                 name=other[0].name,
@@ -129,6 +138,9 @@ class ConformerEnsemble(Connectivity):
             self._coords = np.full((n_conformers or 1, self.n_atoms, 3), np.nan)
             self._atomic_charges = np.zeros((n_conformers or 1, self.n_atoms))
             self._weights = np.ones((n_conformers or 1,))
+            if n_conformers is None:
+                self.coords = other.coords
+                self.atomic_charges[0] = other.atomic_charges
 
         if coords is not None:
             self.coords = coords

@@ -685,9 +685,9 @@ class Atom:
             {'element': C, 'label': None, 'attrib': {}}
         """
         if schema is None:
-            return attrs.asdict(self)
-        else:
-            return {a: getattr(self, a, None) for a in schema}
+            schema = self.__slots__[:-2]
+
+        return {a: getattr(self, a, None) for a in schema}
 
     def as_tuple(self, schema: List[str] = None) -> tuple:
         """Returns the atom as a tuple
@@ -711,9 +711,9 @@ class Atom:
         """
 
         if schema is None:
-            return attrs.astuple(self)
-        else:
-            return tuple(getattr(self, a, None) for a in schema)
+            schema = self.__slots__[:-2]
+
+        return tuple(getattr(self, a, None) for a in schema)
 
     @property
     def is_dummy(self) -> bool:
@@ -1132,6 +1132,7 @@ class Promolecule:
         "_bonds",
         "_adjacency",
         "_coords",
+        "_weights",
         "charge",
         "mult",
         "attrib",

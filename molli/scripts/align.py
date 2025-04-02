@@ -157,11 +157,11 @@ def molli_main(args, **kwargs):
 
     matched_query_indices = {}
 
-    print("matching structures:")
-    with source.reading():
-        for elem_name in tqdm(source):
-            elem = source[elem_name]
-            matched_query_indices[elem_name] = list(elem.get_substr_indices(query_mol))
+    # print("matching structures:")
+    # with source.reading():
+    #     for elem_name in tqdm(source):
+    #         elem = source[elem_name]
+    #         matched_query_indices[elem_name] = list(elem.get_substr_indices(query_mol))
 
     align_stats = {}
 
@@ -173,9 +173,10 @@ def molli_main(args, **kwargs):
     with source.reading(), destination.writing():
         for element_name in tqdm(source):
             element = source[element_name]
+            matched_query_indices = list(element.get_substr_indices(query_mol))
             rmsd_val = element.align_to_ref_coords(
                 rmsd_func,
-                matched_query_indices[element_name],
+                matched_query_indices,
                 reference_subgeometry,
                 vec,
             )
