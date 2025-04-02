@@ -44,6 +44,16 @@ body {
     margin: 20px
 }
 
+.flex-row {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    flex-direction: row;
+    flex-grow: 1;
+    margin: 20px
+}
+
+
 #header a#title {
     font-size: xx-large;
     font-weight: 700;
@@ -103,7 +113,7 @@ body {
     align-self: stretch;
 }
 
-#libitemlist {
+.libitemlist {
     display: flex;
     flex-wrap: wrap;
     align-content: center;

@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 from flask import Flask, request, abort, Response
 from itertools import chain
+from molli.chem.library import library_type
 
 MOLLI_VERSION = ml.__version__
 
@@ -52,21 +53,7 @@ def get_library_info(fp: Path):
 
     fsize = os.path.getsize(fp) / 1e6  # Get file size in MB
 
-    try:
-        lib = ml.MoleculeLibrary(fp)
-        with lib.reading():
-            k = lib.keys().pop()
-            lib[k]
-        return "MoleculeLibrary", fsize
-    except:
-        try:
-            lib = ml.ConformerLibrary(fp)
-            with lib.reading():
-                k = lib.keys().pop()
-                lib[k]
-            return "ConformerLibrary", fsize
-        except Exception as xc:
-            return f"Unknown file (Error: {xc})", fsize
+    return library_type(fp), fsize
 
 
 @app.route("/", methods=["POST", "GET"])
@@ -77,13 +64,27 @@ def molli_landing():
         abort(404)
     else:
         html = get_aux_file("library_index.html").read_text()
-        liblist = ""
+        liblist = {}
         for lib in chain(cwd.glob("**/*.mlib"), cwd.glob("**/*.clib")):
             ltyp, lsiz = get_library_info(lib)
-            shortpath = lib.relative_to(cwd).as_posix()
-            liblist += f"""<div class="libitem" onclick="location.href='/lib/{shortpath}';"><a>{lib.name}</a><p>{ltyp} | {lsiz:0.1f} MB</p><p>{shortpath}</p></div>"""
 
-        html = html.replace(r"{{ lib_list }}", liblist)
+            shortpath = lib.relative_to(cwd).as_posix()
+            key = lib.relative_to(cwd).parent.as_posix() + "/"
+            if key not in liblist:
+                liblist[key] = ""
+            if ltyp is None:
+                continue
+            else:
+                ltyp = ltyp.__name__
+            liblist[
+                key
+            ] += f"""<div class="libitem" onclick="location.href='/lib/{shortpath}';"><a>{lib.name}</a><p>{ltyp} | {lsiz:0.1f} MB</p></div>"""
+
+        listing = ""
+        for k in liblist:
+            listing += f"""<h2>{k}</h2><div class="libitemlist">{liblist[k]}</div>\n"""
+
+        html = html.replace(r"{{ lib_list }}", listing)
         return html
 
 
@@ -100,12 +101,8 @@ def molli_show_library(fpath=None):
         print(f"Blocked {fpath}")
         abort(404)
 
-    try:
-        library = ml.MoleculeLibrary(full_path)
-        with library.reading():
-            pass
-    except:
-        library = ml.ConformerLibrary(full_path)
+    if (ltype := library_type(fpath)) is not None:
+        library = ltype(fpath)
 
     if request.method == "POST":
         # That's for javascript to retrieve molecules
