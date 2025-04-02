@@ -257,6 +257,11 @@ def loads_all_obmol(data, ext, connect_perceive: bool = False, cls: type = Molec
         if connect_perceive:
             obmol.ConnectTheDots()
             obmol.PerceiveBondOrders()
+
+        if obmol.GetDimension() == 0:  # Case of SMILES
+            builder = ob.OBBuilder()
+            builder.Build(obmol)
+            obmol.addHydrogens()
         mlmol = from_obmol(obmol)
         mols.append(mlmol)
         obmol = ob.OBMol()
@@ -368,7 +373,7 @@ def obabel_optimize(
     if not obff.Setup(obm):
         raise RuntimeError(f"Cannot set up {ff=} for {mol!r}")
 
-    obff.SteepestDescent(max_steps, tol)
+    obff.ConjugateGradients(max_steps, tol)
     obff.GetCoordinates(obm)
 
     e_tot = obff.Energy()
@@ -397,7 +402,8 @@ def obabel_optimize(
 
     if inplace:
         mol.coords = optimized
-        mol.attrib |= e_attrib
+        if not isinstance(mol, ml.Conformer):
+            mol.attrib |= e_attrib
     else:
         return Molecule(mol, coords=optimized, attrib=e_attrib)
 
