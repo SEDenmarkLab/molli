@@ -49,6 +49,42 @@ import msgpack
 import gc
 
 
+def library_type(path: Path | str):
+    from ..storage.ukvfile import _ukv_head
+
+    head = _ukv_head(path)
+
+    if head is None:
+        # this is not a valid UKV collection
+        return None
+    else:
+        h1, h2, b0, b1key, b1val = head
+        if h1 == b"ML10UKV01\x00\x00\x00\x00\x00\x00\x00":
+            # These are version 2 uKV files
+            # advantage of these files is that we define the structure in block0
+            descriptor = msgpack.loads(b0)
+            otype = descriptor["object_class"]
+
+            if otype == "Molecule":
+                return MoleculeLibrary
+            elif otype == "ConformerEnsemble":
+                return ConformerLibrary
+            else:
+                raise SyntaxError(f"Unsupported library: {descriptor}")
+
+        elif h1 == b"ML10Library\x00\x00\x00\x00\x00":
+            # These are version 1 uKV files
+            # We will need to do some try-excelt here
+            try:
+                _deserialize_mol_v1(msgpack.loads(b1val))
+            except:
+                return ConformerLibrary
+            else:
+                return MoleculeLibrary
+        else:
+            return None
+
+
 class MoleculeLibrary(Collection[Molecule]):
     """This class is an overarching storage system for molecules
     for that allows for both serialization and deserialization.
