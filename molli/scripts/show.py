@@ -118,10 +118,6 @@ arg_parser.add_argument(
 #     help="This will set the orientation matrix. When applicable.",
 # )
 
-f"""
-<html encoding="u>
-"""
-
 
 def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -163,10 +159,10 @@ def molli_main(args, **kwargs):
 
             plt.show()
 
-        case "flask":
-            from ._flask import app, config
+        # case "flask":
+        #     from ._flask import app, config
 
-            libraries = {path.name: lib}
-            config.libraries = libraries
+        #     libraries = {path.name: lib}
+        #     config.libraries = libraries
 
-            app.run(host="0.0.0.0", port=parsed.port)
+        #     app.run(host="0.0.0.0", port=parsed.port)
