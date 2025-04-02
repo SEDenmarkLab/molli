@@ -100,7 +100,6 @@ arg_parser.add_argument(
     default=False,
 )
 
-
 @delayed
 def _runner(fx, items):
     return [(k, fx(v)) for k, v in items]
@@ -182,6 +181,9 @@ def molli_main(args, **kwargs):
 
         parallel = Parallel(n_jobs=parsed.nprocs, return_as="generator")
 
+        with source.reading(), destination.reading():
+            keys_tbd = source.keys() ^ destination.keys()
+
         with source.reading():
             # error_counts = 0
             for results in (
@@ -189,7 +191,9 @@ def molli_main(args, **kwargs):
                     parallel(
                         (
                             _runner(_ext_module.main, b)
-                            for b in ml.aux.batched(source.items(), parsed.batchsize)
+                            for b in ml.aux.batched(
+                                ((k, source[k]) for k in keys_tbd), parsed.batchsize
+                            )
                         )
                     ),
                     total=ml.aux.len_batched(source, parsed.batchsize),
