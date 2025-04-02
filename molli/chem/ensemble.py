@@ -129,10 +129,10 @@ class ConformerEnsemble(Connectivity):
             self._atomic_charges = np.zeros((n_conformers, self.n_atoms))
             self._weights = np.ones((n_conformers,))
 
-        # if isinstance(other, ConformerEnsemble):
-        #     self._atomic_charges = np.array(other.atomic_charges)
-        #     self._coords = np.array(other.coords)
-        #     self._weights = np.array(other.weights)
+        if isinstance(other, ConformerEnsemble):
+            self._atomic_charges = np.array(other.atomic_charges)
+            self._coords = np.array(other.coords)
+            self._weights = np.array(other.weights)
 
         if isinstance(other, Molecule):
             self._coords = np.full((n_conformers or 1, self.n_atoms, 3), np.nan)
