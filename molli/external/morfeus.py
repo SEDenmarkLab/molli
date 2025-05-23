@@ -139,10 +139,6 @@ def buried_volume(
     must be specified. In order to do octant analysis, `z_axis_atoms` and `xz_plane_atoms` must
     be specified.
     
-    This utilizes an algorithm similar to:
-    - *Organometallics* **2016**, *35*, 2286
-    - ***DOI***: 10.1021/acs.organomet.6b00371  
-    
     Parameters
     ----------
     ml_mol : ml.Molecule
@@ -208,9 +204,14 @@ def buried_volume(
         - Quadrants 
             - dict of V_bur calculation for octants
             - Must specify `z_axis_atoms` and `xz_plane_atoms`
+
+    Relevant References
+    -------------------
+    - Similar Buried Volume Algorithm: 
+        - ***DOI***: 10.1021/acs.organomet.6b00371 
     '''
     
-    elements = [a.element.symbol for a in ml_mol.atoms]
+    elements = [ml.Element.H if a.element == ml.Element.Unknown else a.element for a in ml_mol.atoms]
 
     #Allows matching of the XYZ file format if necessary
     if round_coords:
@@ -218,15 +219,10 @@ def buried_volume(
     else:
         coordinates = ml_mol.coords
 
+
+
     #morfeus starts counting from 1 instead of 0
-    if isinstance(metal_atom, ml.Atom):
-        metal_index = ml_mol.get_atom_index(metal_atom) + 1
-
-    elif isinstance(metal_atom, int):
-        metal_index = metal_atom + 1
-
-    else:
-        raise ValueError(f'Metal atom not an atom instance or integer! :  {metal_atom}')
+    metal_index = ml_mol.get_atom_index(metal_atom) + 1
 
     exc_idx = None
     z_idx = None
@@ -368,11 +364,18 @@ def cone_angle(
         - TangentAtoms
             - This is a list of numbers
         - NormalVec
-            - This is the normal vector used to define the cone.  
+            - This is the normal vector used to define the cone.
+
+    Relevant References
+    -------------------
+    - Exact Cone Angle and Algorithm: 
+        - ***DOI***: 10.1002/jcc.23217
+    - Tolman Cone Angle: 
+        - ***DOI***: 10.1021/cr60307a002
     '''
 
 
-    elements = [a.element.symbol for a in ml_mol.atoms]
+    elements = [ml.Element.H if a.element == ml.Element.Unknown else a.element for a in ml_mol.atoms]
 
     #Allows matching of the XYZ file format if necessary
     if round_coords:
@@ -381,14 +384,7 @@ def cone_angle(
         coordinates = ml_mol.coords
 
     #morfeus starts counting from 1 instead of 0
-    if isinstance(atom, ml.Atom):
-        atom_idx = ml_mol.get_atom_index(atom) + 1
-
-    elif isinstance(atom, int):
-        atom_idx = atom + 1
-
-    else:
-        raise ValueError(f'Metal atom not an atom instance or integer! :  {metal_atom}')
+    atom_idx = ml_mol.get_atom_index(atom) + 1
 
     #Chooses the dictionary utilized for calculating vdw radius
     match radii:
