@@ -23,7 +23,7 @@ Installation:
 pip install morfeus-ml
 '''
 
-from morfeus import BuriedVolume, ConeAngle
+from morfeus import BuriedVolume, ConeAngle, Sterimol
 from morfeus.typing import ArrayLike1D
 
 def draw_3D_cone(
@@ -432,5 +432,161 @@ def cone_angle(
             cone_color=cone_color,
             cone_opacity=cone_opacity,
             vdw_opacity=vdw_opacity)
+    
+    return ml_mol
+
+def sterimol(
+    ml_mol: ml.Molecule, 
+    dummy_atom: (ml.Atom | int),
+    attached_atom: (ml.Atom | int),
+    round_coords: bool = False,
+    radii: (str | ArrayLike1D) = "morfeus",
+    radii_type: str = 'crc',
+    n_rot_vectors=3600,
+    excluded_atoms: Iterable[ml.Atom] = None,
+    calc_buried: bool = False,
+    bury_radius: float = 5.5,
+    bury_method: str = 'delete',
+    bury_radii_scale: float = 0.5,
+    bury_density: float = 0.01,
+    verbose: bool = False
+) -> ml.Molecule:
+    '''Sterimol calculation as done with morfeus. This will store sterimol
+    calculation data and return the molecule with calculated data.
+
+    Parameters
+    ----------
+    ml_mol : ml.Molecule
+        Molecule to do sterimol calculation on
+    dummy_atom : ml.Atom  |  int
+        Dummy atom for sterimol calculation
+    attached_atom : ml.Atom  |  int
+        Atom attached to full structure for sterimol calculation
+    round_coords : bool, optional
+        This converts the coordinates to be rounded to 6 floating point values to match
+        traditional XYZ format, by default False
+    radii : str  |  ArrayLike1D, optional
+        vdW radii to use. `molli`, `morfeus`, and a separate array can be specified, by default morfeus 
+    radii_type : str, optional
+        Types of radii to be used: `alvarez`, `bondi`, `crc` or `truhlar`, by default 'bondi'
+    n_rot_vectors : int, optional
+        Number of rotational vectors for determining B1 and B5, by default 3600
+    excluded_atoms : Iterable[ml.Atom], optional
+        Atoms to exclude in buried volume calculation, by default None with metal atom excluded
+    calc_buried : bool, optional
+        Do a buried sterimol calculation on top of the original sterimol, by default False
+    bury_radius : float, optional
+        Radius of the sphere for the buried Sterimol calculation, by default 5.5
+    bury_method : str, optional
+        Method for burying: `delete`, `slice`, or `truncate` available, by default 'delete'
+    bury_radii_scale : float, optional
+        Scaling factor for radii with the `delete` method calculation, by default 0.5
+    bury_density : float, optional
+        Area per point on the surface of (Å²), by default 0.01
+    verbose : bool, optional
+        Allows printing of final results, by default False
+
+    Returns
+    -------
+    ml.Molecule
+        Updated Molecule object
+
+    Additional Notes
+    ----------------
+    - This has been tested with the a `MoleculeLibrary` of structures created from `ml.files.BOX_4_position` to match with morfeus
+    if `round_coords` are used. 
+    - The following attributes are created under the attrib `Sterimol` assuming the buried sterimol calculation is done :
+        - B_1
+        - B_1_Vec
+        - B_5
+        - B_5_Vec 
+        - L 
+        - L_uncorr 
+        - d(a1-a2) 
+            - represents bond length between a1 and a2
+        - B_1_Bury
+        - B_1_Vec_Bury
+        - B_5_Bury
+        - B_5_Vec_Bury
+        - L_Bury
+        - L_uncorr_Bury
+    
+    Relevant References
+    -------------------
+    - Sterimol: 
+        - ***DOI***: 10.1016/B978-0-12-060307-7.50010-9
+        - ***DOI***: 10.1016/B978-0-08-029222-9.50051-2
+    - Buried Sterimol: 
+        - ***DOI***: 10.1021/jacs.1c09718
+    '''
+
+    #Converts any element to hydrogen if it is unknown
+    elements = [ml.Element.H if a.element == ml.Element.Unknown else a.element for a in ml_mol.atoms]
+
+    #Allows matching of the XYZ file format if necessary
+    if round_coords:
+        coordinates = np.vectorize(lambda x: float(f"{x:.6f}"))(ml_mol.coords)
+    else:
+        coordinates = ml_mol.coords
+
+    #Chooses the dictionary utilized for calculating vdw radius
+    match radii:
+        case 'morfeus':
+            radii = None
+        case 'molli':
+            radii = [a.vdw_radius for a in ml_mol.atoms]
+        case _:
+            print('radii not `molli` or `morfeus`, interpreting as 1D array')
+
+    #morfeus starts counting from 1 instead of 0
+    dummy_idx = ml_mol.get_atom_index(dummy_atom) + 1
+    attached_idx = ml_mol.get_atom_index(attached_atom) + 1
+
+    exc_idx = None
+    if excluded_atoms is not None:
+        exc_idx = [ml_mol.get_atom_index(x) + 1 for x in excluded_atoms]
+
+    ster = Sterimol(
+    elements=elements, 
+    coordinates=coordinates, 
+    dummy_index=dummy_idx, 
+    attached_index=attached_idx,
+    radii=radii,
+    radii_type=radii_type,
+    n_rot_vectors=n_rot_vectors,
+    excluded_atoms=exc_idx,
+    calculate=True)
+
+    res = {
+            'B_1': ster.B_1_value,
+            'B_1_Vec': ster.B_1,
+            'B_5': ster.B_5_value,
+            'B_5_Vec': ster.B_5,
+            'L': ster.L_value,
+            'L_Vec':ster.L,
+            'L_uncorr':ster.L_value_uncorrected,
+            'd(a1-a2)':ster.bond_length,
+        }
+    
+    if calc_buried:
+        ster.bury(
+            sphere_radius=bury_radius,
+            method=bury_method,
+            radii_scale=bury_radii_scale,
+            density=bury_density
+        )
+        res['B_1_Bury'] = ster.B_1_value
+        res['B_1_Vec_Bury'] = ster.B_1
+        res['B_5_Bury'] = ster.B_5_value
+        res['B_5_Vec_Bury'] = ster.B_5
+        res['L_Bury'] = ster.L_value
+        res['L_Vec_Bury'] = ster.L
+        res['L_uncorr_Bury'] = ster.L_value_uncorrected
+
+    ml_mol.attrib['Sterimol'] = res
+
+    if verbose:
+        print(f'The following attributes were added to {ml_mol} under the attribute name `Sterimol`')
+        pprint(ml_mol.attrib['Sterimol'])
     
     return ml_mol
