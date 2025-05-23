@@ -10,6 +10,7 @@ def is_package_installed(pkg_name):
 if not is_package_installed("morfeus"):
     raise ImportError("morfeus-ml is not installed in this environment")
 
+
 '''
 This is meant to interface with the morfeus-ml package originally developed
 by Kjell Jorner, along with Gabriel dos Passos Gomes, Pascal Friedrich, and Tobias Gensch
@@ -22,8 +23,96 @@ Installation:
 pip install morfeus-ml
 '''
 
-from morfeus import BuriedVolume
+from morfeus import BuriedVolume, ConeAngle
 from morfeus.typing import ArrayLike1D
+
+def draw_3D_cone(
+    cone_angle: ConeAngle,
+    mlmol: ml.Molecule,
+    cone_atom: ml.Atom,
+    show_cone_atom: bool=True,
+    cone_color: str = "steelblue",
+    cone_opacity: float = 0.3,
+    vdw_opacity: float= 0.3
+) -> None:
+    '''Draw a 3D representation of the molecule with the cone. This is 
+    heavily taking from the morfeus implementation of `ConeAngle.draw_3D` 
+    function with a simple modification to ensure cone inversion at angles
+    greater than 180 degrees.
+
+    Parameters
+    ----------
+    cone_angle : ConeAngle
+        ConeAngle instance created by morfeus
+    mlmol : ml.Molecule
+        Molecule used for descriptor calculation
+    cone_atom : ml.Atom
+        Atom used for cone angle calculation
+    cone_color : str, optional
+        Color of cone drawn, by default "steelblue"
+    cone_opacity : float, optional
+        Opacity of cone drawn, by default 0.3
+    show_cone_atom: bool, optional
+        Show Atom used for cone angle calculation in visualization, by default True
+    vdw_opacity : float, optional
+        Opacity of cone drawn, by default 0.3
+
+    Additional Notes
+    -----------------
+    `ConeAngle.draw_3D` reference can be found here:
+    https://github.com/digital-chemistry-laboratory/morfeus/blob/main/morfeus/cone_angle.py
+
+    '''
+
+    from molli.visual._pyvista import draw_vdwsphere
+    from pyvista import Cone
+
+    if show_cone_atom:
+        p = draw_vdwsphere(mlmol, _tobeshown=False, opacity=vdw_opacity)
+    else:
+        p = draw_vdwsphere(mlmol, exclude_atoms=[cone_atom], _tobeshown=False, opacity=vdw_opacity)
+
+    # Determines direction and extension of cone
+    angle = cone_angle.cone_angle
+
+    coordinates = mlmol.coords
+    radii= np.array([atom.vdw_radius for atom in mlmol.atoms])
+    cone_atom_coord = mlmol.get_atom_coord(cone_atom)
+
+    #Inverts the normal vector defining the cone when the angle is greater than 180
+    if angle > 180:
+        normal = -cone_angle._cone.normal
+    else:
+        normal = cone_angle._cone.normal
+    #Projects all the atom coordinates onto the normal vector
+    projected = np.dot(normal, coordinates.T) + np.array(radii)
+
+    #Determines the maximum distance necessary to render for the cone
+    max_extension = np.max(projected)
+
+    #The "angle" calculated refers to the apex angle of the cone, which 
+    #is multiplied by 2. This needs to be divided by 2 regardless of direction
+    if angle > 180:
+        max_extension += 1
+        #Inverts the cone and moves it 
+        fix_angle = (360-angle) / 2
+    else:
+        fix_angle = angle / 2
+    
+    #Creates the cone where center (i.e. the midpoint of the cone) is shifted
+    #to the middle of the atom that was used to define the cone (i.e. the tip)
+    cone = Cone(
+        center=cone_atom_coord + (max_extension * normal) / 2,
+        direction=-normal,
+        angle=fix_angle,
+        height=max_extension,
+        capping=False,
+        resolution=100,
+        )
+
+    p.add_mesh(cone, opacity=cone_opacity, show_edges=False, color=cone_color)
+
+    p.show()
 
 def buried_volume(
         ml_mol: ml.Molecule, 
@@ -73,7 +162,7 @@ def buried_volume(
     radius : float, optional
         Radius of the sphere for buried volume calculation, by default 3.5
     radii_type : str, optional
-        Types of radii to be used: `alvarez`, `bondi`, `crc` or `truhlar, by default 'bondi'
+        Types of radii to be used: `alvarez`, `bondi`, `crc` or `truhlar`, by default 'bondi'
     radii_scale : float, optional
         Scaling factor for radii, by default 1.17
     density : float, optional
@@ -105,7 +194,7 @@ def buried_volume(
     - This has been tested with the `MoleculeLibrary` `ml.files.cinchonidine_no_conf` to match exactly with morfeus
     only if `round_coords` is used. If `round_coords` is not used, it matches to a relative tolerance of 1e-3 and absolute 
     tolerance  of 1e-5 as defined by the `numpy.isclose` function
-    - The following attributes are created assuming distal volume calculation and octant analysis is done:
+    - The following attributes are created assuming distal volume calculation and octant analysis under the attrib `BuriedVolume`:
         - percent_buried_volume
         - buried_volume
         - free volume
@@ -216,4 +305,132 @@ def buried_volume(
         print(f'The following attributes were added to {ml_mol} under the attribute name `BuriedVolume`')
         pprint(ml_mol.attrib['BuriedVolume'])
 
+    return ml_mol
+
+def cone_angle(
+    ml_mol: ml.Molecule, 
+    atom: (ml.Atom | int),
+    round_coords: bool = False,
+    radii: (str | ArrayLike1D) = "morfeus",
+    radii_type: str = 'crc',
+    method: str = 'libconeangle',
+    verbose: bool = False,
+    plot: bool = False,
+    show_cone_atom: bool = True,
+    cone_color: str = "steelblue",
+    cone_opacity: float = 0.3,
+    vdw_opacity: float= 0.3
+    ) -> ml.Molecule:
+    '''Cone Angle calculation as done with morfeus. This will store cone angle
+    calculation data and return the molecule with calculated data. Visualization
+    requires the installation of pyvista. The `libconeangle` must be installed to use
+    the method.
+
+    Parameters
+    ----------
+    ml_mol : ml.Molecule
+        Molecule to do cone angle calculation on
+    atom : ml.Atom  |  int
+        Cone atom for cone angle calculation
+    round_coords : bool, optional
+        This converts the coordinates to be rounded to 6 floating point values to match
+        traditional XYZ format, by default False
+    radii : str  |  ArrayLike1D, optional
+        vdW radii to use. `molli`, `morfeus`, and a separate array can be specified, by default morfeus 
+    radii_type : str, optional
+        Types of radii to be used: `alvarez`, `bondi`, `crc` or `truhlar`, by default 'bondi'
+    method : str, optional
+        Method of calculation: `internal` or `libconeangle, by default 'libconeangle'
+    verbose : bool, optional
+        Allows printing of final results, by default False
+    plot : bool, optional
+        Allows plotting of the cone created for the molecule, by default True
+    show_cone_atom : bool, optional
+        Specifies if the atom used to calculate the angle is shown, by default True
+    cone_color : str, optional
+        Color fo the plotted cone, by default "steelblue"
+    cone_opacity : float, optional
+        Opacity of the cone, by default 0.3
+    vdw_opacity : float, optional
+        Opacity of the van der Waals visualization, by default 0.3
+
+    Returns
+    -------
+    ml.Molecule
+        Molecule with updated attributes
+
+    Additional Notes
+    ----------------
+    - This has been tested with the a `MoleculeLibrary` created from an MMFF94 optimized `ml.files.buch_phos_cdxml` with a Ni atom
+    appended to it. `round_coords` allows less floats to be utilized and make the calculation a bit faster.
+    - The following attributes are added to the Molecule under the attrib `ConeAngle`:
+        - ConeAngle
+        - TangentAtoms
+            - This is a list of numbers
+        - NormalVec
+            - This is the normal vector used to define the cone.  
+    '''
+
+
+    elements = [a.element.symbol for a in ml_mol.atoms]
+
+    #Allows matching of the XYZ file format if necessary
+    if round_coords:
+        coordinates = np.vectorize(lambda x: float(f"{x:.6f}"))(ml_mol.coords)
+    else:
+        coordinates = ml_mol.coords
+
+    #morfeus starts counting from 1 instead of 0
+    if isinstance(atom, ml.Atom):
+        atom_idx = ml_mol.get_atom_index(atom) + 1
+
+    elif isinstance(atom, int):
+        atom_idx = atom + 1
+
+    else:
+        raise ValueError(f'Metal atom not an atom instance or integer! :  {metal_atom}')
+
+    #Chooses the dictionary utilized for calculating vdw radius
+    match radii:
+        case 'morfeus':
+            radii = None
+        case 'molli':
+            radii = [a.vdw_radius for a in ml_mol.atoms]
+        case _:
+            print('radii not `molli` or `morfeus`, interpreting as 1D array')
+
+    ca = ConeAngle(
+        elements=elements,
+        coordinates=coordinates,
+        atom_1=atom_idx,
+        radii=radii,
+        radii_type=radii_type,
+        method=method
+    )
+
+    res = {
+        "ConeAngle":ca.cone_angle,
+        "TangentAtoms":ca.tangent_atoms,
+        "NormalVec":ca._cone.normal
+        }
+
+    ml_mol.attrib['ConeAngle'] = res
+
+    if verbose:
+        print(f'The following attributes were added to {ml_mol} under the attribute name `BuriedVolume`')
+        pprint(ml_mol.attrib['BuriedVolume'])
+
+    if plot:
+        if not is_package_installed("pyvista"):
+            raise ImportError("pyvista is not installed in this environment to enable visualization")
+
+        draw_3D_cone(
+            cone_angle=ca,
+            mlmol=ml_mol,
+            cone_atom=atom, 
+            show_cone_atom=show_cone_atom,
+            cone_color=cone_color,
+            cone_opacity=cone_opacity,
+            vdw_opacity=vdw_opacity)
+    
     return ml_mol
