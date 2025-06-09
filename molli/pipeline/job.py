@@ -51,7 +51,8 @@ from time import sleep
 T_in = TypeVar("T_in")
 T_out = TypeVar("T_out")
 
-MOLLI_RUN = Path(sys.executable).with_name("_molli_run")
+# MOLLI_RUN = Path(sys.executable).with_name("_molli_run")
+MOLLI_RUN = Path('./_molli_run')
 
 
 @attrs.define(repr=True)
