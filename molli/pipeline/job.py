@@ -705,8 +705,8 @@ def _run_local(
     odir: Path,
     sdir: Path,
 ):
-    script = f"""{MOLLI_RUN} {ifn} -o {odir.as_posix()} -s {sdir.as_posix()}"""
-
+    script = f"""{MOLLI_RUN} {ifn.as_posix()} -o {odir.as_posix()} -s {sdir.as_posix()}"""
+    
     proc = run(
         shlex.split(script),
         cwd=cwd,
