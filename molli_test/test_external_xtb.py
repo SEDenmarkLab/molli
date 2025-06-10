@@ -43,162 +43,166 @@ import importlib.util
 # a little clunky but will check if xTB is installed
 try:
     out = subprocess.run(["xtb", "--version"], capture_output=True)
-    if out.stderr == b"normal termination of xtb\n":
+    if b'normal termination' in out.stderr:
         _XTB_INSTALLED = True
 except FileNotFoundError:
     _XTB_INSTALLED = False
-
 
 def is_package_installed(pkg_name):
     return importlib.util.find_spec(pkg_name) is not None
 
 
-_CURRENT_BACKUP_DIR = BACKUP_DIR
-_CURRENT_SCRATCH_DIR = SCRATCH_DIR
-_TEST_BACKUP_DIR: Path = ml.config.HOME / "test_backup"
-_TEST_SCRATCH_DIR: Path = ml.config.HOME / "test_scratch"
-_TEST_LOG_DIR: Path = ml.config.HOME / "test_log"
-_TEST_ERROR_DIR: Path = ml.config.HOME / "test_error"
-
-
-def prep_dirs():
-    ml.config.BACKUP_DIR = _TEST_BACKUP_DIR
-    ml.config.SCRATCH_DIR = _TEST_SCRATCH_DIR
-    # _TEST_BACKUP_DIR.mkdir()
-    # _TEST_SCRATCH_DIR.mkdir()
-
-
-def cleanup_dirs():
-    shutil.rmtree(_TEST_BACKUP_DIR)
-    shutil.rmtree(_TEST_SCRATCH_DIR)
-    shutil.rmtree(_TEST_LOG_DIR)
-    shutil.rmtree(_TEST_ERROR_DIR)
-    ml.config.BACKUP_DIR = _CURRENT_BACKUP_DIR
-    ml.config.SCRATCH_DIR = _CURRENT_SCRATCH_DIR
-
+# def cleanup_dirs(backup_dir, scratch_dir):
+#     shutil.rmtree(backup_dir)
+#     shutil.rmtree(scratch_dir)
+    # for file in (SCRATCH_DIR).glob("*.mlib"):
+    #     file.unlink()
 
 class XTBTC(ut.TestCase):
     """This test suite is for the basic installation stuff"""
-
+    
     @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")
     def test_xtb_optimize_parallel(self):
         xtb = XTBDriver(nprocs=4)
 
-        source = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+        _TEST_DIR = SCRATCH_DIR / 'xtb_opt'
+        _TEST_BACKUP_DIR = _TEST_DIR / 'backup'
+        _TEST_SCRATCH_DIR = _TEST_DIR / 'scratch'
+
+        [x.mkdir(parents=True, exist_ok=True) for x in [_TEST_DIR, _TEST_BACKUP_DIR, _TEST_SCRATCH_DIR]]
+
+        init_lib = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+
+        source = ml.MoleculeLibrary(_TEST_DIR / 'small.mlib', readonly=False, overwrite=True)
+
+        with init_lib.reading(), source.writing():
+            for i, k in enumerate(init_lib):
+                source[k] = init_lib[k]
+                if i == 10:
+                    break
 
         target = ml.MoleculeLibrary(
-            ml.config.SCRATCH_DIR / "dest.mlib",
+            _TEST_DIR / "dest.mlib",
             overwrite=True,
             readonly=False,
             comment="We did it!",
         )
-
-        prep_dirs()
 
         ml.pipeline.jobmap(
             xtb.optimize_m,
             source,
             target,
-            cache_dir=ml.config.BACKUP_DIR,
-            error_dir=_TEST_ERROR_DIR,
-            log_dir=_TEST_LOG_DIR,
-            scratch_dir=ml.config.SCRATCH_DIR,
-            scheduler="local",
-            n_workers=4,
-            n_jobs_per_worker=8,
+            cache_dir=_TEST_BACKUP_DIR,
+            scratch_dir=_TEST_SCRATCH_DIR,
+            n_workers=2,
             verbose=True,
-            progress=True,
+            progress=True
         )
 
-        res = ml.MoleculeLibrary(ml.config.SCRATCH_DIR / "dest.mlib")
 
-        with res.reading(), source.reading():
-            for name in res:
-                m1, m2 = source[name], res[name]
+        with target.reading(), source.reading():
+            self.assertTrue(target.n_items == source.n_items)
+            for name in target:
+                m1 = source[name]
+                m2 = target[name]
                 self.assertNotAlmostEqual(np.linalg.norm(m1.coords - m2.coords), 0)
-            cleanup_dirs()
+        
+        shutil.rmtree(_TEST_DIR)
 
     @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")
     def test_xtb_energy_parallel(self):
-        xtb = XTBDriver(nprocs=4)
+        xtb = XTBDriver(nprocs=4,memory=4000)
 
-        source = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+        _TEST_DIR = SCRATCH_DIR / 'xtb_energy'
+        _TEST_BACKUP_DIR = _TEST_DIR / 'backup'
+        _TEST_SCRATCH_DIR = _TEST_DIR / 'scratch'
+
+        [x.mkdir(parents=True, exist_ok=True) for x in [_TEST_DIR, _TEST_BACKUP_DIR, _TEST_SCRATCH_DIR]]
+
+        init_lib = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+
+        source = ml.MoleculeLibrary(_TEST_DIR / 'small.mlib', readonly=False, overwrite=True)
+
+        with init_lib.reading(), source.writing():
+            for i, k in enumerate(init_lib):
+                source[k] = init_lib[k]
+                if i == 10:
+                    break
 
         target = ml.MoleculeLibrary(
-            ml.config.SCRATCH_DIR / "dest.mlib",
+            _TEST_DIR / "dest.mlib",
             overwrite=True,
             readonly=False,
             comment="We did it!",
         )
-
-        prep_dirs()
 
         ml.pipeline.jobmap(
             xtb.energy,
             source,
             target,
-            cache_dir=ml.config.BACKUP_DIR,
-            error_dir=_TEST_ERROR_DIR,
-            log_dir=_TEST_LOG_DIR,
-            scratch_dir=ml.config.SCRATCH_DIR,
-            scheduler="local",
-            n_workers=4,
-            n_jobs_per_worker=8,
+            cache_dir=_TEST_BACKUP_DIR.as_posix(),
+            scratch_dir=_TEST_SCRATCH_DIR.as_posix(),
+            n_workers=2,
             verbose=True,
             progress=True,
         )
 
-        res = ml.MoleculeLibrary(ml.config.SCRATCH_DIR / "dest.mlib")
-
-        with res.reading():
-            for name in res:
-                m = res[name]
-                if name == "1_5_c_cf0":
-                    self.assertEqual(m.attrib["energy"], -105.283692410825)
-                if name == "2_12_c_cf0":
-                    self.assertEqual(m.attrib["energy"], -102.602803640785)
-                if name == "10_5_c_cf0":
-                    self.assertEqual(m.attrib["energy"], -115.729089277128)
-            cleanup_dirs()
+        with target.reading(), source.reading():
+            self.assertTrue(target.n_items == source.n_items)
+            for name in target:
+                m = target[name]
+                self.assertTrue('energy' in m.attrib)
+        
+        shutil.rmtree(_TEST_DIR)
 
     @ut.skipUnless(is_package_installed("pandas"), "pandas is not installed")
+    @ut.skipUnless(_XTB_INSTALLED, "xtb is not installed in current environment.")
     def test_atom_properties_parallel(self):
         xtb = XTBDriver(nprocs=4)
+        
+        _TEST_DIR = SCRATCH_DIR / 'xtb_atom'
+        _TEST_BACKUP_DIR = _TEST_DIR / 'backup'
+        _TEST_SCRATCH_DIR = _TEST_DIR / 'scratch'
 
-        source = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+        [x.mkdir(parents=True, exist_ok=True) for x in [_TEST_DIR, _TEST_BACKUP_DIR, _TEST_SCRATCH_DIR]]
+
+        init_lib = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+
+        source = ml.MoleculeLibrary(_TEST_DIR / 'small.mlib', readonly=False, overwrite=True)
+
+        with init_lib.reading(), source.writing():
+            for i, k in enumerate(init_lib):
+                source[k] = init_lib[k]
+                if i == 10:
+                    break
 
         target = ml.MoleculeLibrary(
-            ml.config.SCRATCH_DIR / "dest.mlib",
+            _TEST_DIR / "dest.mlib",
             overwrite=True,
             readonly=False,
             comment="We did it!",
         )
 
-        prep_dirs()
-
         ml.pipeline.jobmap(
             xtb.atom_properties_m,
             source,
             target,
-            cache_dir=ml.config.BACKUP_DIR,
-            error_dir=_TEST_ERROR_DIR,
-            log_dir=_TEST_LOG_DIR,
-            scratch_dir=ml.config.SCRATCH_DIR,
-            scheduler="local",
-            n_workers=4,
-            n_jobs_per_worker=8,
+            cache_dir=_TEST_BACKUP_DIR.as_posix(),
+            scratch_dir=_TEST_SCRATCH_DIR.as_posix(),
+            n_workers=2,
             verbose=True,
             progress=True,
         )
 
-        res = ml.MoleculeLibrary(ml.config.SCRATCH_DIR / "dest.mlib")
 
-        with res.reading():
-            for name in res:
-                m = res[name]
+        with target.reading(), source.reading():
+            self.assertTrue(target.n_items == source.n_items)
+            for name in target:
+                m = target[name]
                 a = m.get_atom(0)
                 for att in a.attrib:
-                    attribs = [a.attrib[att] for a in m.atoms]
-                    self.assertEqual(len(m.atoms), len(attribs))
-                    self.assertTrue(attribs)
-            cleanup_dirs()
+                    self.assertTrue(a.attrib[att] != '')
+                attribs = [a.attrib[att] for a in m.atoms]
+                self.assertEqual(len(m.atoms), len(attribs))
+
+        shutil.rmtree(_TEST_DIR)

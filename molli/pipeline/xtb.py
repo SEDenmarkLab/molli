@@ -53,13 +53,26 @@ class XTBDriver(DriverBase):
         M: Molecule,
         charge: int = None,
         mult: int = None,
-        method: str = "gff",
+        method: str = "gfn2",
         crit: str = "loose",
         xtbinp: str = "",
         maxiter: int = 500,
         misc: str = None,
     ):
-        """Optimize a molecule with XTB"""
+        """Optimize a molecule with XTB
+        
+        Additional Notes
+        -----------------
+        In the event that no optimization occurs, this function raises an assertion error that can be found in the backup folder under jobmap.log
+
+        Current Issue exists for xtb v6.7.1 from conda-forge with fortran code.
+        This can be solved by downgrading libgfortran from 15.1.0 --> 14.2.0. Will most likely
+        be resolved in future xtb updates:
+
+        * https://github.com/grimme-lab/xtb/issues/1277
+
+        
+        """
         assert isinstance(M, Molecule), "User did not pass a Molecule object!"
         inp = JobInput(
             M.name,
@@ -86,15 +99,15 @@ class XTBDriver(DriverBase):
         **kwargs,
     ):
         if res := out.files["xtbopt.xyz"]:
-            xyz = res.decode()
-
-            # the second line of the xtb output is not needed - it is the energy line
-            xyz_coords = (
-                xyz.split("\n")[0] + "\n" + "\n" + "\n".join(xyz.split("\n")[2:])
-            )
-            optimized = Molecule(M, coords=Molecule.loads_xyz(xyz_coords).coords)
-
-            return optimized
+            xyz = Molecule.loads_xyz(res.decode())
+            new_M = Molecule(M)
+            np.testing.assert_raises( # This checks for failed optimization
+                AssertionError,
+                np.testing.assert_array_almost_equal,
+                new_M.coords,
+                xyz.coords)
+            new_M.coords = xyz.coords
+            return new_M
 
     optimize_ens = Job.vectorize(optimize_m)
 
@@ -112,7 +125,7 @@ class XTBDriver(DriverBase):
             old_conf.coords = new_conf.coords
         return newens
 
-    @Job().prep
+    @Job(return_files=()).prep
     def energy_m(
         self,
         M: Molecule,
@@ -124,7 +137,7 @@ class XTBDriver(DriverBase):
         maxiter: int = 2000,
         misc: str = None,
     ):
-        # assert isinstance(M, Molecule), "User did not pass a Molecule object!"
+        assert isinstance(M, Molecule), "User did not pass a Molecule object!"
 
         inp = JobInput(
             M.name,
@@ -145,7 +158,7 @@ class XTBDriver(DriverBase):
 
     @energy_m.post
     def energy(self, out: JobOutput, M: Molecule, **kwargs):
-        if res := out.stdouts[self.executable]:
+        if res := out.stdouts["xtb"]:
             for l in res.split("\n")[::-1]:
                 if m := re.match(
                     r"\s+\|\s+TOTAL ENERGY\s+(?P<eh>[0-9.-]+)\s+Eh\s+\|.*", l
