@@ -527,8 +527,6 @@ def jobmap(
     logger.addHandler(_handler)
     logger.setLevel(log_level.upper())
 
-    logger = logging.getLogger("molli.pipeline.jobmap")
-
     job_input_dir = cache_dir / "input"
     job_input_dir.mkdir(exist_ok=True, parents=True)
 
@@ -698,6 +696,8 @@ def jobmap(
                     destination[key] = result
                     logger.info(f"Successfully computed for {key=}")
 
+    logger.removeHandler(_handler)
+    _handler.close()
 
 def _run_local(
     ifn: Path,
@@ -760,8 +760,6 @@ def jobmap_sge(
     _handler = logging.FileHandler(log_file)
     logger.addHandler(_handler)
     logger.setLevel(log_level.upper())
-
-    logger = logging.getLogger("molli.pipeline.jobmap")
 
     job_input_dir = cache_dir / "input"
     job_input_dir.mkdir(exist_ok=True, parents=True)
@@ -948,3 +946,5 @@ def jobmap_sge(
                 else:
                     destination[key] = result
                     logger.info(f"Successfully computed for {key=}")
+    logger.removeHandler(_handler)
+    _handler.close()
