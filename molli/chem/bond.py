@@ -146,12 +146,12 @@ class Bond:
 
     btype: BondType = attrs.field(
         default=BondType.Single,
-        repr=lambda x: x.name if hasattr(x, 'name') else x,
+        repr=lambda x: x.name if hasattr(x, "name") else x,
     )
 
     stereo: BondStereo = attrs.field(
         default=BondStereo.Unknown,
-        repr=lambda x: x.name if hasattr(x, 'name') else x,
+        repr=lambda x: x.name if hasattr(x, "name") else x,
     )
 
     f_order: float = attrs.field(
@@ -310,7 +310,7 @@ class Bond:
 
         if schema is None:
             schema = self.__slots__[:-2]
-        
+
         return tuple(getattr(self, a, None) for a in schema)
 
     def __contains__(self, other: Atom) -> bool:
@@ -477,11 +477,11 @@ class Bond:
 
             case BondType.NotConnected:
                 return MOL2_BOND_TYPE_MAP.inverse[BondType.NotConnected]
-            
-            #Mol2 Format Doesn't Recognize Multi-Attachment Bonds Natively
+
+            # Mol2 Format Doesn't Recognize Multi-Attachment Bonds Natively
             case BondType.Ligand:
                 return MOL2_BOND_TYPE_MAP.inverse[BondType.Unknown]
-            
+
             case _:
                 return MOL2_BOND_TYPE_MAP.inverse[BondType.Unknown]
 
@@ -1216,15 +1216,15 @@ class Connectivity(Promolecule):
 
         # NOTE "geom" and "label" are not compared
 
-        if a2["stereo"] != AtomStereo.Unknown and a1["stereo"] != a2["stereo"]:
-            # NOTE: no queries for now
-            # print("stereo:", a1["stereo"], a2["stereo"])
-            return False
+        # if a2["stereo"] != AtomStereo.Unknown and a1["stereo"] != a2["stereo"]:
+        #     # NOTE: no queries for now
+        #     # print("stereo:", a1["stereo"], a2["stereo"])
+        #     return False
 
-        if a1["atype"] != AtomType.Unknown and a2["atype"] != a2["atype"]:
-            # TODO: add groups for queries
-            # print("atype:", a1["atype"], a2["atype"])
-            return False
+        # if a1["atype"] != AtomType.Unknown and a2["atype"] != a2["atype"]:
+        #     # TODO: add groups for queries
+        #     # print("atype:", a1["atype"], a2["atype"])
+        #     return False
 
         return True
 
@@ -1255,21 +1255,21 @@ class Connectivity(Promolecule):
             case BondType.Dummy | _:
                 raise NotImplementedError
 
-        match e2["stereo"]:
-            case BondStereo.Unknown:
-                pass
-            case _:
-                if e1["stereo"] != e2["stereo"]:
-                    # print("bond stereo not equal")
-                    return False
+        # match e2["stereo"]:
+        #     case BondStereo.Unknown:
+        #         pass
+        #     case _:
+        #         if e1["stereo"] != e2["stereo"]:
+        #             # print("bond stereo not equal")
+        #             return False
 
-        match e2["label"]:
-            case None:
-                pass
-            case _:
-                if e1["label"] != e2["label"]:
-                    # print("blabel:", e1["label"], e2["label"])
-                    return False
+        # match e2["label"]:
+        #     case None:
+        #         pass
+        #     case _:
+        #         if e1["label"] != e2["label"]:
+        #             # print("blabel:", e1["label"], e2["label"])
+        #             return False
 
         return True
 

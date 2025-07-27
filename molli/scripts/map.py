@@ -100,6 +100,7 @@ arg_parser.add_argument(
     default=False,
 )
 
+
 @delayed
 def _runner(fx, items):
     return [(k, fx(v)) for k, v in items]
@@ -196,7 +197,7 @@ def molli_main(args, **kwargs):
                             )
                         )
                     ),
-                    total=ml.aux.len_batched(source, parsed.batchsize),
+                    total=ml.aux.len_batched(keys_tbd, parsed.batchsize),
                     dynamic_ncols=True,
                 )
             ):
