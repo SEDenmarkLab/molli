@@ -23,13 +23,6 @@ import importlib.util
 from typing import Iterable
 from pprint import pprint
 
-def is_package_installed(pkg_name):
-    return importlib.util.find_spec(pkg_name) is not None
-
-if not is_package_installed("morfeus"):
-    raise ImportError("morfeus-ml is not installed in this environment")
-
-
 '''
 This is meant to interface with the morfeus-ml package originally developed
 by Kjell Jorner, along with Gabriel dos Passos Gomes, Pascal Friedrich, and Tobias Gensch
@@ -42,8 +35,11 @@ Installation:
 pip install morfeus-ml
 '''
 
-from morfeus import BuriedVolume, ConeAngle, Sterimol
-from morfeus.typing import ArrayLike1D
+try:
+    from morfeus import BuriedVolume, ConeAngle, Sterimol
+    from morfeus.typing import ArrayLike1D
+except ImportError as xc:
+    raise ImportError("morfeus-ml is not installed in this environment") from xc
 
 def draw_3D_cone(
     cone_angle: ConeAngle,

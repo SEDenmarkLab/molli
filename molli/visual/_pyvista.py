@@ -10,8 +10,8 @@ HEIGHT = 400
 
 def draw_vdwsphere(
     s: ml.Structure,
-    _tobeshown=False,
-    exclude_atoms=list(),
+    _tobeshown:bool = False,
+    exclude_atoms:list = None,
     quality: int = 16,
     opacity: float = None) -> pv.Plotter:
     '''Draws the van der Waals sphere representation of a molecule.
@@ -23,8 +23,8 @@ def draw_vdwsphere(
         Structure for visualization
     _tobeshown : bool, optional
         Shows the plot immediately upon creation, by default False
-    exclude_atoms : _type_, optional
-        Atoms to leave out of the drawing, by default list()
+    exclude_atoms : list, optional
+        Atoms to leave out of the drawing, by default None
     quality : int, optional
         Sets the quality of the rendering, by default 16
     opacity : float, optional
@@ -35,6 +35,8 @@ def draw_vdwsphere(
     pv.Plotter
         _description_
     '''
+
+    exclude_atoms = list() if exclude_atoms is None else exclude_atoms
 
     plt = pv.Plotter()
     plt.set_background(BGCOLOR)
