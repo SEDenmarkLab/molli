@@ -8,6 +8,76 @@ THEME = "dark"
 WIDTH = 800
 HEIGHT = 400
 
+def draw_vdwsphere(
+    s: ml.Structure,
+    _tobeshown:bool = False,
+    exclude_atoms:list = None,
+    quality: int = 16,
+    opacity: float = None) -> pv.Plotter:
+    '''Draws the van der Waals sphere representation of a molecule.
+    Does not draw any bonds
+
+    Parameters
+    ----------
+    s : ml.Structure
+        Structure for visualization
+    _tobeshown : bool, optional
+        Shows the plot immediately upon creation, by default False
+    exclude_atoms : list, optional
+        Atoms to leave out of the drawing, by default None
+    quality : int, optional
+        Sets the quality of the rendering, by default 16
+    opacity : float, optional
+        Opacity of structures, by default None
+
+    Returns
+    -------
+    pv.Plotter
+        _description_
+    '''
+
+    exclude_atoms = list() if exclude_atoms is None else exclude_atoms
+
+    plt = pv.Plotter()
+    plt.set_background(BGCOLOR)
+
+    # Bin the atoms based on their element identity
+    atom_elt_bins: dict[ml.Element, list[int]] = {}
+    for i, a in enumerate(s.atoms):
+        e = a.element
+        #Checks if the atom or index is in the list
+        if (a in exclude_atoms) or (s.get_atom_index(a) in exclude_atoms):
+            continue
+        if e in atom_elt_bins:
+            atom_elt_bins[e].append(a.idx)
+        else:
+            atom_elt_bins[e] = [a.idx]
+
+    for element, atom_id_list in atom_elt_bins.items():
+        substr = ml.Substructure(s, atom_id_list)
+        #Operating with original syntax that atom_id_list
+
+        if element > 0:
+            glyph = pv.Sphere(radius=element.vdw_radius, theta_resolution=quality, phi_resolution=quality)
+        else:
+            glyph = pv.Tetrahedron(radius=ml.Element.H.vdw_radius, theta_resolution=quality, phi_resolution=quality)
+        mesh = pv.PolyData(substr.coords).glyph(geom=glyph)
+
+        plt.add_mesh(
+            mesh,
+            color=element.color_cpk if element > 0 else "navy",
+            smooth_shading=True,
+            diffuse=0.60,
+            ambient=0.40,
+            opacity=opacity,
+            # silhouette=True,
+        )
+
+    if _tobeshown:
+        plt.show()
+
+    return plt
+
 
 def draw_ballnstick(
     s: ml.Structure,
