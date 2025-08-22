@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+:root {
+    color-scheme: light dark;
+    font-family: Roboto, sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    background-color: light-dark(#efefef, #1f1f1f);
+    /* transition-duration: 400ms;
+    transition-delay: 500ms; */
+}
+
+input,
+textarea,
+select {
+    font-family: inherit;
+    padding: 5px;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
+#header {
+    display: flex;
+    /* align-content: center; */
+    align-items: center;
+    flex-direction: row;
+    margin: 20px
+}
+
+#main {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    flex-direction: row;
+    flex-grow: 1;
+    margin: 20px
+}
+
+.flex-row {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    flex-direction: row;
+    flex-grow: 1;
+    margin: 20px
+}
+
+
+#header a#title {
+    font-size: xx-large;
+    font-weight: 700;
+}
+
+#header a#title:any-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+#header #toolbar_top {
+    flex-grow: 1;
+    margin: 0px 40px
+}
+
+#mollilogo {
+    /* margin: 10px 0px; */
+    height: 75px;
+}
+
+
+#left_panel {
+    width: 10%;
+    float: left;
+    display: flex;
+    flex-direction: column;
+    /* padding: 10px; */
+    flex-grow: 1;
+    align-self: stretch;
+    margin: 10px;
+}
+
+#right_panel {
+    background-color: black;
+    width: 30%;
+    float: left;
+    display: flex;
+    flex-direction: column;
+    /* padding: 10px; */
+    flex-grow: 1;
+    align-self: stretch;
+    margin: 10px;
+}
+
+
+#molid {
+    flex-grow: 1;
+    align-self: stretch;
+}
+
+#v3dm {
+    width: 88%;
+    float: left;
+    position: relative;
+    flex-grow: 1;
+    display: flex;
+    align-self: stretch;
+}
+
+.libitemlist {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    flex-grow: 1;
+    margin: 10px;
+}
+
+.libitem {
+    border-radius: 3px;
+    border: 2px solid gray;
+    margin: 5px 5px;
+    padding: 15px 15px;
+    cursor: pointer;
+}
+
+.libitem>a {
+    font-size: larger;
+    font-weight: 700;
+}
+
+.libitem>p {
+    font-family: "Roboto Mono", monospace;
+    margin: 0;
+    font-size: small;
+    font-weight: 400;
+    color: light-dark(navy, lightblue);
+}
+
+.libitem:hover {
+    background-color: light-dark(lightblue, #5f5f5f);
+}

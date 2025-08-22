@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>molli Library Server</title>
+    <link rel="stylesheet" href="/style1.css">
+    <script>
+        function change_color_scheme() {
+            scheme = document.getElementById('themesel').value
+            localStorage.setItem('molli_libview_color_scheme', scheme);
+            document.documentElement.style.colorScheme = scheme;
+        }
+
+        function recall_color_scheme() {
+            let scheme = localStorage.getItem('molli_libview_color_scheme');
+            document.documentElement.style.colorScheme = scheme;
+            document.getElementById('themesel').value = scheme
+        }
+    </script>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <script src="https://3Dmol.org/build/3Dmol.ui-min.js"></script>
+    <script src="/molli_3dmol.js"></script>
+</head>
+
+<body onload="recall_color_scheme(); get_keys();">
+    <div id="header">
+        <img src="/molli.svg" alt="molli logo" id="mollilogo">
+        <a id="title" href="/">Library Viewer</a>
+        <span id="toolbar_top"></span>
+        <select title="Theme" id="themesel" onchange="change_color_scheme();">
+            <option value="light dark" selected>System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+        </select>
+    </div>
+    <div id="main">
+        <div id="left_panel">
+            <input type="text"
+                title="Filter library ids using wildcards. Currently only supported *, which means any number of any characters."
+                id="wildcard" value="*" onchange="filter_keys();" autocomplete="off">
+            <br>
+            <select id="molid" multiple onchange="get_molecules()"></select>
+        </div>
+
+        <div id="v3dm" class='viewer_3Dmoljs'>
+        </div>
+
+        <!-- <div id="right_panel"> -->
+
+    </div>
+    </div>
+</body>
+
+</html>

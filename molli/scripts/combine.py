@@ -90,6 +90,16 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
+    "-d",
+    "--distance",
+    action="store",
+    metavar=1.5,
+    default=None,
+    type=float,
+    help="Join the fragments at this distance",
+)
+
+arg_parser.add_argument(
     "-b",
     "--batchsize",
     action="store",
@@ -112,7 +122,7 @@ arg_parser.add_argument(
     "-sep",
     "--separator",
     action="store",
-    default="_",
+    default="",
     help="Name separator",
 )
 
@@ -135,11 +145,24 @@ arg_parser.add_argument(
     ),
 )
 
-
 arg_parser.add_argument(
     "--overwrite",
     action="store_true",
     help="Overwrite the target files if they exist (default is false)",
+    default=False,
+)
+
+arg_parser.add_argument(
+    "--sort",
+    action="store_true",
+    help="Sort the keys before writing",
+    default=False,
+)
+
+arg_parser.add_argument(
+    "--shortname",
+    action="store_true",
+    help="If mode is `same`, only one substituent name will be added to the name.",
     default=False,
 )
 
@@ -152,6 +175,8 @@ def _ml_assemble(
     hadd: bool = True,
     obopt: Callable = None,
     separator: str = "_",
+    distance: float = None,
+    shortname: bool = False,
 ):
     results = {}
     for substituent_combo in substituent_combos:
@@ -160,11 +185,19 @@ def _ml_assemble(
         deriv = ml.Molecule(core)
         for i, (ap_i, sub) in enumerate(zip(core_aps, substituent_combo)):
             deriv = ml.Molecule.join(
-                deriv, sub, ap_i - i, sub.attachment_points[0], optimize_rotation=True
+                deriv,
+                sub,
+                ap_i - i,
+                sub.attachment_points[0],
+                dist=distance,
+                optimize_rotation=True,
             )
-        deriv.name = separator.join(
-            [core.name] + [sub.name for sub in substituent_combo]
-        )
+        if shortname:
+            deriv.name = separator.join([core.name, substituent_combo[0].name])
+        else:
+            deriv.name = separator.join(
+                [core.name] + [sub.name for sub in substituent_combo]
+            )
 
         if hadd:
             deriv.add_implicit_hydrogens()
@@ -180,9 +213,16 @@ def _ml_assemble(
 def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
     with (_lib := ml.MoleculeLibrary(parsed.cores)).reading():
-        cores: list[ml.Molecule] = list(_lib.values())
+        if parsed.sort:
+            cores = [_lib[k] for k in sorted(_lib.keys())]
+        else:
+            cores: list[ml.Molecule] = list(_lib.values())
+
     with (_lib := ml.MoleculeLibrary(parsed.substituents)).reading():
-        substituents: list[ml.Molecule] = list(_lib.values())
+        if parsed.sort:
+            substituents = [_lib[k] for k in sorted(_lib.keys())]
+        else:
+            substituents: list[ml.Molecule] = list(_lib.values())
 
     if parsed.obopt is not None:
         match parsed.obopt:
@@ -278,32 +318,39 @@ def molli_main(args, **kwargs):
 
     print(f"Will create a library of size {lib_size}")
 
-    parallel = Parallel(n_jobs=parsed.nprocs, return_as="generator")
+    parallel = Parallel(n_jobs=parsed.nprocs, return_as="generator", backend="loky")
 
     library = ml.MoleculeLibrary(
         parsed.output, readonly=False, overwrite=parsed.overwrite
     )
 
-    for results in tqdm(
-        parallel(
-            _ml_assemble(
-                c,
-                i,
-                sb,
-                hadd=parsed.hadd,
-                obopt=obopt,
-                separator=parsed.separator,
-            )
-            for (c, i), sb in product(
-                zip(cores, ap_indices),
-                ml.aux.batched(subst_iter, parsed.batchsize),
-            )
-        ),
-        total=ml.aux.len_batched(n_subst_combos, parsed.batchsize) * n_cores,
+    for results in (
+        pb := tqdm(
+            parallel(
+                _ml_assemble(
+                    c,
+                    i,
+                    sb,
+                    hadd=parsed.hadd,
+                    obopt=obopt,
+                    separator=parsed.separator,
+                    distance=parsed.distance,
+                    shortname=(parsed.mode == "same" and parsed.shortname),
+                )
+                for (c, i), sb in product(
+                    zip(cores, ap_indices),
+                    ml.aux.batched(subst_iter, parsed.batchsize),
+                )
+            ),
+            total=ml.aux.len_batched(n_subst_combos, parsed.batchsize) * n_cores,
+        )
     ):
         with library.writing():
             for k, v in results.items():
-                library[k] = v
+                if v is None:
+                    pb.write(f"Error for key {k}. Output not written.")
+                else:
+                    library[k] = v
 
     # Now all the files will be concatenated
 

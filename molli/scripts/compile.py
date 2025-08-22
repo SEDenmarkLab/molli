@@ -103,6 +103,13 @@ arg_parser.add_argument(
     help="Overwrite the destination collection",
 )
 
+arg_parser.add_argument(
+    "--du2aps",
+    action="store_true",
+    default=False,
+    help="For atoms that are defined as dummy atoms, set the attachment_point flag to true.",
+)
+
 
 def molli_main(args, **kwargs):
     parsed = arg_parser.parse_args(args)
@@ -143,5 +150,10 @@ def molli_main(args, **kwargs):
             else:
                 name = None
             mol = ml.load(fn, parser=parsed.parser, otype=parsed.type, name=name)
+            if parsed.du2aps:
+                for a in mol.atoms:
+                    if a.is_dummy:
+                        a.atype = ml.AtomType.AttachmentPoint
+
             name = mol.name
             library[name] = mol
