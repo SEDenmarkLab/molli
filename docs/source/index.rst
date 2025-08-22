@@ -52,6 +52,8 @@ Table of Contents
    cookbook/011-gbca.ipynb
    cookbook/012-jobmap.ipynb
    cookbook/013-BOX_workflow.ipynb
+   cookbook/014-map.ipynb
+   cookbook/015-libmanip.ipynb
    
 .. toctree::
    :maxdepth: 2
