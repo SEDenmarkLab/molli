@@ -65,6 +65,7 @@ substituents_cdxml = ROOT / "substituents.cdxml"
 parser_demo_cdxml = ROOT / "parser_demo.cdxml"
 parser_demo2_cdxml = ROOT / "parser_demo2.cdxml"
 charges_mult_cdxml = ROOT / "charges_mult.cdxml"
+buch_phos_cdxml = ROOT / "buchwald_cats.cdxml"
 
 oldstyle_xml = ROOT / "oldstyle.xml"
 
