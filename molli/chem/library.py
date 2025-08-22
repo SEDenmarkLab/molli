@@ -50,6 +50,30 @@ import gc
 
 
 def library_type(path: Path | str):
+    """
+    Returns the type (ConformerLibrary or MoleculeLibrary) corresponding to the
+
+    This is intended to be a much faster way of determining the appropriate
+    library class corresponding to a file than trial-and-error
+
+    Relies on
+
+    Parameters
+    ----------
+    path : Path | str
+        Path to library file
+
+    Returns
+    -------
+    type
+        Library class that fits the data in the file
+
+    Raises
+    ------
+    SyntaxError
+        Raised if the UKV file contains unsupported object.
+        This is an unexpected error in most cases.
+    """
     from ..storage.ukvfile import _ukv_head
 
     head = _ukv_head(path)
