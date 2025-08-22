@@ -19,7 +19,7 @@
 
 
 """
-Invoke this script to get a subset of a UKV file 
+Invoke this script to get a subset of a UKV file
 """
 
 from argparse import ArgumentParser
@@ -47,14 +47,14 @@ arg_parser = ArgumentParser(
 arg_parser.add_argument(
     "source",
     type=Path,
-    help="List of library files (or glob patterns)",
+    help="Library file",
 )
 
 arg_parser.add_argument(
     "patterns",
     nargs="*",
     default=None,
-    help="List of library files (or glob patterns)",
+    help="List of regular expressions to match",
 )
 
 arg_parser.add_argument(
