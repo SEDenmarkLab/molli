@@ -1,12 +1,16 @@
 name: Mamba Build test
 
+
 on:
   pull_request:
+  push:
+    branches:
+      - main
   
 
 jobs:
   mamba_build:
-    name: ${{ matrix.os }} -> mamba build
+    name: Test mamba build ${{ matrix.os }} / ${{ matrix.py }}
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -16,6 +20,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        py: 
+          - 3.10
+          - 3.11
+          - 3.12
+          - 3.13
 
     steps:
       - uses: actions/checkout@v4
@@ -50,4 +59,4 @@ jobs:
           ACTIONS_STEP_DEBUG: true
         run: |
           mkdir conda-dist;
-          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload;
+          conda mambabuild conda-recipe --output-folder conda-dist --python ${{ matrix.py }} --no-anaconda-upload;
