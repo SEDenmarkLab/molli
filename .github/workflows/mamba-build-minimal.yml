@@ -1,13 +1,12 @@
-name: Anaconda Test Upload
+name: Mamba build minimal test
+
 
 on:
-  push:
-    branches:
-      - main
-
+  pull_request:
+  
 jobs:
-  conda_build:
-    name: Conda ${{ matrix.os }} build and upload 
+  mamba_build:
+    name: Testing mamba build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -15,9 +14,13 @@ jobs:
         shell: bash -l {0}
 
     strategy:
+      fail-fast: false 
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+
     steps:
+      - uses: actions/checkout@v4
+
       - name: Set up MSVC (Windows only)
         if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
@@ -25,37 +28,27 @@ jobs:
       - name: Delete Incorrect Link from Path
         if: matrix.os == 'windows-latest'
         run: rm /usr/bin/link.exe
-
-      - uses: actions/checkout@v4
-
+        
       - name: Install micromamba
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         env:
           ACTIONS_STEP_DEBUG: true
         with:
           init-shell: >-
             bash
-            powershell
-
           create-args: >-
             python=3.11
             conda
-
           environment-name: molli
-      
+
       - name: Install conda build and upload dependencies
         run: |
-          conda install -y conda-build anaconda-client
+          conda install boa;
+          conda install conda-verify;
 
-      - name: Build conda package
+      - name: Build package
         env:
           ACTIONS_STEP_DEBUG: true
         run: |
           mkdir conda-dist;
-          conda build --output-folder conda-dist conda-recipe;
-      
-      - name: Upload conda package
-        env:
-          ACTIONS_STEP_DEBUG: true
-        run: |
-          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --label test --user esalx --force conda-dist/*/molli-*.tar.bz2;
+          conda mambabuild conda-recipe --output-folder conda-dist --no-anaconda-upload --python 3.13;
