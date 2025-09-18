@@ -38,13 +38,13 @@ requirements:
   run:
     - python {{ python }}
     - numpy>=1.24.0
-    - scipy~=1.9.1
+    - scipy>=1.9.1
     - h5py>=3.8
     - msgpack-python>=1.0.4
     - msgpack-numpy>=0.4.8
     - attrs>=22.1.0
     - bidict>=0.21.2
-    - networkx~=3.0
+    - networkx>=3.0
     - colorama>=0.4.5
     - tqdm>=4.64.0
     - pyyaml>=5.4.1
