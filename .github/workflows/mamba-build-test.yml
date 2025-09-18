@@ -10,7 +10,7 @@ on:
 
 jobs:
   mamba_build:
-    name: Test mamba build ${{ matrix.os }} / ${{ matrix.py }}
+    name: Testing mamba build on ${{ matrix.os }}, python=${{ matrix.py_version }}
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -21,10 +21,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         py: 
-          - 3.10
-          - 3.11
-          - 3.12
-          - 3.13
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
 
     steps:
       - uses: actions/checkout@v4
