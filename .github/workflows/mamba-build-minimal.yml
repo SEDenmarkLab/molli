@@ -1,12 +1,9 @@
-name: Mamba Build full test
+name: Mamba build minimal test
 
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
   
-
 jobs:
   mamba_build:
     name: Testing mamba build on ${{ matrix.os }}
@@ -54,4 +51,4 @@ jobs:
           ACTIONS_STEP_DEBUG: true
         run: |
           mkdir conda-dist;
-          conda mambabuild conda-recipe --output-folder conda-dist --no-anaconda-upload;
+          conda mambabuild conda-recipe --output-folder conda-dist --no-anaconda-upload --python 3.13;
