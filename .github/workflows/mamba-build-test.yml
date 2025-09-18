@@ -10,7 +10,7 @@ on:
 
 jobs:
   mamba_build:
-    name: Testing mamba build on ${{ matrix.os }}, python=${{ matrix.py_version }}
+    name: Testing mamba build on ${{ matrix.os }}, python=${{ matrix.py }}
     runs-on: ${{ matrix.os }}
 
     defaults:
