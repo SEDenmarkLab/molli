@@ -10,7 +10,7 @@ on:
 
 jobs:
   mamba_build:
-    name: Testing mamba build on ${{ matrix.os }}, python=${{ matrix.py }}
+    name: Testing mamba build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -20,11 +20,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        py: 
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
 
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +40,7 @@ jobs:
           init-shell: >-
             bash
           create-args: >-
-            python=${{ matrix.py }}
+            python=3.11
             conda
           environment-name: molli
 
@@ -59,4 +54,4 @@ jobs:
           ACTIONS_STEP_DEBUG: true
         run: |
           mkdir conda-dist;
-          conda mambabuild conda-recipe --output-folder conda-dist --python ${{ matrix.py }} --no-anaconda-upload;
+          conda mambabuild conda-recipe --output-folder conda-dist --no-anaconda-upload;
