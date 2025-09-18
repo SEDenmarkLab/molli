@@ -38,14 +38,14 @@ jobs:
         run: rm /usr/bin/link.exe
         
       - name: Install micromamba
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         env:
           ACTIONS_STEP_DEBUG: true
         with:
           init-shell: >-
             bash
           create-args: >-
-            python=3.11
+            python=${{ matrix.py }}
             conda
           environment-name: molli
 
