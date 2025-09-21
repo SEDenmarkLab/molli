@@ -1,6 +1,6 @@
 # These overrides are needed to prevent documentation files from destroying code statistics
-examples-jupyter/* linguist-documentation
-examples-scripts/* linguist-documentation
-examples-zenodo/* linguist-documentation
-docs/* linguist-documentation
-dev/* linguist-generated
+examples-jupyter/** linguist-documentation
+examples-scripts/** linguist-documentation
+examples-zenodo/** linguist-documentation
+docs/** linguist-documentation
+dev/** linguist-generated
