@@ -104,8 +104,8 @@ def run_local():
                 names.append(name)
 
                 with (
-                    open(f"{name}.out", "wt") as stdout,
-                    open(f"{name}.err", "wt") as stderr,
+                    open(f"{name}.out", "wt", encoding='utf-8') as stdout,
+                    open(f"{name}.err", "wt", encoding='utf-8') as stderr,
                 ):
                     proc = run(
                         shlex.split(cmd),
@@ -136,8 +136,8 @@ def run_local():
 
         for name in names:
             with (
-                open(f"{name}.out", "rt") as stdout,
-                open(f"{name}.err", "rt") as stderr,
+                open(f"{name}.out", "rt", encoding='utf-8') as stdout,
+                open(f"{name}.err", "rt", encoding='utf-8') as stderr,
             ):
                 stdouts[name] = stdout.read()
                 stderrs[name] = stderr.read()
