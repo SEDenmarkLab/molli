@@ -491,459 +491,300 @@ def worker(
     return success, failure
 
 
-def jobmap(
-    job: Job,
-    source: Collection,
-    destination: Collection,
-    cache_dir: str | Path = None,
-    scratch_dir: str | Path = None,
-    shared_dir: str | Path = None,
-    n_workers: int = None,
-    args: tuple = None,
-    kwargs: dict = None,
-    verbose: bool = False,
-    progress: bool = False,
-    log_level: str = "warning",
-    strict_hash: bool = True,
-):
-    """
-    This function maps a Job call onto a collection of items.
-    This represents the central concept of parallelization
-    """
-    logger = logging.getLogger("molli.pipeline")
+@attrs.define
+class Jobmap:
+    job: Job
+    source: Collection
+    destination: Collection
+    cache_dir: str | Path = attrs.field(default=None)
+    scratch_dir: str | Path = attrs.field(default=None)
+    shared_dir: str | Path = attrs.field(default=None)
+    n_workers: int = attrs.field(default=None)
+    args: tuple = attrs.field(default=None)
+    kwargs: dict = attrs.field(default=None)
+    verbose: bool = attrs.field(default=False)
+    progress: bool = attrs.field(default=False)
+    log_level: str = attrs.field(default="warning")
+    strict_hash: bool = attrs.field(default=True)
 
-    if cache_dir is None:
-        cache_dir = Path(source._path.stem + "." + job.name).absolute()
-    else:
-        cache_dir = Path(cache_dir).absolute()
-    cache_dir.mkdir(exist_ok=True, parents=True)
+    _logger: logging.Logger = attrs.field(init=False)
+    _input_dir: Path = attrs.field(init=False)
+    _output_dir: Path = attrs.field(init=False)
+    _work_dir: Path = attrs.field(init=False)
+    _to_be_done: set = attrs.field(init=False)
+    _jobs_to_run: list[Path] = attrs.field(init=False, factory=list)
+    _job_len: dict = attrs.field(init=False, factory=dict)
 
-    # This will configure logging into the file
-    log_file = cache_dir / "jobmap.log"
-    with open(log_file, "at") as f:
-        f.write(config.SPLASH)
-    _handler = logging.FileHandler(log_file)
-    logger.addHandler(_handler)
-    logger.setLevel(log_level.upper())
+    def __attrs_post_init__(self):
+        self._logger = logging.getLogger("molli.pipeline")
 
-    logger = logging.getLogger("molli.pipeline.jobmap")
+        if self.cache_dir is None:
+            self.cache_dir = Path(
+                self.source._path.stem + "." + self.job.name
+            ).absolute()
+        else:
+            self.cache_dir = Path(self.cache_dir).absolute()
+        self.cache_dir.mkdir(exist_ok=True, parents=True)
 
-    job_input_dir = cache_dir / "input"
-    job_input_dir.mkdir(exist_ok=True, parents=True)
+        # This will configure logging into the file
+        log_file = self.cache_dir / "jobmap.log"
+        with open(log_file, "at") as f:
+            f.write(config.SPLASH)
+        _handler = logging.FileHandler(log_file)
+        self._logger.addHandler(_handler)
+        self._logger.setLevel(self.log_level.upper())
 
-    job_output_dir = cache_dir / "output"
-    job_output_dir.mkdir(exist_ok=True, parents=True)
+        self._logger = logging.getLogger("molli.pipeline.jobmap")
 
-    job_work_dir = cache_dir / "work"
-    job_work_dir.mkdir(exist_ok=True, parents=True)
+        self._input_dir = self.cache_dir / "input"
+        self._input_dir.mkdir(exist_ok=True, parents=True)
 
-    if scratch_dir is None:
-        scratch_dir = config.SCRATCH_DIR
-    else:
-        scratch_dir = Path(scratch_dir)
+        self._output_dir = self.cache_dir / "output"
+        self._output_dir.mkdir(exist_ok=True, parents=True)
 
-    with source.reading():
-        all_keys = source.keys()
+        self._work_dir = self.cache_dir / "work"
+        self._work_dir.mkdir(exist_ok=True, parents=True)
 
-    with destination.reading():
-        skip_keys = destination.keys()
+        if self.scratch_dir is None:
+            self.scratch_dir = config.SCRATCH_DIR
+        else:
+            self.scratch_dir = Path(self.scratch_dir)
 
-    to_be_done = all_keys ^ skip_keys
+        with self.source.reading():
+            all_keys = self.source.keys()
 
-    if verbose:
-        print("Starting a molli.pipeline.jobmap_sge calculation:")
-        print("calculation:", job.name)
-        print(job.__doc__)
-        print("     source: ", source)
-        print("destination: ", destination)
-        print("scratch dir: ", scratch_dir)
-        print(f"Total number of jobs: {len(all_keys):>8}")
-        print(f"Exist in destination: {len(skip_keys):>8}")
-        print(f"To be computed:       {len(to_be_done):>8}")
+        with self.destination.reading():
+            skip_keys = self.destination.keys()
 
-    args = args or ()
-    kwargs = kwargs or {}
+        self._to_be_done = all_keys ^ skip_keys
 
-    jobs_to_run = []
-    job_len = {}
+        if self.verbose:
+            print("Creating Input Files for a molli.pipeline calculation:")
+            print("calculation:", self.job.name)
+            print(self.job.__doc__)
+            print("     source: ", self.source)
+            print("destination: ", self.destination)
+            print("scratch dir: ", self.scratch_dir)
+            print(f"Total number of jobs: {len(all_keys):>8}")
+            print(f"Exist in destination: {len(skip_keys):>8}")
+            print(f"To be computed:       {len(self._to_be_done):>8}")
 
-    # Step 2. Create all job input files
-    with source.reading():
-        for k in tqdm(to_be_done, desc="Preparing inputs", disable=not progress):
-            obj = source[k]
-            _input = job.prepare(obj, *args, **kwargs)
-            if isinstance(_input, JobInput):
-                job_len[k] = None
-                if (_out_fn := job_output_dir / f"{k}.out").is_file():
-                    try:
-                        _out = JobOutput.load(_out_fn)
-                    except Exception as xc:
-                        logger.debug(
-                            f"Cannot load output file {k}.out. Error: {xc}. The results will be computed."
-                        )
-                    else:
-                        if (
-                            not strict_hash or _out.input_hash == _input.hash
-                        ) and _out.exitcode == 0:
-                            logger.debug(
-                                f"Found output file {k} successfully! Expensive calculation will be skipped."
-                            )
-                            continue
-                        else:
-                            logger.debug(
-                                f"Found output file {k} successfully, but input hash differs: found {_out.input_hash!r} != expected {_input.hash!r}"
-                            )
-                _input.dump(job_input_dir / f"{k}.inp")
-                jobs_to_run.append(job_input_dir / f"{k}.inp")
+        self.args = self.args or ()
+        self.kwargs = self.kwargs or {}
 
-            else:
-                L = 0
-                for i, _inp in enumerate(_input):
-                    L += 1
-                    if (_out_fn := job_output_dir / f"{k}.{i}.out").is_file():
+        self._jobs_to_run = []
+        self._job_len = {}
+
+        # Step 2. Create all job input files
+        with self.source.reading():
+            for k in tqdm(
+                self._to_be_done, desc="Preparing inputs", disable=not self.progress
+            ):
+                obj = self.source[k]
+                _input = self.job.prepare(obj, *self.args, **self.kwargs)
+                if isinstance(_input, JobInput):
+                    self._job_len[k] = None
+                    if (_out_fn := self._output_dir / f"{k}.out").is_file():
                         try:
                             _out = JobOutput.load(_out_fn)
                         except Exception as xc:
-                            logger.debug(
-                                f"Cannot load output file {k}.{i}.out. Error: {xc}. The results will be computed."
+                            self._logger.debug(
+                                f"Cannot load output file {k}.out. Error: {xc}. The results will be computed."
                             )
                         else:
                             if (
-                                not strict_hash or _out.input_hash == _input.hash
+                                not self.strict_hash or _out.input_hash == _input.hash
                             ) and _out.exitcode == 0:
-                                logger.debug(
-                                    f"Found output file {k}.{i}.out successfully! Expensive calculation will be skipped."
+                                self._logger.debug(
+                                    f"Found output file {k} successfully! Expensive calculation will be skipped."
                                 )
                                 continue
                             else:
-                                logger.debug(
-                                    f"Found output file {k}.{i}.out, but the file unsuitable: \nexptd {_inp.hash!r} \nfound {_out.input_hash!r} \nexitcode {_out.exitcode}"
+                                self._logger.debug(
+                                    f"Found output file {k} successfully, but input hash differs: found {_out.input_hash!r} != expected {_input.hash!r}"
                                 )
+                    _input.dump(self._input_dir / f"{k}.inp")
+                    self._jobs_to_run.append(self._input_dir / f"{k}.inp")
 
-                    _inp.dump(job_input_dir / f"{k}.{i}.inp")
-                    jobs_to_run.append(f"{k}.{i}.inp")
+                else:
+                    L = 0
+                    for i, _inp in enumerate(_input):
+                        L += 1
+                        if (_out_fn := self._output_dir / f"{k}.{i}.out").is_file():
+                            try:
+                                _out = JobOutput.load(_out_fn)
+                            except Exception as xc:
+                                self._logger.debug(
+                                    f"Cannot load output file {k}.{i}.out. Error: {xc}. The results will be computed."
+                                )
+                            else:
+                                if (
+                                    not self.strict_hash
+                                    or _out.input_hash == _input.hash
+                                ) and _out.exitcode == 0:
+                                    self._logger.debug(
+                                        f"Found output file {k}.{i}.out successfully! Expensive calculation will be skipped."
+                                    )
+                                    continue
+                                else:
+                                    self._logger.debug(
+                                        f"Found output file {k}.{i}.out, but the file unsuitable: \nexptd {_inp.hash!r} \nfound {_out.input_hash!r} \nexitcode {_out.exitcode}"
+                                    )
 
-                job_len[k] = L
+                        _inp.dump(self._input_dir / f"{k}.{i}.inp")
+                        self._jobs_to_run.append(f"{k}.{i}.inp")
 
-    if jobs_to_run:
-        logger.debug(
-            f"Listing jobs to be run:\n  -"
-            + "\n  -".join(str(x) for x in jobs_to_run)
-            + f"\n-----------\n  total: {len(jobs_to_run)}"
-        )
+                    self._job_len[k] = L
 
-    logger.debug(f"{job_len}")
-
-    futures = []
-    with ThreadPoolExecutor(
-        max_workers=n_workers,  # thread_name_prefix=job.name
-    ) as executor:
-        for i, jin in tqdm(
-            enumerate(jobs_to_run),
-            desc="Submitting jobs",
-            total=len(jobs_to_run),
-        ):
-            f = executor.submit(
-                _run_local,
-                job_input_dir / jin,
-                job_work_dir,
-                job_output_dir,
-                scratch_dir,
+        if self._jobs_to_run:
+            self._logger.debug(
+                f"Listing jobs to be run:\n  -"
+                + "\n  -".join(str(x) for x in self._jobs_to_run)
+                + f"\n-----------\n  total: {len(self._jobs_to_run)}"
             )
-            futures.append(f)
 
-        for f in tqdm(futures, desc="Waiting for jobs"):
-            proc = f.result()
-            if proc.returncode:
-                logger.error(f"Failed for process: {proc}")
+        self._logger.debug(f"{self._job_len}")
 
-    with source.reading(), destination.writing():
-        for key in (pb := tqdm(to_be_done, "Finalizing the calculations")):
-            if job_len[key] is None:
-                try:
-                    output = JobOutput.load(job_output_dir / f"{key}.out")
-                    result = job.process(
-                        output,
-                        source[key],
-                        *args,
-                        **kwargs,
-                    )
-                except Exception as xc:
-                    logger.error(f"Failed to compute for {key=}")
-                    logger.exception(xc)
-                else:
-                    destination[key] = result
-                    logger.info(f"Successfully computed for {key=}")
-            else:
-                try:
-                    outputs = map(
-                        JobOutput.load,
-                        (
-                            job_output_dir / f"{key}.{j}.out"
-                            for j in range(job_len[key])
-                        ),
-                    )
-                    result = job.process(
-                        outputs,
-                        source[key],
-                        *args,
-                        **kwargs,
-                    )
-                except Exception as xc:
-                    logger.error(f"Failed to compute for {key=}")
-                    logger.exception(xc)
-                    pb.write(f"Error for {key!r}: {xc}")
-                else:
-                    destination[key] = result
-                    logger.info(f"Successfully computed for {key=}")
+    def _is_running_sge(self, jid: str):
+        proc = run(shlex.split(f"qstat -j {jid}"), capture_output=True)
+        if proc.returncode:
+            return False
+        else:
+            return True
 
-
-def _run_local(
-    ifn: Path,
-    cwd: Path,
-    odir: Path,
-    sdir: Path,
-):
-    script = f"""{MOLLI_RUN} {ifn} -o {odir.as_posix()} -s {sdir.as_posix()}"""
-
-    proc = run(
-        shlex.split(script),
-        cwd=cwd,
-        capture_output=True,
-        encoding="utf8",
-    )
-
-    return proc
-
-
-def is_running(jid: str):
-    proc = run(shlex.split(f"qstat -j {jid}"), capture_output=True)
-    if proc.returncode:
-        return False
-    else:
-        return True
-
-
-def jobmap_sge(
-    job: Job,
-    source: Collection,
-    destination: Collection,
-    cache_dir: str | Path = None,
-    scratch_dir: str | Path = None,
-    qsub_header: str = None,
-    args: tuple = None,
-    kwargs: dict = None,
-    verbose: bool = False,
-    progress: bool = False,
-    update: float = 10.0,
-    log_level: str = "warning",
-    strict_hash: bool = True,
-):
-    """
-    This function maps a job using SGE cluster functionality.
-    """
-    # Step 1. Analyze source and destination.
-    # Only keys not present in the destination will be run.
-    logger = logging.getLogger("molli.pipeline")
-
-    if cache_dir is None:
-        cache_dir = Path(source._path.stem + "." + job.name).absolute()
-    else:
-        cache_dir = Path(cache_dir).absolute()
-    cache_dir.mkdir(exist_ok=True, parents=True)
-
-    # This will configure logging into the file
-    log_file = cache_dir / "jobmap.log"
-    with open(log_file, "at") as f:
-        f.write(config.SPLASH)
-    _handler = logging.FileHandler(log_file)
-    logger.addHandler(_handler)
-    logger.setLevel(log_level.upper())
-
-    logger = logging.getLogger("molli.pipeline.jobmap")
-
-    job_input_dir = cache_dir / "input"
-    job_input_dir.mkdir(exist_ok=True, parents=True)
-
-    job_output_dir = cache_dir / "output"
-    job_output_dir.mkdir(exist_ok=True, parents=True)
-
-    job_work_dir = cache_dir / "work"
-    job_work_dir.mkdir(exist_ok=True, parents=True)
-
-    if scratch_dir is None:
-        scratch_dir = config.SCRATCH_DIR
-    else:
-        scratch_dir = Path(scratch_dir)
-
-    with source.reading():
-        all_keys = source.keys()
-
-    with destination.reading():
-        skip_keys = destination.keys()
-
-    to_be_done = all_keys ^ skip_keys
-
-    if verbose:
-        print("Starting a molli.pipeline.jobmap_sge calculation:")
-        print("calculation:", job.name)
-        print(job.__doc__)
-        print("     source: ", source)
-        print("destination: ", destination)
-        print("scratch dir: ", scratch_dir)
-        print(f"Total number of jobs: {len(all_keys):>8}")
-        print(f"Exist in destination: {len(skip_keys):>8}")
-        print(f"To be computed:       {len(to_be_done):>8}")
-
-    args = args or ()
-    kwargs = kwargs or {}
-
-    jobs_to_run = []
-    job_len = {}
-
-    # Step 2. Create all job input files
-    with source.reading():
-        for k in tqdm(to_be_done, desc="Preparing inputs", disable=not progress):
-            obj = source[k]
-            _input = job.prepare(obj, *args, **kwargs)
-            if isinstance(_input, JobInput):
-                job_len[k] = None
-                if (_out_fn := job_output_dir / f"{k}.out").is_file():
-                    try:
-                        _out = JobOutput.load(_out_fn)
-                    except Exception as xc:
-                        logger.debug(
-                            f"Cannot load output file {k}.out. Error: {xc}. The results will be computed."
-                        )
-                    else:
-                        if (
-                            not strict_hash or _out.input_hash == _input.hash
-                        ) and _out.exitcode == 0:
-                            logger.debug(
-                                f"Found output file {k} successfully! Expensive calculation will be skipped."
-                            )
-                            continue
-                        else:
-                            logger.debug(
-                                f"Found output file {k} successfully, but input hash differs: found {_out.input_hash!r} != expected {_input.hash!r}"
-                            )
-                _input.dump(job_input_dir / f"{k}.inp")
-                jobs_to_run.append(job_input_dir / f"{k}.inp")
-
-            else:
-                L = 0
-                for i, _inp in enumerate(_input):
-                    L += 1
-                    if (_out_fn := job_output_dir / f"{k}.{i}.out").is_file():
-                        try:
-                            _out = JobOutput.load(_out_fn)
-                        except Exception as xc:
-                            logger.debug(
-                                f"Cannot load output file {k}.{i}.out. Error: {xc}. The results will be computed."
-                            )
-                        else:
-                            if (
-                                not strict_hash or _out.input_hash == _input.hash
-                            ) and _out.exitcode == 0:
-                                logger.debug(
-                                    f"Found output file {k}.{i}.out successfully! Expensive calculation will be skipped."
-                                )
-                                continue
-                            else:
-                                logger.debug(
-                                    f"Found output file {k}.{i}.out, but the file unsuitable: \nexptd {_inp.hash!r} \nfound {_out.input_hash!r} \nexitcode {_out.exitcode}"
-                                )
-
-                    _inp.dump(job_input_dir / f"{k}.{i}.inp")
-                    jobs_to_run.append(f"{k}.{i}.inp")
-
-                job_len[k] = L
-
-    if jobs_to_run:
-        logger.debug(
-            f"Listing jobs to be run:\n  -"
-            + "\n  -".join(str(x) for x in jobs_to_run)
-            + f"\n-----------\n  total: {len(jobs_to_run)}"
-        )
-
-    logger.debug(f"{job_len}")
-
-    # Step 3. Schedule the jobs through qsub
-    # if batchsize is specified, jobs will be scheduled in batches
-    # to reduce the qsub overhead
-
-    jids = []
-
-    for i, jin in tqdm(
-        enumerate(jobs_to_run),
-        desc="Submitting jobs",
-        total=len(jobs_to_run),
+    def _run_local_helper(
+        self,
+        ifn: Path,
+        cwd: Path,
+        odir: Path,
+        sdir: Path,
     ):
-        script = (
-            (qsub_header or "")
-            + f"\n\n {MOLLI_RUN} {(job_input_dir / jin).as_posix()} -o {job_output_dir.as_posix()} --s {scratch_dir.as_posix()}"
-        )
+        script = f"""{MOLLI_RUN} {ifn} -o {odir.as_posix()} -s {sdir.as_posix()}"""
 
         proc = run(
-            shlex.split(f"qsub -N {job.name}.{i+1} -shell n -V -terse -cwd -j y"),
-            input=script,
-            cwd=job_work_dir,
+            shlex.split(script),
+            cwd=cwd,
             capture_output=True,
             encoding="utf8",
         )
 
-        if proc.returncode == 0:
-            jids.append(proc.stdout.strip())
-            logger.info(f"Successfully submitted calculation {jids[-1]} for {jin!r}")
-        else:
-            logger.error(
-                f"Failed to submit calculation for {jin!r}\nError: {proc.stderr}"
+        return proc
+
+    def run_local(self):
+        """
+        This function maps a Job call onto a collection of items.
+        This represents the central concept of parallelization
+        """
+        futures = []
+        with ThreadPoolExecutor(
+            max_workers=self.n_workers,  # thread_name_prefix=job.name
+        ) as executor:
+            for i, jin in tqdm(
+                enumerate(self._jobs_to_run),
+                desc="Submitting jobs",
+                total=len(self._jobs_to_run),
+            ):
+                f = executor.submit(
+                    self._run_local_helper,
+                    self._input_dir / jin,
+                    self._work_dir,
+                    self._output_dir,
+                    self.scratch_dir,
+                )
+                futures.append(f)
+
+            for f in tqdm(futures, desc="Waiting for jobs"):
+                proc = f.result()
+                if proc.returncode:
+                    self._logger.error(f"Failed for process: {proc}")
+
+        self._collect_outs()
+
+    def run_sge(self, qsub_header: str | None = None, update: float = 10.0):
+        """
+        This function maps a job using SGE cluster functionality.
+        """
+        jids = []
+
+        for i, jin in tqdm(
+            enumerate(self._jobs_to_run),
+            desc="Submitting jobs",
+            total=len(self._jobs_to_run),
+        ):
+            script = (
+                (qsub_header or "")
+                + f"\n\n {MOLLI_RUN} {(self._input_dir / jin).as_posix()} -o {self._output_dir.as_posix()} --s {self.scratch_dir.as_posix()}"
             )
 
-    prev = len(jobs_to_run)
-    with tqdm(desc="Waiting for calculations", total=prev) as pbar:
-        while prev > 0:
-            sleep(update)
-            current = sum(int(is_running(j)) for j in jids)
-            pbar.update(prev - current)
-            prev = current
+            proc = run(
+                shlex.split(
+                    f"qsub -N {self.job.name}.{i+1} -shell n -V -terse -cwd -j y"
+                ),
+                input=script,
+                cwd=self._work_dir,
+                capture_output=True,
+                encoding="utf8",
+            )
 
-    with source.reading(), destination.writing():
-        for key in (pb := tqdm(to_be_done, "Finalizing the calculations")):
-            if job_len[key] is None:
-                try:
-                    output = JobOutput.load(job_output_dir / f"{key}.out")
-                    result = job.process(
-                        output,
-                        source[key],
-                        *args,
-                        **kwargs,
-                    )
-                except Exception as xc:
-                    logger.error(f"Failed to compute for {key=}")
-                    logger.exception(xc)
-                else:
-                    destination[key] = result
-                    logger.info(f"Successfully computed for {key=}")
+            if proc.returncode == 0:
+                jids.append(proc.stdout.strip())
+                self._logger.info(
+                    f"Successfully submitted calculation {jids[-1]} for {jin!r}"
+                )
             else:
-                try:
-                    outputs = map(
-                        JobOutput.load,
-                        (
-                            job_output_dir / f"{key}.{j}.out"
-                            for j in range(job_len[key])
-                        ),
-                    )
-                    result = job.process(
-                        outputs,
-                        source[key],
-                        *args,
-                        **kwargs,
-                    )
-                except Exception as xc:
-                    logger.error(f"Failed to compute for {key=}")
-                    logger.exception(xc)
-                    pb.write(f"Error for {key!r}: {xc}")
+                self._logger.error(
+                    f"Failed to submit calculation for {jin!r}\nError: {proc.stderr}"
+                )
+
+        prev = len(self._jobs_to_run)
+
+        with tqdm(desc="Waiting for calculations", total=prev) as pbar:
+            while prev > 0:
+                sleep(update)
+                current = sum(int(self._is_running_sge(j)) for j in jids)
+                pbar.update(prev - current)
+                prev = current
+            pass
+
+        self._collect_outs()
+
+    def _collect_outs(self):
+        with self.source.reading(), self.destination.writing():
+            for key in (pb := tqdm(self._to_be_done, "Finalizing the calculations")):
+                if self._job_len[key] is None:
+                    try:
+                        output = JobOutput.load(self._output_dir / f"{key}.out")
+                        result = self.job.process(
+                            output,
+                            self.source[key],
+                            *self.args,
+                            **self.kwargs,
+                        )
+                    except Exception as xc:
+                        self._logger.error(f"Failed to compute for {key=}")
+                        self._logger.exception(xc)
+                    else:
+                        self.destination[key] = result
+                        self._logger.info(f"Successfully computed for {key=}")
                 else:
-                    destination[key] = result
-                    logger.info(f"Successfully computed for {key=}")
+                    try:
+                        outputs = map(
+                            JobOutput.load,
+                            (
+                                self._output_dir / f"{key}.{j}.out"
+                                for j in range(self._job_len[key])
+                            ),
+                        )
+                        result = self.job.process(
+                            outputs,
+                            self.source[key],
+                            *self.args,
+                            **self.kwargs,
+                        )
+                    except Exception as xc:
+                        self._logger.error(f"Failed to compute for {key=}")
+                        self._logger.exception(xc)
+                        pb.write(f"Error for {key!r}: {xc}")
+                    else:
+                        self.destination[key] = result
+                        self._logger.info(f"Successfully computed for {key=}")

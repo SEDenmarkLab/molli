@@ -1,1 +1,1 @@
-from .job import JobInput, JobOutput, Job, jobmap, jobmap_sge
+from .job import JobInput, JobOutput, Job, Jobmap
