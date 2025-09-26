@@ -652,6 +652,10 @@ class Jobmap:
         else:
             return True
 
+    def _is_running_slurm(self, jid: str):
+        proc = run(shlex.split(f"squeue -h -j {jid}"), capture_output=True)
+        return bool(proc.stdout)  # Checks to see output
+
     def _run_local_helper(
         self,
         ifn: Path,
@@ -742,6 +746,52 @@ class Jobmap:
             while prev > 0:
                 sleep(update)
                 current = sum(int(self._is_running_sge(j)) for j in jids)
+                pbar.update(prev - current)
+                prev = current
+            pass
+
+        self._collect_outs()
+
+    def run_slurm(self, sbatch_header: str | None = None, update: float = 10.0):
+
+        jids = []
+
+        for i, jin in tqdm(
+            enumerate(self._jobs_to_run),
+            desc="Submitting jobs",
+            total=len(self._jobs_to_run),
+        ):
+            script = (
+                (sbatch_header or "")
+                + f"\n\n {MOLLI_RUN} {(self._input_dir / jin).as_posix()} -o {self._output_dir.as_posix()} --s {self.scratch_dir.as_posix()}"
+            )
+
+            proc = run(
+                shlex.split(
+                    f"sbatch --job-name={self.job.name}.{i+1} --export=ALL --parsable --output=%x_%j.out --error=%x_%j.out"
+                ),  # %x is the job name, %j is the jid
+                input=script,
+                cwd=self._work_dir,
+                capture_output=True,
+                encoding="utf8",
+            )
+
+            if proc.returncode == 0:
+                jids.append(proc.stdout.strip())
+                self._logger.info(
+                    f"Successfully submitted calculation {jids[-1]} for {jin!r}"
+                )
+            else:
+                self._logger.error(
+                    f"Failed to submit calculation for {jin!r}\nError: {proc.stderr}"
+                )
+
+        prev = len(self._jobs_to_run)
+
+        with tqdm(desc="Waiting for calculations", total=prev) as pbar:
+            while prev > 0:
+                sleep(update)
+                current = sum(int(self._is_running_slurm(j)) for j in jids)
                 pbar.update(prev - current)
                 prev = current
             pass
