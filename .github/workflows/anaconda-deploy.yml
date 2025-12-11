@@ -32,6 +32,8 @@ jobs:
         run: rm /usr/bin/link.exe
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 #Find correct version tag
 
       - name: Install micromamba
         uses: mamba-org/setup-micromamba@v1
@@ -54,6 +56,7 @@ jobs:
         env:
           ACTIONS_STEP_DEBUG: true
         run: |
+          export GIT_DESCRIBE_TAG=$(git describe --tags --abrev=0) #Find latest tag
           mkdir conda-dist;
           conda build --output-folder conda-dist conda-recipe;
       
@@ -63,6 +66,6 @@ jobs:
           ANACONDA_TOKEN: ${{ secrets.CONDA_TOKEN }}
         run: |
           # Find file regardless of OS path
-          FILE_PATH=$(find conda-dist -name "molli-*.tar.bz2" | head -n 1) 
+          FILE_PATH=$(find conda-dist -type f \( -name "molli-*.tar.bz2" -o -name "molli-*.conda" \) | head -n 1)
 
           anaconda --token $ANACONDA_TOKEN upload --user esalx --label dev --force "$FILE_PATH"; 
