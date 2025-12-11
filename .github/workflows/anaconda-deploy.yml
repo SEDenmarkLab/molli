@@ -1,6 +1,9 @@
 name: Upload Anaconda Package
 
 on:
+  push:
+    branches:
+      - "**" # Runs on all branches
   release:
     types:
       - published
@@ -16,6 +19,7 @@ jobs:
         shell: bash -l {0}
 
     strategy:
+      fail-fast: false #Allows other OS builds to run if one fails
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
@@ -41,12 +45,10 @@ jobs:
           create-args: >-
             python=3.11
             conda
+            conda-build
+            anaconda-client
 
           environment-name: molli
-      
-      - name: Install conda build and upload dependencies
-        run: |
-          conda install -y conda-build anaconda-client
 
       - name: Build conda package
         env:
@@ -58,5 +60,9 @@ jobs:
       - name: Upload conda package
         env:
           ACTIONS_STEP_DEBUG: true
+          ANACONDA_TOKEN: ${{ secrets.CONDA_TOKEN }}
         run: |
-          anaconda --token ${{ secrets.CONDA_TOKEN }} upload --user esalx --force conda-dist/*/molli-*.tar.bz2; 
+          # Find file regardless of OS path
+          FILE_PATH=$(find conda-dist -name "molli-*.tar.bz2" | head -n 1) 
+
+          anaconda --token $ANACONDA_TOKEN upload --user esalx --label dev --force "$FILE_PATH"; 
