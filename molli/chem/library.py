@@ -197,7 +197,7 @@ class MoleculeLibrary(Collection[Molecule]):
         self._backend: UkvCollectionBackend
 
     def _molecule_encoder(self, mol: Molecule) -> bytes:
-        return msgpack.dumps(self._serializer(mol), use_single_float=True)
+        return msgpack.dumps(self._serializer(mol))
 
     def _molecule_decoder(self, molb: bytes) -> Molecule:
         return self._deserializer(msgpack.loads(molb, use_list=False))
@@ -290,7 +290,7 @@ class ConformerLibrary(Collection[ConformerEnsemble]):
         self._backend: UkvCollectionBackend
 
     def _ensemble_encoder(self, ens: ConformerEnsemble) -> bytes:
-        return msgpack.dumps(self._serializer(ens), use_single_float=True)
+        return msgpack.dumps(self._serializer(ens))
 
     def _ensemble_decoder(self, ensb: bytes) -> ConformerEnsemble:
         return self._deserializer(msgpack.loads(ensb, use_list=False))
