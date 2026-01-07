@@ -49,6 +49,7 @@ dynamic = ["version"]
 [tool.setuptools.package-data]
 "molli.files" = ["*"]
 "molli.data" = ["*.yml"]
+"molli._aux.files" = ["*.html"]
 
 [tool.setuptools.packages.find]
 include = ["molli", "molli.*", "molli_test"]

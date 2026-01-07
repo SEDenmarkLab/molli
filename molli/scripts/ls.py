@@ -123,9 +123,12 @@ def molli_main(args, verbose=False, **kwargs):
                 total=L,
                 disable=not verbose,
             ):
-                obj = library[k]
-                attrib = {a: get_attribute(obj, a, _sentinel) for a in parsed.attrib}
-                s = f""" {i:>{D}}  {k:<{N}} """ + " ".join(
-                    f"{x}={y!r}" for x, y in attrib.items()
-                )
+                s = f"""{k:<{N}} """
+                if parsed.attrib:
+                    obj = library[k]
+                    attrib = {
+                        a: get_attribute(obj, a, _sentinel) for a in parsed.attrib
+                    }
+                    s += " ".join(f"{x}={y!r}" for x, y in attrib.items())
+
                 tqdm.write(s)

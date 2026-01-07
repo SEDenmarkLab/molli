@@ -20,7 +20,7 @@
 
 """
 # `molli.chem.molecule`
-This submodule defines the cornerstone of the diamond inheritance in `molli`: 
+This submodule defines the cornerstone of the diamond inheritance in `molli`:
 the `Structure` and `Substructure` classes
 """
 
@@ -859,7 +859,7 @@ class Structure(CartesianGeometry, Connectivity):
         origin = self.get_atom_coord(atoms[1])
 
         # Define the rotation matrix
-        R = rotation_matrix_from_axis(ax, rotation_angle)
+        R = rotation_matrix_from_axis(-ax, rotation_angle)
 
         # substructure to be rotated
         substruct = self.substructure(self.yield_bfs(atoms[1], atoms[2]))

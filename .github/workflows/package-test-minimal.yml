@@ -1,13 +1,10 @@
-# This version of code testing is done on push to main
+# This version of code testing is done on pull requests
 # To ensure that code tests run on all supported OS
-# with all supported versions of Python
+# with the earliest and the latest supported version of Python
 
-name: Comprehensive test
-
+name: Minimal code testing
 on:
-  push:
-    branches:
-      - main
+  pull_request:
        
 
 permissions:
@@ -18,10 +15,6 @@ jobs:
     name: Testing on ${{ matrix.os }}, python=${{ matrix.py_version }}
     runs-on: ${{ matrix.os }}
 
-    # defaults:
-    #   run:
-    #     shell: bash -l {0}
-
     strategy:
       matrix:
         os: 
@@ -31,8 +24,6 @@ jobs:
         
         py_version:
           - "3.10"
-          - "3.11"
-          - "3.12"
           - "3.13"
     
     steps:

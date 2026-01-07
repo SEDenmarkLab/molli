@@ -1,6 +1,7 @@
 """
 UKVFile (Micro Key-Value pair database)
 """
+
 from __future__ import annotations
 from struct import pack, unpack, Struct
 from pathlib import Path
@@ -52,6 +53,21 @@ class UKVRecord:
     @property
     def end(self):
         return self.pos + self.size
+
+
+def _ukv_head(path: Path | str):
+    with open(path, "rb") as f:
+        try:
+            h1, h2s, b0s = _FILE_HEADER.unpack(f.read(_FILE_HEADER.size))
+            h2 = f.read(h2s)
+            b0 = f.read(b0s)
+        except:
+            return None
+        else:
+            b1ks, b1vs = _BLOCK_HEADER.unpack(f.read(_BLOCK_HEADER.size))
+            b1key = f.read(b1ks)
+            b1val = f.read(b1vs)
+            return h1, h2, b0, b1key, b1val
 
 
 class UKVFile:

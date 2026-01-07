@@ -1,12 +1,15 @@
-name: Mamba Build test
+name: Mamba Build full test
+
 
 on:
-  pull_request:
+  push:
+    branches:
+      - main
   
 
 jobs:
   mamba_build:
-    name: ${{ matrix.os }} -> mamba build
+    name: Testing mamba build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -14,6 +17,7 @@ jobs:
         shell: bash -l {0}
 
     strategy:
+      fail-fast: false 
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
@@ -29,7 +33,7 @@ jobs:
         run: rm /usr/bin/link.exe
         
       - name: Install micromamba
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         env:
           ACTIONS_STEP_DEBUG: true
         with:
@@ -50,4 +54,4 @@ jobs:
           ACTIONS_STEP_DEBUG: true
         run: |
           mkdir conda-dist;
-          conda mambabuild conda-recipe --output-folder conda-dist --python 3.10 --no-anaconda-upload;
+          conda mambabuild conda-recipe --output-folder conda-dist --no-anaconda-upload;

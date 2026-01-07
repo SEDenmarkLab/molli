@@ -37,3 +37,4 @@ from .test_external_rdkit import RDKitTC
 from .test_collections import CollectionsTC
 from .test_molli_extensions import ExtensionTC
 from .test_read_write import ReadWriteTC
+from .test_external_morfeus import MorfeusTC

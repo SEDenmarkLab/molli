@@ -243,6 +243,7 @@ def _deserialize_ens_v1(
         bonds,
         charge,
         mult,
+        _,
         coords,
         weights,
         atomic_charges,
@@ -257,9 +258,17 @@ def _deserialize_ens_v1(
         name=name,
         charge=charge,
         mult=mult,
-        coords=np.frombuffer(coords, dtype=">f4").reshape((n_conformers, n_atoms, 3)),
-        weights=np.frombuffer(weights, dtype=">f4"),
-        atomic_charges=np.frombuffer(atomic_charges, dtype=">f4"),
+        coords=(
+            np.frombuffer(coords, dtype=">f4").reshape((n_conformers, n_atoms, 3))
+            if coords is not None
+            else None
+        ),
+        weights=np.frombuffer(weights, dtype=">f4") if weights is not None else None,
+        atomic_charges=(
+            np.frombuffer(atomic_charges, dtype=">f4")
+            if atomic_charges is not None
+            else None
+        ),
     )
 
     for b in bonds:
