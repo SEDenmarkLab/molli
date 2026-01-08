@@ -25,6 +25,7 @@ This describes the foundational class for all drivers.
 import shutil
 from pathlib import Path
 
+
 class DriverBase:
     def __init__(
         self,
@@ -42,12 +43,12 @@ class DriverBase:
         self.envars = envars
         self.memory = memory
 
-        if check_exe and not self.which():
+        if check_exe and not (which_exe := self.which()):
             raise FileNotFoundError(
                 f"Requested executable {self.executable!r} for {self.__class__.__name__!r} is not reachable."
             )
         elif find:
-            self.executable = Path(self.which()).as_posix()
+            self.executable = Path(which_exe).as_posix()
 
     def which(self):
         return shutil.which(self.executable)
