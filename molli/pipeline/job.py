@@ -39,6 +39,7 @@ import numpy as np
 import re
 import os
 import sys
+import sysconfig
 from ..storage import Collection
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -51,8 +52,12 @@ from time import sleep
 T_in = TypeVar("T_in")
 T_out = TypeVar("T_out")
 
-# MOLLI_RUN = Path(sys.executable).with_name("_molli_run")
-MOLLI_RUN = Path('./_molli_run')
+scripts_dir = Path(sysconfig.get_path("scripts"))
+
+MOLLI_RUN = scripts_dir / "_molli_run"
+
+if sys.platform == "win32" and not MOLLI_RUN.exists():
+    MOLLI_RUN = MOLLI_RUN.with_suffix(".exe").as_posix()
 
 
 @attrs.define(repr=True)
@@ -699,14 +704,17 @@ def jobmap(
     logger.removeHandler(_handler)
     _handler.close()
 
+
 def _run_local(
     ifn: Path,
     cwd: Path,
     odir: Path,
     sdir: Path,
 ):
-    script = f"""{MOLLI_RUN} {ifn.as_posix()} -o {odir.as_posix()} -s {sdir.as_posix()}"""
-    
+    script = (
+        f"""{MOLLI_RUN} {ifn.as_posix()} -o {odir.as_posix()} -s {sdir.as_posix()}"""
+    )
+
     proc = run(
         shlex.split(script),
         cwd=cwd,
