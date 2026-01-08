@@ -34,6 +34,8 @@ from .test_conformer_ensemble import ConformerEnsembleTC
 from .test_descriptor import DescriptorTC
 from .test_external_openbabel import OpenbabelTC
 from .test_external_rdkit import RDKitTC
+from .test_external_xtb import XTBTC
+from .test_external_morfeus import MorfeusTC
 from .test_collections import CollectionsTC
 from .test_molli_extensions import ExtensionTC
 from .test_read_write import ReadWriteTC
