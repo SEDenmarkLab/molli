@@ -71,15 +71,24 @@ class XTBTC(ut.TestCase):
 
         [x.mkdir(parents=True, exist_ok=True) for x in [_TEST_DIR, _TEST_BACKUP_DIR, _TEST_SCRATCH_DIR]]
 
-        init_lib = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+        # init_lib = ml.MoleculeLibrary(ml.files.cinchonidine_no_conf)
+        cdx = ml.CDXMLFile(ml.files.parser_demo_cdxml)
+
+        names = ['benzene', 
+                 'toluene', 
+                 'stereo', 
+                 'high_complexity_1', 
+                 'estradiol', 
+                 'taxadiene', 
+                 'r_binol']
 
         source = ml.MoleculeLibrary(_TEST_DIR / 'small.mlib', readonly=False, overwrite=True)
 
-        with init_lib.reading(), source.writing():
-            for i, k in enumerate(init_lib):
-                source[k] = init_lib[k]
-                if i == 10:
-                    break
+        with source.writing():
+            for key in names:
+                mlmol = cdx[key]
+                mlmol.add_implicit_hydrogens()
+                source[key] = mlmol
 
         target = ml.MoleculeLibrary(
             _TEST_DIR / "dest.mlib",
@@ -95,6 +104,7 @@ class XTBTC(ut.TestCase):
             cache_dir=_TEST_BACKUP_DIR,
             scratch_dir=_TEST_SCRATCH_DIR,
             n_workers=2,
+            kwargs={'method':'gfnff'},
             verbose=True,
             progress=True
         )
@@ -105,7 +115,11 @@ class XTBTC(ut.TestCase):
             for name in target:
                 m1 = source[name]
                 m2 = target[name]
-                self.assertNotAlmostEqual(np.linalg.norm(m1.coords - m2.coords), 0)
+                np.testing.assert_raises( # This checks for failed optimization
+                AssertionError,
+                np.testing.assert_array_almost_equal,
+                m2.coords,
+                m1.coords)
         
         shutil.rmtree(_TEST_DIR)
 
