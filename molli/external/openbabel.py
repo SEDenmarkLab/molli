@@ -356,14 +356,39 @@ def obabel_optimize(
     *,
     ff: str = "UFF",
     max_steps: int = 1000,
-    coord_displace: float | bool = False,
+    coord_displace: float | bool = 0.01,
     tol: float = 1e-4,
     dummy: Element | str = Element.H,
     inplace: bool = False,
 ) -> Molecule:
-    """
-    If inplace = True, this mutates mlmol to optimized coordinates and returns None
-    If inplace = False, mlmol is unchanged and an optimized copy is returned
+    """Performs a forcefield optimization on a molecule using openbabel.
+
+    Parameters
+    ----------
+    mol : Molecule
+        Molecule to optimize
+    ff : str, optional
+        Forcefield to use for optimization, by default "UFF"
+    max_steps : int, optional
+        Maximum number of steps to take during optimization, by default 1000
+    coord_displace : float | bool, optional
+        Amount to displace coordinates, by default 0.01
+    tol : float, optional
+        Tolerance for Convergence, by default 1e-4
+    dummy : Element | str, optional
+        Element to change unrecognized atoms into, by default Element.Cl
+    inplace : bool, optional
+        Change molecule inplace, by default False
+
+    Returns
+    -------
+    Molecule | None
+        Final optimized molecule, or none if done inplace
+
+    Raises
+    ------
+    RuntimeError
+        Raises error if forcefield does not get setup correctly.
     """
 
     obm = to_obmol(mol, dummy=dummy, coord_displace=coord_displace)
@@ -413,13 +438,49 @@ def optimize_coordination(
     *,
     ff: str = "UFF",
     max_steps: int = 1000,
-    coord_displace: float | bool = False,
+    coord_displace: float | bool = 0.01,
     tol: float = 1e-4,
     dummy: Element | str = Element.Cl,
     inplace: bool = False,
-) -> Molecule:
-    """
-    This function does everything that normal optimize does, but it adds additional constraints to simulate
+) -> Molecule | None:
+    """This function does everything that normal forcefield optimization  in openbabel does,
+    but it adds additional constraints to simulate a coordination environment. This is a
+    prototype function, and may not perform as intended. Make sure to check the final structure.
+
+
+    Parameters
+    ----------
+    mol : Molecule
+        Molecule to optimize
+    ff : str, optional
+        Forcefield to use for optimization, by default "UFF"
+    max_steps : int, optional
+        Maximum number of steps to take during optimization, by default 1000
+    coord_displace : float | bool, optional
+        Amount to displace coordinates, by default 0.01
+    tol : float, optional
+        Tolerance for Convergence, by default 1e-4
+    dummy : Element | str, optional
+        Element to change unrecognized atoms into, by default Element.Cl
+    inplace : bool, optional
+        Change molecule inplace, by default False
+
+    Returns
+    -------
+    Molecule | None
+        Final optimized molecule, or none if done inplace
+
+    Raises
+    ------
+    RuntimeError
+        Raises error if forcefield does not get setup correctly.
+
+    Additional Notes
+    -----------------
+    Doing an initial preoptimization using a forcefield such as `GAFF` with `obabel_optimize`
+    and then doing `optimize_coordination` can sometimes help.
+
+    This funciton is still a prototype and may be updated later.
     """
 
     obm = to_obmol(
@@ -443,11 +504,39 @@ def optimize_coordination(
     if not obff.Setup(obm, constraints):
         raise RuntimeError
 
+    obff.ConjugateGradients(max_steps, tol)
+    for x in range(1, max_steps):
+        obff.SteepestDescent(x, tol)
+        print(f"Energy after {x} steps: {obff.Energy()}")
     obff.GetCoordinates(obm)
+
+    e_tot = obff.Energy()
+    e_bond = obff.E_Bond()
+    e_angle = obff.E_Angle()
+    e_strbnd = obff.E_StrBnd()
+    e_torsion = obff.E_Torsion()
+    e_oop = obff.E_OOP()
+    e_vdw = obff.E_VDW()
+    e_elstat = obff.E_Electrostatic()
+
+    e_attrib = {
+        f"OpenBabel_{ff}": {
+            "Energy": e_tot,
+            "E_bond": e_bond,
+            "E_angle": e_angle,
+            "E_strbnd": e_strbnd,
+            "E_torsion": e_torsion,
+            "E_OOP": e_oop,
+            "E_vdW": e_vdw,
+            "E_elstat": e_elstat,
+        }
+    }
 
     optimized = coord_from_obmol(obm)
 
     if inplace:
         mol.coords = optimized
+        if not isinstance(mol, ml.Conformer):
+            mol.attrib |= e_attrib
     else:
-        return Molecule(mol, coords=optimized)
+        return Molecule(mol, coords=optimized, attrib=e_attrib)
