@@ -505,9 +505,6 @@ def optimize_coordination(
         raise RuntimeError
 
     obff.ConjugateGradients(max_steps, tol)
-    for x in range(1, max_steps):
-        obff.SteepestDescent(x, tol)
-        print(f"Energy after {x} steps: {obff.Energy()}")
     obff.GetCoordinates(obm)
 
     e_tot = obff.Energy()
