@@ -39,6 +39,7 @@ import numpy as np
 import re
 import os
 import sys
+import sysconfig
 from ..storage import Collection
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -51,7 +52,12 @@ from time import sleep
 T_in = TypeVar("T_in")
 T_out = TypeVar("T_out")
 
-MOLLI_RUN = Path(sys.executable).with_name("_molli_run")
+scripts_dir = Path(sysconfig.get_path("scripts"))
+
+MOLLI_RUN = scripts_dir / "_molli_run"
+
+if sys.platform == "win32" and not MOLLI_RUN.exists():
+    MOLLI_RUN = MOLLI_RUN.with_suffix(".exe").as_posix()
 
 
 @attrs.define(repr=True)
@@ -526,8 +532,6 @@ def jobmap(
     logger.addHandler(_handler)
     logger.setLevel(log_level.upper())
 
-    logger = logging.getLogger("molli.pipeline.jobmap")
-
     job_input_dir = cache_dir / "input"
     job_input_dir.mkdir(exist_ok=True, parents=True)
 
@@ -697,6 +701,9 @@ def jobmap(
                     destination[key] = result
                     logger.info(f"Successfully computed for {key=}")
 
+    logger.removeHandler(_handler)
+    _handler.close()
+
 
 def _run_local(
     ifn: Path,
@@ -704,7 +711,9 @@ def _run_local(
     odir: Path,
     sdir: Path,
 ):
-    script = f"""{MOLLI_RUN} {ifn} -o {odir.as_posix()} -s {sdir.as_posix()}"""
+    script = (
+        f"""{MOLLI_RUN} {ifn.as_posix()} -o {odir.as_posix()} -s {sdir.as_posix()}"""
+    )
 
     proc = run(
         shlex.split(script),
@@ -759,8 +768,6 @@ def jobmap_sge(
     _handler = logging.FileHandler(log_file)
     logger.addHandler(_handler)
     logger.setLevel(log_level.upper())
-
-    logger = logging.getLogger("molli.pipeline.jobmap")
 
     job_input_dir = cache_dir / "input"
     job_input_dir.mkdir(exist_ok=True, parents=True)
@@ -947,3 +954,5 @@ def jobmap_sge(
                 else:
                     destination[key] = result
                     logger.info(f"Successfully computed for {key=}")
+    logger.removeHandler(_handler)
+    _handler.close()

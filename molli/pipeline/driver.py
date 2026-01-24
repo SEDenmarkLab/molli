@@ -23,6 +23,7 @@ This describes the foundational class for all drivers.
 """
 
 import shutil
+from pathlib import Path
 
 
 class DriverBase:
@@ -47,7 +48,7 @@ class DriverBase:
                 f"Requested executable {self.executable!r} for {self.__class__.__name__!r} is not reachable."
             )
         elif find:
-            self.executable = which_exe
+            self.executable = Path(which_exe).as_posix()
 
     def which(self):
         return shutil.which(self.executable)
