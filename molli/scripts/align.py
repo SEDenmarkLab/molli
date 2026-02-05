@@ -30,7 +30,7 @@ import os
 from tqdm import tqdm
 import scipy.spatial
 import rmsd
-import pandas as pd
+import json
 
 import numpy as np
 from pathlib import Path
@@ -200,5 +200,7 @@ def molli_main(args, **kwargs):
     print(f"Median rmsd: {np.median(total_rmsds)}")
 
     if save_stats:
-        df = pd.DataFrame.from_dict(align_stats, orient="index")
-        df.round(3).to_csv(str(input_path.with_suffix("")) + "_stats.csv")
+        with open(
+            str(input_path.with_suffix("")) + "_stats.json", "w", encoding="utf-8"
+        ) as f:
+            json.dump(align_stats, f, ensure_ascii=False, indent=4)
