@@ -29,7 +29,6 @@ import molli as ml
 import os
 from tqdm import tqdm
 import scipy.spatial
-import rmsd
 import json
 
 import numpy as np
@@ -57,12 +56,12 @@ arg_parser.add_argument(
     required=True,
 )
 
-arg_parser.add_argument(
-    "--rmsd",
-    choices=["rmsd", "scipy"],
-    default="rmsd",
-    help="Method of rmsd calculation. Available are the default and scipy",
-)
+# arg_parser.add_argument(
+#     "--rmsd",
+#     choices=["rmsd", "scipy"],
+#     default="scipy",
+#     help="Method of rmsd calculation. Available are the default and scipy",
+# )
 
 arg_parser.add_argument(
     "-o",
@@ -89,11 +88,6 @@ arg_parser.add_argument(
     type=bool,
     help="True/False flag to save alignment statistics in the separate file. Defaults to False.",
 )
-
-
-def rmsd_kabsch_wrapper(P, Q):
-    rotation, _, rmsd_ = rmsd.kabsch_weighted(P, Q)
-    return rotation, rmsd_
 
 
 def scipy_kabsch_wrapper(P, Q):
@@ -124,8 +118,8 @@ def molli_main(args, **kwargs):
     )
     print(f"The output path is {output_path}")
 
-    # choosing rmsd calculation method:
-    rmsd_func = rmsd_kabsch_wrapper if parsed.rmsd == "rmsd" else scipy_kabsch_wrapper
+    # choosing rmsd calculation method (currently defaulting to scipy))
+    rmsd_func = scipy_kabsch_wrapper
     # defining save_stats flag:
     save_stats = parsed.stats
 
