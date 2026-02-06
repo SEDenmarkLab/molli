@@ -250,7 +250,7 @@ class Molecule(Structure):
         centroid = self.substructure(substructure_indices[0]).centroid()
         self.translate(-centroid)
 
-        smallest_rmsd = 100.0
+        smallest_rmsd = np.inf
         optimal_rot_matrix = None
 
         for idx in substructure_indices:
