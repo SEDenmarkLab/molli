@@ -38,7 +38,9 @@ OS_NCORES = os.cpu_count() // 2
 
 arg_parser = ArgumentParser(
     "molli align",
-    description="Read a conformer library and align it across given query",
+    description="Aligns Conformer or Molecular library to a uniform orientation given by a query molecule "
+    "(only heavy atoms are considered). Optimal rotation and translation are found for each molecule/conformer "
+    "in the library by minimizing symmetry-corrected RMSD to the query structure.",
 )
 
 arg_parser.add_argument(
