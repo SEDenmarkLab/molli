@@ -29,8 +29,7 @@ import molli as ml
 import os
 from tqdm import tqdm
 import scipy.spatial
-import rmsd
-import pandas as pd
+import json
 
 import numpy as np
 from pathlib import Path
@@ -39,7 +38,9 @@ OS_NCORES = os.cpu_count() // 2
 
 arg_parser = ArgumentParser(
     "molli align",
-    description="Read a conformer library and align it across given query",
+    description="Aligns Conformer or Molecular library to a uniform orientation given by a query molecule "
+    "(only heavy atoms are considered). Optimal rotation and translation are found for each molecule/conformer "
+    "in the library by minimizing symmetry-corrected RMSD to the query structure.",
 )
 
 arg_parser.add_argument(
@@ -57,12 +58,12 @@ arg_parser.add_argument(
     required=True,
 )
 
-arg_parser.add_argument(
-    "--rmsd",
-    choices=["rmsd", "scipy"],
-    default="rmsd",
-    help="Method of rmsd calculation. Available are the default and scipy",
-)
+# arg_parser.add_argument(
+#     "--rmsd",
+#     choices=["rmsd", "scipy"],
+#     default="scipy",
+#     help="Method of rmsd calculation. Available are the default and scipy",
+# )
 
 arg_parser.add_argument(
     "-o",
@@ -89,11 +90,6 @@ arg_parser.add_argument(
     type=bool,
     help="True/False flag to save alignment statistics in the separate file. Defaults to False.",
 )
-
-
-def rmsd_kabsch_wrapper(P, Q):
-    rotation, _, rmsd_ = rmsd.kabsch_weighted(P, Q)
-    return rotation, rmsd_
 
 
 def scipy_kabsch_wrapper(P, Q):
@@ -124,8 +120,8 @@ def molli_main(args, **kwargs):
     )
     print(f"The output path is {output_path}")
 
-    # choosing rmsd calculation method:
-    rmsd_func = rmsd_kabsch_wrapper if parsed.rmsd == "rmsd" else scipy_kabsch_wrapper
+    # choosing rmsd calculation method (currently defaulting to scipy))
+    rmsd_func = scipy_kabsch_wrapper
     # defining save_stats flag:
     save_stats = parsed.stats
 
@@ -181,8 +177,6 @@ def molli_main(args, **kwargs):
                 vec,
             )
             align_stats[element_name] = rmsd_val
-            element.attrib["name"] = element.name
-            element.attrib["coords"] = element.coords
             destination[element_name] = element
 
     query_mol.translate(vec)
@@ -202,5 +196,7 @@ def molli_main(args, **kwargs):
     print(f"Median rmsd: {np.median(total_rmsds)}")
 
     if save_stats:
-        df = pd.DataFrame.from_dict(align_stats, orient="index")
-        df.round(3).to_csv(str(input_path.with_suffix("")) + "_stats.csv")
+        with open(
+            str(input_path.with_suffix("")) + "_stats.json", "w", encoding="utf-8"
+        ) as f:
+            json.dump(align_stats, f, ensure_ascii=False, indent=4)
