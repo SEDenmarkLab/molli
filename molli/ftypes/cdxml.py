@@ -121,7 +121,10 @@ def validate_label(lbl: et.Element):
         - that element font "face" attribute must be set to 1 (CDXML lingo: bold face)
     """
     _sub = lbl.findall("./s")
-    return len(_sub) == 1 and _sub[0].attrib.get("face", "0") == "1"
+
+    return all(
+        s.attrib.get("face", "0") == "1" for s in _sub
+    )  # Handles nested text strings
 
 
 def validate_fragment(frag: et.Element):
@@ -153,7 +156,11 @@ class CDXMLFile:
             validate_label,
             self.tree.findall("./page/t") + self.tree.findall("./page/group/t"),
         ):
-            if (lbl := xt[0].text) in self.xlabels:
+            lbl = "".join(
+                s.text for s in xt.findall("./s") if s.text
+            )  # Handles nested text strings
+
+            if lbl in self.xlabels:
                 warn(
                     (
                         f"CDXML file {self.path} contains redundant label {lbl!r} "
