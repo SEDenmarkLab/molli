@@ -356,7 +356,7 @@ def obabel_optimize(
     *,
     ff: str = "UFF",
     max_steps: int = 1000,
-    coord_displace: float | bool = 0.01,
+    coord_displace: float | bool = False,
     tol: float = 1e-4,
     dummy: Element | str = Element.H,
     inplace: bool = False,
@@ -372,7 +372,8 @@ def obabel_optimize(
     max_steps : int, optional
         Maximum number of steps to take during optimization, by default 1000
     coord_displace : float | bool, optional
-        Amount to displace coordinates, by default 0.01
+        Amount to displace coordinates, recommended to displace by a small non-zero value after parsing
+        (see Additional Notes), by default False
     tol : float, optional
         Tolerance for Convergence, by default 1e-4
     dummy : Element | str, optional
@@ -389,6 +390,13 @@ def obabel_optimize(
     ------
     RuntimeError
         Raises error if forcefield does not get setup correctly.
+        
+    Additional Notes
+    -----------------
+    * `coord_displace` is recommended to be a non-zero value, such as 0.01, for structures when parsed from Chemdraw
+    Certain flat-structures fail to unflatten upon optimization. For example, methyl groups sometimes fail 
+    to optimize to reasonable structures. For the purpose of reproducibility, coordinate randomization is kept as `False`
+    by default.
     """
 
     obm = to_obmol(mol, dummy=dummy, coord_displace=coord_displace)
@@ -438,7 +446,7 @@ def optimize_coordination(
     *,
     ff: str = "UFF",
     max_steps: int = 1000,
-    coord_displace: float | bool = 0.01,
+    coord_displace: float | bool = False,
     tol: float = 1e-4,
     dummy: Element | str = Element.Cl,
     inplace: bool = False,
@@ -457,7 +465,8 @@ def optimize_coordination(
     max_steps : int, optional
         Maximum number of steps to take during optimization, by default 1000
     coord_displace : float | bool, optional
-        Amount to displace coordinates, by default 0.01
+        Amount to displace coordinates, recommended to displace by a small non-zero value after parsing
+        (see Additional Notes), by default False
     tol : float, optional
         Tolerance for Convergence, by default 1e-4
     dummy : Element | str, optional
@@ -477,10 +486,15 @@ def optimize_coordination(
 
     Additional Notes
     -----------------
-    Doing an initial preoptimization using a forcefield such as `GAFF` with `obabel_optimize`
+    * Doing an initial preoptimization using a forcefield such as `GAFF` with `obabel_optimize`
     and then doing `optimize_coordination` can sometimes help.
 
-    This funciton is still a prototype and may be updated later.
+    * This funciton is still a prototype and may be updated later.
+
+    * `coord_displace` is recommended to be a non-zero value, such as 0.01, for structures when parsed from Chemdraw
+    Certain flat-structures fail to unflatten upon optimization. For example, methyl groups sometimes fail 
+    to optimize to reasonable structures. For the purpose of reproducibility, coordinate randomization is kept as `False`
+    by default.
     """
 
     obm = to_obmol(
