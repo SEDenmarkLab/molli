@@ -1014,7 +1014,7 @@ class Structure(CartesianGeometry, Connectivity):
                         self.add_atom(h := Atom("H"), c)
                         self.append_bond(Bond(a, h))
 
-        self._atomic_charges = np.array(self._atomic_charges, dtype=float)
+        self._atomic_charges = np.array(self._atomic_charges, dtype=np.float64)
         np.nan_to_num(self._atomic_charges, copy=False, nan=0.0)
 
 class Substructure(Structure):
