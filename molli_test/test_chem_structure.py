@@ -141,3 +141,9 @@ class StructureTC(ut.TestCase):
 
         self.assertEqual(s1.n_atoms, 43)
         self.assertEqual(s1.n_bonds, 44)
+
+    def test_implict_hydrogens_charge(self):
+        s1 = ml.CDXMLFile(ml.files.parser_demo_cdxml)['taxadiene']
+        s1.add_implicit_hydrogens()
+        self.assertFalse(np.isnan(s1.atomic_charges).any())
+        self.assertFalse(np.isnan(s1._atomic_charges).any())

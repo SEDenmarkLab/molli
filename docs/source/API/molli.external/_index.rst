@@ -7,3 +7,4 @@ molli.external
 
    rdkit
    openbabel
+   morfeus

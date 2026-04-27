@@ -76,6 +76,8 @@ cinchonidine_rd_conf = ROOT / "cinchonidine_rdconfs.clib"
 fletcher_phosphoramidite = ROOT / "fletcher_phosphoramidite_cats.mlib"
 test_mol2_zip = ROOT / "test_mol2s.zip"
 test_mol2_ml02_zip = ROOT / "test_mol2s_ml02.zip"
+test_ml130_CIN_clib = ROOT / "ml_130_CIN_test.clib"
+test_ml130_CIN_mlib = ROOT / "ml_130_CIN_test.mlib"
 
 BOX_4_position = ROOT / "BOX_4position_fragments.cdxml"
 BOX_cores = ROOT / "BOX_cores.cdxml"

@@ -32,8 +32,8 @@ import os
 import gc
 from time import sleep
 import joblib
+import numpy as np
 from io import UnsupportedOperation
-from numpy.testing import assert_allclose
 
 
 def _write1(i: int, collection: ml.storage.Collection):
@@ -210,7 +210,7 @@ class CollectionsTC(ut.TestCase):
             for mol_name in destination:
                 mol = destination[mol_name]
                 self.assertEqual(mol.attrib["name"], mol.name)
-                assert_allclose(mol.attrib["coords"], mol.coords)
+                np.testing.assert_array_equal(mol.attrib['coords'], mol.coords) # New serializer float64
 
     def test_ensemble_lib(self):
         source = ml.ConformerLibrary(ml.files.cinchonidine_rd_conf, readonly=True)
@@ -235,7 +235,7 @@ class CollectionsTC(ut.TestCase):
             for ens_name in destination:
                 ens = destination[ens_name]
                 self.assertEqual(ens.attrib["name"], ens.name)
-                assert_allclose(ens.attrib["coords"], ens.coords)
+                np.testing.assert_array_equal(ens.attrib["coords"], ens.coords) # New serializer float64
 
     def test_conformer_to_lib(self):
         source = ml.ConformerLibrary(ml.files.cinchonidine_rd_conf, readonly=True)
@@ -250,3 +250,81 @@ class CollectionsTC(ut.TestCase):
             for ens_name in source:
                 ens = source[ens_name]  # Read from source
                 destination[ens_name] = ens[0]
+
+    def test_ml130_mlib_compat(self):
+        attrib_tests = ['t_val', 't_tup', 't_dict', 't_arr']
+        exp_val = 1.123456789123456
+        
+        source = ml.MoleculeLibrary(ml.files.test_ml130_CIN_mlib)
+
+        with source.reading():
+            for key in source:
+                obj = source[key]
+
+                self.assertTrue(len(obj.attrib) == len(attrib_tests))
+
+                for att in attrib_tests:
+                    self.assertIn(att, obj.attrib)
+                    ret_att = obj.attrib[att]
+
+                    # Float Test
+                    if att == 't_val':
+                        self.assertIsInstance(ret_att, float)
+                        self.assertAlmostEqual(ret_att, exp_val, places=6)
+
+                    #Tuple Test
+                    elif att == 't_tup':
+                        self.assertIsInstance(ret_att, tuple)
+                        self.assertEqual(len(ret_att), 1)
+                        self.assertAlmostEqual(ret_att[0], exp_val, places=6)
+                    
+                    #Dict Test
+                    elif att == 't_dict':
+                        self.assertIsInstance(ret_att, dict)
+                        self.assertIn("key", ret_att)
+                        self.assertAlmostEqual(ret_att['key'], exp_val, places=6)
+                    
+                    #Numpy Array Test
+                    elif att == 't_arr':
+                        self.assertIsInstance(ret_att, np.ndarray)
+                        np.testing.assert_array_almost_equal(ret_att, np.array([exp_val]), decimal=6)
+                    
+                    
+    def test_ml130_clib_compat(self):
+        attrib_tests = ['t_val', 't_tup', 't_dict', 't_arr']
+        exp_val = 1.123456789123456
+
+        source = ml.ConformerLibrary(ml.files.test_ml130_CIN_clib)
+
+        with source.reading():
+            for key in source:
+                obj = source[key]
+
+                self.assertTrue(len(obj.attrib) == len(attrib_tests))
+
+                for att in attrib_tests:
+                    self.assertIn(att, obj.attrib)
+                    ret_att = obj.attrib[att]
+
+                    # Float Test
+                    if att == 't_val':
+                        self.assertIsInstance(ret_att, float)
+                        self.assertAlmostEqual(ret_att, exp_val, places=6)
+
+                    #Tuple Test
+                    elif att == 't_tup':
+                        self.assertIsInstance(ret_att, tuple)
+                        self.assertEqual(len(ret_att), 1)
+                        self.assertAlmostEqual(ret_att[0], exp_val, places=6)
+                    
+                    #Dict Test
+                    elif att == 't_dict':
+                        self.assertIsInstance(ret_att, dict)
+                        self.assertIn("key", ret_att)
+                        self.assertAlmostEqual(ret_att['key'], exp_val, places=6)
+                    
+                    #Numpy Array Test
+                    elif att == 't_arr':
+                        self.assertIsInstance(ret_att, np.ndarray)
+                        np.testing.assert_array_almost_equal(ret_att, np.array([exp_val]), decimal=6)
+    
